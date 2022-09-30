@@ -5,11 +5,20 @@
 *.so
 *.dylib
 
+# tmp files
+*.tmp
+
+# vim files
+*.swp
+
 # Test binary, built with `go test -c`
 *.test
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+out.json
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
+# Needed tools
+hack/tools/bin/
+
+bin/
