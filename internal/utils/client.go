@@ -55,7 +55,7 @@ func GetAccessInstance() *k8sAccess {
 // nil. Doing this way though it makes it possible to run uts against each of the implemented
 // command.
 
-// InitalizeManagementClusterAcces initalizes k8sAccess singleton
+// InitalizeManagementClusterAcces initializes k8sAccess singleton
 func InitalizeManagementClusterAcces(scheme *runtime.Scheme, restConfig *rest.Config,
 	cs *kubernetes.Clientset, c client.Client) {
 

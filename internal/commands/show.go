@@ -33,16 +33,18 @@ import (
 // Show takes keyword then calls subcommand.
 func Show(ctx context.Context, args []string, logger logr.Logger) error {
 	doc := `Usage:
-	sveltosctl show <command> [<args>...]
+  sveltosctl show [options] <subcommand> [<args>...]
 
-    features         show details of various features deployed in each cluster.
+    features      Displays information on policies (resources and helm releases) deployed in clusters.
+    dryrun        Displays information on ClusterProfiles in DryRun mode. It displays what changes would
+                  take effect if a ClusterProfile were to be moved out of DryRun mode.
 
 Options:
-	-h --help      Show this screen.
+  -h --help       Show this screen.
 
 Description:
-	See 'sveltosctl show <command> --help' to read about a specific subcommand.
-  `
+See 'sveltosctl show <subcommand> --help' to read about a specific subcommand.
+`
 
 	parser := &docopt.Parser{
 		HelpHandler:   docopt.PrintHelpAndExit,
@@ -62,15 +64,20 @@ Description:
 		os.Exit(1)
 	}
 
-	command := opts["<command>"].(string)
+	command := opts["<subcommand>"].(string)
 	arguments := append([]string{"show", command}, opts["<args>"].([]string)...)
 
-	switch command {
-	case "features":
-		err = show.Features(ctx, arguments, logger)
-	default:
-		logger.V(logs.LogInfo).Info(doc)
-	}
+	if opts["<subcommand>"] != nil {
+		switch command {
+		case "features":
+			err = show.Features(ctx, arguments, logger)
+		case "dryrun":
+			err = show.DryRun(ctx, arguments, logger)
+		default:
+			fmt.Println(doc)
+		}
 
-	return err
+		return err
+	}
+	return nil
 }

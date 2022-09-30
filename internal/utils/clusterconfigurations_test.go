@@ -165,27 +165,27 @@ var _ = Describe("ClusterConfiguration", func() {
 	})
 })
 
-func createClusterConfiguration(clusterFeature1Resources, clusterFeature2Resources []configv1alpha1.Resource,
-	clusterFeature1Charts, clusterFeature2Charts []configv1alpha1.Chart) *configv1alpha1.ClusterConfiguration {
+func createClusterConfiguration(clusterProfile1Resources, clusterProfile2Resources []configv1alpha1.Resource,
+	clusterProfile1Charts, clusterProfile2Charts []configv1alpha1.Chart) *configv1alpha1.ClusterConfiguration {
 
-	cfr1 := &configv1alpha1.ClusterFeatureResource{
-		ClusterFeatureName: randomString(),
+	cfr1 := &configv1alpha1.ClusterProfileResource{
+		ClusterProfileName: randomString(),
 		Features: []configv1alpha1.Feature{
 			{
 				FeatureID: configv1alpha1.FeatureHelm,
-				Resources: clusterFeature1Resources,
-				Charts:    clusterFeature1Charts,
+				Resources: clusterProfile1Resources,
+				Charts:    clusterProfile1Charts,
 			},
 		},
 	}
 
-	cfr2 := &configv1alpha1.ClusterFeatureResource{
-		ClusterFeatureName: randomString(),
+	cfr2 := &configv1alpha1.ClusterProfileResource{
+		ClusterProfileName: randomString(),
 		Features: []configv1alpha1.Feature{
 			{
 				FeatureID: configv1alpha1.FeatureHelm,
-				Resources: clusterFeature2Resources,
-				Charts:    clusterFeature2Charts,
+				Resources: clusterProfile2Resources,
+				Charts:    clusterProfile2Charts,
 			},
 		},
 	}
@@ -196,7 +196,7 @@ func createClusterConfiguration(clusterFeature1Resources, clusterFeature2Resourc
 			Namespace: randomString(),
 		},
 		Status: configv1alpha1.ClusterConfigurationStatus{
-			ClusterFeatureResources: []configv1alpha1.ClusterFeatureResource{
+			ClusterProfileResources: []configv1alpha1.ClusterProfileResource{
 				*cfr1,
 				*cfr2,
 			},
