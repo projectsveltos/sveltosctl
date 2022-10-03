@@ -26,7 +26,6 @@ import (
 	"github.com/docopt/docopt-go"
 	"github.com/go-logr/logr"
 	"github.com/olekukonko/tablewriter"
-	corev1 "k8s.io/api/core/v1"
 
 	configv1alpha1 "github.com/projectsveltos/cluster-api-feature-manager/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/logs"
@@ -37,12 +36,12 @@ var (
 	// cluster represents the cluster => namespace/name
 	// resourceNamespace and resourceName is the kubernetes resource/helm release namespace/name
 	// resourceVersion applies to helm releases only and it is the helm chart version
-	// lastApplies represents the time resource was updated
-	// clusterFeatureNames is the list of all ClusterFeatures causing the resource to be deployed
+	// lastApplied represents the time resource was updated
+	// clusterProfileNames is the list of all ClusterProfiles causing the resource to be deployed
 	// in the cluster
 	genFeatureRow = func(cluster, resourceType, resourceNamespace, resourceName, resourceVersion,
-		lastApplied string, clusterFeatureNames []string) []string {
-		clusterFeatures := strings.Join(clusterFeatureNames, ";")
+		lastApplied string, clusterProfileNames []string) []string {
+		clusterProfiles := strings.Join(clusterProfileNames, ";")
 		return []string{
 			cluster,
 			resourceType,
@@ -50,51 +49,19 @@ var (
 			resourceName,
 			resourceVersion,
 			lastApplied,
-			clusterFeatures,
+			clusterProfiles,
 		}
 	}
 )
 
-func doConsiderNamespace(ns *corev1.Namespace, passedNamespace string) bool {
-	if passedNamespace == "" {
-		return true
-	}
-
-	return ns.Name == passedNamespace
-}
-
-func doConsiderClusterConfiguration(clusterConfiguration *configv1alpha1.ClusterConfiguration,
-	passedCluster string) bool {
-
-	if passedCluster == "" {
-		return true
-	}
-
-	return clusterConfiguration.Name == passedCluster
-}
-
-func doConsiderFeature(clusterFeatureNames []string, passedClusterFeature string) bool {
-	if passedClusterFeature == "" {
-		return true
-	}
-
-	for i := range clusterFeatureNames {
-		if clusterFeatureNames[i] == passedClusterFeature {
-			return true
-		}
-	}
-
-	return false
-}
-
-func displayFeatures(ctx context.Context, passedNamespace, passedCluster, passedClusterFeature string,
+func displayFeatures(ctx context.Context, passedNamespace, passedCluster, passedClusterProfile string,
 	logger logr.Logger) error {
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"CLUSTER", "RESOURCE TYPE", "NAMESPACE", "NAME", "VERSION", "TIME", "CLUSTER FEATURES"})
+	table.SetHeader([]string{"CLUSTER", "RESOURCE TYPE", "NAMESPACE", "NAME", "VERSION", "TIME", "CLUSTER PROFILES"})
 
 	if err := displayFeaturesInNamespaces(ctx, passedNamespace, passedCluster,
-		passedClusterFeature, table, logger); err != nil {
+		passedClusterProfile, table, logger); err != nil {
 		return err
 	}
 
@@ -103,7 +70,7 @@ func displayFeatures(ctx context.Context, passedNamespace, passedCluster, passed
 	return nil
 }
 
-func displayFeaturesInNamespaces(ctx context.Context, passedNamespace, passedCluster, passedClusterFeature string,
+func displayFeaturesInNamespaces(ctx context.Context, passedNamespace, passedCluster, passedClusterProfile string,
 	table *tablewriter.Table, logger logr.Logger) error {
 
 	instance := utils.GetAccessInstance()
@@ -117,7 +84,7 @@ func displayFeaturesInNamespaces(ctx context.Context, passedNamespace, passedClu
 		ns := &namespaces.Items[i]
 		if doConsiderNamespace(ns, passedNamespace) {
 			logger.V(logs.LogVerbose).Info(fmt.Sprintf("Considering namespace: %s", ns.Name))
-			err = displayFeaturesInNamespace(ctx, ns.Name, passedCluster, passedClusterFeature,
+			err = displayFeaturesInNamespace(ctx, ns.Name, passedCluster, passedClusterProfile,
 				table, logger)
 			if err != nil {
 				return err
@@ -128,7 +95,7 @@ func displayFeaturesInNamespaces(ctx context.Context, passedNamespace, passedClu
 	return nil
 }
 
-func displayFeaturesInNamespace(ctx context.Context, namespace, passedCluster, passedClusterFeature string,
+func displayFeaturesInNamespace(ctx context.Context, namespace, passedCluster, passedClusterProfile string,
 	table *tablewriter.Table, logger logr.Logger) error {
 
 	instance := utils.GetAccessInstance()
@@ -144,14 +111,14 @@ func displayFeaturesInNamespace(ctx context.Context, namespace, passedCluster, p
 		cc := &clusterConfigurations.Items[i]
 		if doConsiderClusterConfiguration(cc, passedCluster) {
 			logger.V(logs.LogVerbose).Info(fmt.Sprintf("Considering ClusterConfiguration: %s", cc.Name))
-			displayFeaturesForCluster(cc, passedClusterFeature, table, logger)
+			displayFeaturesForCluster(cc, passedClusterProfile, table, logger)
 		}
 	}
 
 	return nil
 }
 
-func displayFeaturesForCluster(clusterConfiguration *configv1alpha1.ClusterConfiguration, passedClusterFeature string,
+func displayFeaturesForCluster(clusterConfiguration *configv1alpha1.ClusterConfiguration, passedClusterProfile string,
 	table *tablewriter.Table, logger logr.Logger) {
 
 	instance := utils.GetAccessInstance()
@@ -161,7 +128,7 @@ func displayFeaturesForCluster(clusterConfiguration *configv1alpha1.ClusterConfi
 	logger.V(logs.LogVerbose).Info("Get ClusterConfiguration")
 	clusterInfo := fmt.Sprintf("%s/%s", clusterConfiguration.Namespace, clusterConfiguration.Name)
 	for chart := range helmCharts {
-		if doConsiderFeature(helmCharts[chart], passedClusterFeature) {
+		if doConsiderClusterProfile(helmCharts[chart], passedClusterProfile) {
 			table.Append(genFeatureRow(clusterInfo, "helm chart", chart.Namespace, chart.ReleaseName, chart.ChartVersion,
 				chart.LastAppliedTime.String(), helmCharts[chart]))
 		}
@@ -169,7 +136,7 @@ func displayFeaturesForCluster(clusterConfiguration *configv1alpha1.ClusterConfi
 
 	resources := instance.GetResources(clusterConfiguration, logger)
 	for resource := range resources {
-		if doConsiderFeature(resources[resource], passedClusterFeature) {
+		if doConsiderClusterProfile(resources[resource], passedClusterProfile) {
 			table.Append(genFeatureRow(clusterInfo, fmt.Sprintf("%s:%s", resource.Group, resource.Kind),
 				resource.Namespace, resource.Name, "N/A",
 				resource.LastAppliedTime.String(), resources[resource]))
@@ -180,16 +147,18 @@ func displayFeaturesForCluster(clusterConfiguration *configv1alpha1.ClusterConfi
 // Features displays information about features deployed in clusters
 func Features(ctx context.Context, args []string, logger logr.Logger) error {
 	doc := `Usage:
-  sveltosctl show features [--namespace=<name>] [--cluster=<name>] [--clusterfeature=<name>] [--verbose]
-Options:
-  -h --help                  Show this screen.
+  sveltosctl show features [options] [--namespace=<name>] [--cluster=<name>] [--clusterprofile=<name>] [--verbose]
+
      --namespace=<name>      Show features deployed in clusters in this namespace. If not specified all namespaces are considered.
      --cluster=<name>        Show features deployed in cluster with name. If not specified all cluster names are considered.
-	 --clusterfeature=<name> Show features deployed because of this clusterfeature. If not specified all clusterfeature names are considered.
-     --verbose               Verbose mode. Print each step.
+     --clusterprofile=<name> Show features deployed because of this clusterprofile. If not specified all clusterprofile names are considered.
+
+Options:
+  -h --help                  Show this screen.
+     --verbose               Verbose mode. Print each step.  
 
 Description:
-  The show cluster command shows information about workload cluster.
+  The show features command shows information about features deployed in clusters.
 `
 	parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
 	if err != nil {
@@ -211,7 +180,7 @@ Description:
 		}
 	}
 	defer func() {
-		_ = flag.Lookup("v").Value.Set(fmt.Sprint(0))
+		_ = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogInfo))
 	}()
 
 	namespace := ""
@@ -224,10 +193,10 @@ Description:
 		cluster = passedCluster.(string)
 	}
 
-	clusterFeature := ""
-	if passedClusterFeature := parsedArgs["--clusterfeature"]; passedClusterFeature != nil {
-		clusterFeature = passedClusterFeature.(string)
+	clusterProfile := ""
+	if passedClusterProfile := parsedArgs["--clusterprofile"]; passedClusterProfile != nil {
+		clusterProfile = passedClusterProfile.(string)
 	}
 
-	return displayFeatures(ctx, namespace, cluster, clusterFeature, logger)
+	return displayFeatures(ctx, namespace, cluster, clusterProfile, logger)
 }

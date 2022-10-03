@@ -32,22 +32,22 @@ import (
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
-var _ = Describe("ClusterFeature", func() {
-	It("ListClusterFeatures returns list of all clusterFeatures", func() {
+var _ = Describe("ClusterProfile", func() {
+	It("ListClusterProfiles returns list of all clusterProfiles", func() {
 
 		initObjects := []client.Object{}
 
 		for i := 0; i < 10; i++ {
-			clusterFeature := &configv1alpha1.ClusterFeature{
+			clusterProfile := &configv1alpha1.ClusterProfile{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: randomString(),
 				},
-				Spec: configv1alpha1.ClusterFeatureSpec{
+				Spec: configv1alpha1.ClusterProfileSpec{
 					ClusterSelector: configv1alpha1.Selector("zone:west"),
 					SyncMode:        configv1alpha1.SyncModeContinuous,
 				},
 			}
-			initObjects = append(initObjects, clusterFeature)
+			initObjects = append(initObjects, clusterProfile)
 		}
 
 		scheme := runtime.NewScheme()
@@ -55,8 +55,8 @@ var _ = Describe("ClusterFeature", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		k8sAccess := utils.GetK8sAccess(scheme, c)
-		clusterFeatures, err := k8sAccess.ListClusterFeatures(context.TODO(), klogr.New())
+		clusterProfiles, err := k8sAccess.ListClusterProfiles(context.TODO(), klogr.New())
 		Expect(err).To(BeNil())
-		Expect(len(clusterFeatures.Items)).To(Equal(len(initObjects)))
+		Expect(len(clusterProfiles.Items)).To(Equal(len(initObjects)))
 	})
 })

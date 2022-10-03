@@ -25,12 +25,12 @@ import (
 	"github.com/projectsveltos/sveltosctl/internal/logs"
 )
 
-// ListClusterFeatures returns all current ClusterFeatures
-func (a *k8sAccess) ListClusterFeatures(ctx context.Context,
-	logger logr.Logger) (*configv1alpha1.ClusterFeatureList, error) {
+// ListClusterReports returns all current ClusterProfiles
+func (a *k8sAccess) ListClusterProfiles(ctx context.Context,
+	logger logr.Logger) (*configv1alpha1.ClusterProfileList, error) {
 
-	logger.V(logs.LogVerbose).Info("Get all ClusterFeatures")
-	clusterFeatures := &configv1alpha1.ClusterFeatureList{}
-	err := a.client.List(ctx, clusterFeatures)
-	return clusterFeatures, err
+	logger.V(logs.LogVerbose).Info("Get all ClusterProfiles")
+	clusterProfiles := &configv1alpha1.ClusterProfileList{}
+	err := a.client.List(ctx, clusterProfiles)
+	return clusterProfiles, err
 }

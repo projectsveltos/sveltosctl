@@ -28,15 +28,15 @@ import (
 
 // addDeployedHelmCharts adds provided charts as deployed in clusterConfiguration status
 func addDeployedHelmCharts(clusterConfiguration *configv1alpha1.ClusterConfiguration,
-	clusterFeatureName string, charts []configv1alpha1.Chart) *configv1alpha1.ClusterConfiguration {
+	clusterProfileName string, charts []configv1alpha1.Chart) *configv1alpha1.ClusterConfiguration {
 
-	if clusterConfiguration.Status.ClusterFeatureResources == nil {
-		clusterConfiguration.Status.ClusterFeatureResources = make([]configv1alpha1.ClusterFeatureResource, 0)
+	if clusterConfiguration.Status.ClusterProfileResources == nil {
+		clusterConfiguration.Status.ClusterProfileResources = make([]configv1alpha1.ClusterProfileResource, 0)
 	}
 
-	for i := range clusterConfiguration.Status.ClusterFeatureResources {
-		cfr := &clusterConfiguration.Status.ClusterFeatureResources[i]
-		if cfr.ClusterFeatureName == clusterFeatureName {
+	for i := range clusterConfiguration.Status.ClusterProfileResources {
+		cfr := &clusterConfiguration.Status.ClusterProfileResources[i]
+		if cfr.ClusterProfileName == clusterProfileName {
 			if cfr.Features == nil {
 				cfr.Features = make([]configv1alpha1.Feature, 0)
 			}
@@ -50,28 +50,28 @@ func addDeployedHelmCharts(clusterConfiguration *configv1alpha1.ClusterConfigura
 		}
 	}
 
-	cfr := &configv1alpha1.ClusterFeatureResource{
-		ClusterFeatureName: clusterFeatureName,
+	cfr := &configv1alpha1.ClusterProfileResource{
+		ClusterProfileName: clusterProfileName,
 		Features: []configv1alpha1.Feature{
 			{FeatureID: configv1alpha1.FeatureHelm, Charts: charts},
 		},
 	}
-	clusterConfiguration.Status.ClusterFeatureResources = append(clusterConfiguration.Status.ClusterFeatureResources, *cfr)
+	clusterConfiguration.Status.ClusterProfileResources = append(clusterConfiguration.Status.ClusterProfileResources, *cfr)
 
 	return clusterConfiguration
 }
 
 // addDeployedResources adds provided resources as deployed in clusterConfiguration status
 func addDeployedResources(clusterConfiguration *configv1alpha1.ClusterConfiguration,
-	clusterFeatureName string, resources []configv1alpha1.Resource) *configv1alpha1.ClusterConfiguration {
+	clusterProfileName string, resources []configv1alpha1.Resource) *configv1alpha1.ClusterConfiguration {
 
-	if clusterConfiguration.Status.ClusterFeatureResources == nil {
-		clusterConfiguration.Status.ClusterFeatureResources = make([]configv1alpha1.ClusterFeatureResource, 0)
+	if clusterConfiguration.Status.ClusterProfileResources == nil {
+		clusterConfiguration.Status.ClusterProfileResources = make([]configv1alpha1.ClusterProfileResource, 0)
 	}
 
-	for i := range clusterConfiguration.Status.ClusterFeatureResources {
-		cfr := &clusterConfiguration.Status.ClusterFeatureResources[i]
-		if cfr.ClusterFeatureName == clusterFeatureName {
+	for i := range clusterConfiguration.Status.ClusterProfileResources {
+		cfr := &clusterConfiguration.Status.ClusterProfileResources[i]
+		if cfr.ClusterProfileName == clusterProfileName {
 			if cfr.Features == nil {
 				cfr.Features = make([]configv1alpha1.Feature, 0)
 			}
@@ -85,13 +85,13 @@ func addDeployedResources(clusterConfiguration *configv1alpha1.ClusterConfigurat
 		}
 	}
 
-	cfr := &configv1alpha1.ClusterFeatureResource{
-		ClusterFeatureName: clusterFeatureName,
+	cfr := &configv1alpha1.ClusterProfileResource{
+		ClusterProfileName: clusterProfileName,
 		Features: []configv1alpha1.Feature{
 			{FeatureID: configv1alpha1.FeatureResources, Resources: resources},
 		},
 	}
-	clusterConfiguration.Status.ClusterFeatureResources = append(clusterConfiguration.Status.ClusterFeatureResources, *cfr)
+	clusterConfiguration.Status.ClusterProfileResources = append(clusterConfiguration.Status.ClusterProfileResources, *cfr)
 
 	return clusterConfiguration
 }
@@ -115,6 +115,27 @@ func generateResource() *configv1alpha1.Resource {
 		Group:           randomString(),
 		Kind:            randomString(),
 		LastAppliedTime: &t,
+	}
+}
+
+func generateReleaseReport(action string) *configv1alpha1.ReleaseReport {
+	return &configv1alpha1.ReleaseReport{
+		ReleaseName:      randomString(),
+		ReleaseNamespace: randomString(),
+		ChartVersion:     randomString(),
+		Action:           action,
+	}
+}
+
+func generateResourceReport(action string) *configv1alpha1.ResourceReport {
+	return &configv1alpha1.ResourceReport{
+		Resource: configv1alpha1.Resource{
+			Name:      randomString(),
+			Namespace: randomString(),
+			Group:     randomString(),
+			Kind:      randomString(),
+		},
+		Action: action,
 	}
 }
 

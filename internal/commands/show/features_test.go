@@ -59,18 +59,18 @@ var _ = Describe("Features", func() {
 		}
 	})
 
-	It("show features displayed deployed helm charts", func() {
-		clusterFeatureName1 := randomString()
+	It("show features displays deployed helm charts", func() {
+		clusterProfileName1 := randomString()
 		charts1 := []configv1alpha1.Chart{
 			*generateChart(), *generateChart(),
 		}
-		clusterConfiguration = addDeployedHelmCharts(clusterConfiguration, clusterFeatureName1, charts1)
+		clusterConfiguration = addDeployedHelmCharts(clusterConfiguration, clusterProfileName1, charts1)
 
-		clusterFeatureName2 := randomString()
+		clusterProfileName2 := randomString()
 		charts2 := []configv1alpha1.Chart{
 			*generateChart(), *generateChart(), *generateChart(),
 		}
-		clusterConfiguration = addDeployedHelmCharts(clusterConfiguration, clusterFeatureName2, charts2)
+		clusterConfiguration = addDeployedHelmCharts(clusterConfiguration, clusterProfileName2, charts2)
 
 		old := os.Stdout // keep backup of the real stdout
 		r, w, _ := os.Pipe()
@@ -103,24 +103,24 @@ var _ = Describe("Features", func() {
 		*/
 
 		lines := strings.Split(buf.String(), "\n")
-		verifyCharts(lines, clusterInfo, clusterFeatureName1, charts1)
-		verifyCharts(lines, clusterInfo, clusterFeatureName2, charts2)
+		verifyCharts(lines, clusterInfo, clusterProfileName1, charts1)
+		verifyCharts(lines, clusterInfo, clusterProfileName2, charts2)
 
 		os.Stdout = old
 	})
 
-	It("show features displayed deployed resources", func() {
-		clusterFeatureName1 := randomString()
+	It("show features display deployed resources", func() {
+		clusterProfileName1 := randomString()
 		resource1 := []configv1alpha1.Resource{
 			*generateResource(), *generateResource(), *generateResource(),
 		}
-		clusterConfiguration = addDeployedResources(clusterConfiguration, clusterFeatureName1, resource1)
+		clusterConfiguration = addDeployedResources(clusterConfiguration, clusterProfileName1, resource1)
 
-		clusterFeatureName2 := randomString()
+		clusterProfileName2 := randomString()
 		resource2 := []configv1alpha1.Resource{
 			*generateResource(), *generateResource(), *generateResource(),
 		}
-		clusterConfiguration = addDeployedResources(clusterConfiguration, clusterFeatureName2, resource2)
+		clusterConfiguration = addDeployedResources(clusterConfiguration, clusterProfileName2, resource2)
 
 		old := os.Stdout // keep backup of the real stdout
 		r, w, _ := os.Pipe()
@@ -146,35 +146,35 @@ var _ = Describe("Features", func() {
 		/*
 			// This is an example of how the table needs to look like
 			+-------------------------------------+---------------+-----------+----------------+---------+---------------------+------------------+
-			|               CLUSTER               | RESOURCE TYPE | NAMESPACE |      NAME      | VERSION |             TIME    | CLUSTER FEATURES |
+			|               CLUSTER               | RESOURCE TYPE | NAMESPACE |      NAME      | VERSION |             TIME    | CLUSTER PROFILES |
 			+-------------------------------------+---------------+-----------+----------------+---------+---------------------+------------------+
 			| default/sveltos-management-workload | :Pod          | default   | nginx          | N/A     | 2022-09-30 13:41:05 | nginx-group      |
 			+-------------------------------------+---------------+-----------+----------------+---------+---------------------+------------------+
 		*/
 
 		lines := strings.Split(buf.String(), "\n")
-		verifyResources(lines, clusterInfo, clusterFeatureName1, resource1)
-		verifyResources(lines, clusterInfo, clusterFeatureName2, resource2)
+		verifyResources(lines, clusterInfo, clusterProfileName1, resource1)
+		verifyResources(lines, clusterInfo, clusterProfileName2, resource2)
 
 		os.Stdout = old
 	})
 })
 
-func verifyCharts(lines []string, clusterInfo, clusterFeatureName string,
+func verifyCharts(lines []string, clusterInfo, clusterProfileName string,
 	charts []configv1alpha1.Chart) {
 
 	for i := range charts {
-		verifyChart(lines, clusterInfo, clusterFeatureName, &charts[i])
+		verifyChart(lines, clusterInfo, clusterProfileName, &charts[i])
 	}
 }
 
-func verifyChart(lines []string, clusterInfo, clusterFeatureName string,
+func verifyChart(lines []string, clusterInfo, clusterProfileName string,
 	chart *configv1alpha1.Chart) {
 
 	found := false
 	for i := range lines {
 		if strings.Contains(lines[i], clusterInfo) &&
-			strings.Contains(lines[i], clusterFeatureName) &&
+			strings.Contains(lines[i], clusterProfileName) &&
 			strings.Contains(lines[i], chart.Namespace) &&
 			strings.Contains(lines[i], chart.ReleaseName) {
 
@@ -189,21 +189,21 @@ func verifyChart(lines []string, clusterInfo, clusterFeatureName string,
 	Expect(found).To(BeTrue())
 }
 
-func verifyResources(lines []string, clusterInfo, clusterFeatureName string,
+func verifyResources(lines []string, clusterInfo, clusterProfileName string,
 	resources []configv1alpha1.Resource) {
 
 	for i := range resources {
-		verifyResource(lines, clusterInfo, clusterFeatureName, &resources[i])
+		verifyResource(lines, clusterInfo, clusterProfileName, &resources[i])
 	}
 }
 
-func verifyResource(lines []string, clusterInfo, clusterFeatureName string,
+func verifyResource(lines []string, clusterInfo, clusterProfileName string,
 	resource *configv1alpha1.Resource) {
 
 	found := false
 	for i := range lines {
 		if strings.Contains(lines[i], clusterInfo) &&
-			strings.Contains(lines[i], clusterFeatureName) &&
+			strings.Contains(lines[i], clusterProfileName) &&
 			strings.Contains(lines[i], resource.Namespace) &&
 			strings.Contains(lines[i], resource.Name) &&
 			strings.Contains(lines[i], resource.Group) &&

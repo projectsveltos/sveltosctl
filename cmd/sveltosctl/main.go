@@ -40,12 +40,13 @@ func main() {
 	doc := `Usage:
 	sveltosctl [options] <command> [<args>...]
 
-	show          Display information on deployed policies in each cluster.
-	version       Display the version of sveltosctl.
+    show          Display information on deployed policies (resources and helm releases) in each cluster
+                  or for ClusterProfiles in DryRun mode, what changes would take effect if the ClusterProfile
+                  mode was to be moved out of DryRun mode.
+    version       Display the version of sveltosctl.
 
 Options:
-  -h --help     Show this screen.
-     --version  Show version.
+	-h --help          Show this screen.
 
 Description:
   The sveltosctl command line tool is used to display various type of information
