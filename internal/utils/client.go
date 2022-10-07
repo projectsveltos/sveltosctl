@@ -19,17 +19,23 @@ package utils
 import (
 	"context"
 
+	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/discovery"
+	memory "k8s.io/client-go/discovery/cached"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/restmapper"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/go-logr/logr"
-
 	configv1alpha1 "github.com/projectsveltos/cluster-api-feature-manager/api/v1alpha1"
+	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/logs"
 )
 
@@ -85,6 +91,12 @@ func addToScheme(scheme *runtime.Scheme) error {
 	if err := configv1alpha1.AddToScheme(scheme); err != nil {
 		return err
 	}
+	if err := utilsv1alpha1.AddToScheme(scheme); err != nil {
+		return err
+	}
+	if err := clusterv1.AddToScheme(scheme); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -95,4 +107,34 @@ func (a *k8sAccess) ListNamespaces(ctx context.Context, logger logr.Logger) (*co
 	list := &corev1.NamespaceList{}
 	err := a.client.List(ctx, list, &client.ListOptions{})
 	return list, err
+}
+
+// GetDynamicResourceInterface returns a dynamic ResourceInterface for the policy's GroupVersionKind
+func (a *k8sAccess) GetDynamicResourceInterface(policy *unstructured.Unstructured) (dynamic.ResourceInterface, error) {
+	dynClient, err := dynamic.NewForConfig(a.restConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	gvk := policy.GroupVersionKind()
+
+	dc, err := discovery.NewDiscoveryClientForConfig(a.restConfig)
+	if err != nil {
+		return nil, err
+	}
+	mapper := restmapper.NewDeferredDiscoveryRESTMapper(memory.NewMemCacheClient(dc))
+	mapping, err := mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+	if err != nil {
+		return nil, err
+	}
+	var dr dynamic.ResourceInterface
+	if mapping.Scope.Name() == meta.RESTScopeNameNamespace {
+		// namespaced resources should specify the namespace
+		dr = dynClient.Resource(mapping.Resource).Namespace(policy.GetNamespace())
+	} else {
+		// for cluster-wide resources
+		dr = dynClient.Resource(mapping.Resource)
+	}
+
+	return dr, nil
 }

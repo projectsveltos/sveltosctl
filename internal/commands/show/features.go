@@ -172,6 +172,8 @@ Description:
 	if len(parsedArgs) == 0 {
 		return nil
 	}
+
+	_ = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogInfo))
 	verbose := parsedArgs["--verbose"].(bool)
 	if verbose {
 		err = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogVerbose))
@@ -179,9 +181,6 @@ Description:
 			return err
 		}
 	}
-	defer func() {
-		_ = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogInfo))
-	}()
 
 	namespace := ""
 	if passedNamespace := parsedArgs["--namespace"]; passedNamespace != nil {

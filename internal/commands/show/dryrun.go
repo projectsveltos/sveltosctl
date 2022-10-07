@@ -110,18 +110,19 @@ func displayDryRunInNamespace(ctx context.Context, namespace, passedCluster, pas
 
 	for i := range clusterReports.Items {
 		cc := &clusterReports.Items[i]
-		if doConsiderClusterReport(cc, passedCluster) {
+		clusterProfileLabel := cc.Labels[controllers.ClusterProfileLabelName]
+		if doConsiderClusterReport(cc, passedCluster) &&
+			doConsiderClusterProfile([]string{clusterProfileLabel}, passedClusterProfile) {
+
 			logger.V(logs.LogVerbose).Info(fmt.Sprintf("Considering ClusterReport: %s", cc.Name))
-			displayDryRunForCluster(cc, passedClusterProfile, table, logger)
+			displayDryRunForCluster(cc, table)
 		}
 	}
 
 	return nil
 }
 
-func displayDryRunForCluster(clusterReport *configv1alpha1.ClusterReport, passedClusterProfile string,
-	table *tablewriter.Table, logger logr.Logger) {
-
+func displayDryRunForCluster(clusterReport *configv1alpha1.ClusterReport, table *tablewriter.Table) {
 	clusterProfileName := clusterReport.Labels[controllers.ClusterProfileLabelName]
 	clusterInfo := fmt.Sprintf("%s/%s", clusterReport.Spec.ClusterNamespace, clusterReport.Spec.ClusterName)
 	for i := range clusterReport.Status.ReleaseReports {
@@ -166,6 +167,8 @@ Description:
 	if len(parsedArgs) == 0 {
 		return nil
 	}
+
+	_ = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogInfo))
 	verbose := parsedArgs["--verbose"].(bool)
 	if verbose {
 		err = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogVerbose))
@@ -173,9 +176,6 @@ Description:
 			return err
 		}
 	}
-	defer func() {
-		_ = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogInfo))
-	}()
 
 	namespace := ""
 	if passedNamespace := parsedArgs["--namespace"]; passedNamespace != nil {

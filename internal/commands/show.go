@@ -74,6 +74,7 @@ See 'sveltosctl show <subcommand> --help' to read about a specific subcommand.
 		case "dryrun":
 			err = show.DryRun(ctx, arguments, logger)
 		default:
+			//nolint: forbidigo // print doc
 			fmt.Println(doc)
 		}
 

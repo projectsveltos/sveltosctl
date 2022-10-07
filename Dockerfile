@@ -1,0 +1,49 @@
+# Build the manager binary
+FROM golang:1.19 as builder
+
+ARG ARCH
+ARG PKEY
+ARG GIT_VERSION=unknown
+ARG LDFLAGS
+
+
+ENV GOPRIVATE github.com/projectsveltos
+RUN git config --global url."ssh://git@github.com/".insteadOf https://github.com/
+# replace with correct SSH if using customized
+ENV GIT_SSH_COMMAND 'ssh -i /workspace/.ssh/$PKEY -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+COPY .ssh/ /workspace/.ssh/
+COPY .gitconfig /workspace/.gitconfig
+
+
+WORKDIR /workspace
+# Copy the Go Modules manifests
+COPY go.mod go.mod
+COPY go.sum go.sum
+# cache deps before building and copying source so that we don't need to re-download as much
+# and so that source changes don't invalidate our downloaded layer
+RUN go mod download
+
+# Copy the go source
+COPY api/ api
+COPY cmd/ cmd
+COPY internal/ internal/
+
+# Build
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=$ARCH GO111MODULE=on go build -ldflags "$LDFLAGS" -a -o sveltosctl cmd/sveltosctl/main.go
+
+LABEL name="Sveltos CLI tool" \
+      vendor="Projectsveltos" \
+      version=$GIT_VERSION \
+      release="1" \
+      summary="Sveltos CLI tool" \
+      description="sveltoctl is a command line tool used to visualize information on deployed features." \
+      maintainer="mgianluc@cisco.com"
+
+# Use distroless as minimal base image to package the manager binary
+# Refer to https://github.com/GoogleContainerTools/distroless for more details
+FROM gcr.io/distroless/static:nonroot
+WORKDIR /
+COPY --from=builder /workspace/sveltosctl .
+USER nonroot:nonroot
+
+ENTRYPOINT ["/sveltosctl"]

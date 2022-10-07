@@ -35,6 +35,7 @@ import (
 )
 
 var _ = Describe("ClusterConfiguration", func() {
+	//nolint: dupl // exception for a test
 	It("ListClusterConfigurations returns list of all clusterConfigurations", func() {
 		initObjects := []client.Object{}
 
