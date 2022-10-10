@@ -34,7 +34,6 @@ import (
 
 var _ = Describe("ClusterProfile", func() {
 	It("ListClusterProfiles returns list of all clusterProfiles", func() {
-
 		initObjects := []client.Object{}
 
 		for i := 0; i < 10; i++ {

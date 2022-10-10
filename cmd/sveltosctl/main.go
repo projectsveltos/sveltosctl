@@ -25,7 +25,9 @@ import (
 	"strings"
 
 	docopt "github.com/docopt/docopt-go"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
 	"k8s.io/klog/v2/klogr"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -43,6 +45,7 @@ func main() {
     show          Display information on deployed policies (resources and helm releases) in each cluster
                   or for ClusterProfiles in DryRun mode, what changes would take effect if the ClusterProfile
                   mode was to be moved out of DryRun mode.
+    snapshot      Displays collected snaphost. Visualize diffs between two collected snapshots.
     version       Display the version of sveltosctl.
 
 Options:
@@ -59,7 +62,10 @@ Description:
   - $HOME/.kube/config if exists
 `
 	klog.InitFlags(nil)
-	logger := klogr.New()
+
+	ctx := context.Background()
+	scheme, restConfig, clientSet, c := initializeManagementClusterAccess()
+	utils.InitalizeManagementClusterAcces(scheme, restConfig, clientSet, c)
 
 	parser := &docopt.Parser{
 		HelpHandler:   docopt.PrintHelpOnly,
@@ -67,6 +73,7 @@ Description:
 		SkipHelpFlags: false,
 	}
 
+	logger := klogr.New()
 	opts, err := parser.ParseArgs(doc, nil, "")
 	if err != nil {
 		var userError docopt.UserError
@@ -79,9 +86,6 @@ Description:
 		os.Exit(1)
 	}
 
-	ctx := context.Background()
-	initializeManagementClusterAccess()
-
 	if opts["<command>"] != nil {
 		command := opts["<command>"].(string)
 		args := append([]string{command}, opts["<args>"].([]string)...)
@@ -90,6 +94,8 @@ Description:
 		switch command {
 		case "show":
 			err = commands.Show(ctx, args, logger)
+		case "snapshot":
+			err = commands.Snapshot(ctx, args, logger)
 		case "version":
 			err = commands.Version(args, logger)
 		default:
@@ -102,7 +108,7 @@ Description:
 	}
 }
 
-func initializeManagementClusterAccess() {
+func initializeManagementClusterAccess() (*runtime.Scheme, *rest.Config, *kubernetes.Clientset, client.Client) {
 	scheme, err := utils.GetScheme()
 	if err != nil {
 		werr := fmt.Errorf("failed to get scheme %w", err)
@@ -125,5 +131,5 @@ func initializeManagementClusterAccess() {
 		log.Fatal(werr)
 	}
 
-	utils.InitalizeManagementClusterAcces(scheme, restConfig, cs, c)
+	return scheme, restConfig, cs, c
 }

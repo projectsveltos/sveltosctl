@@ -33,10 +33,11 @@ import (
 )
 
 var _ = Describe("ClusterReport", func() {
+	//nolint: dupl // exception for a test
 	It("ListClusterReports returns list of all clusterReports", func() {
 		initObjects := []client.Object{}
 
-		for i := 0; i < 10; i++ {
+		for i := 0; i < 5; i++ {
 			clusterReport := &configv1alpha1.ClusterReport{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      randomString(),

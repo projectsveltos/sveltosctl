@@ -8,6 +8,11 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+REGISTRY ?= projectsveltos
+IMAGE_NAME ?= sveltosctl
+export SVELTOSCTL_IMG ?= $(REGISTRY)/$(IMAGE_NAME) 
+TAG ?= dev
+ARCH ?= amd64
 
 # Directories.
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
@@ -25,6 +30,7 @@ GOIMPORTS := $(TOOLS_BIN_DIR)/goimports
 GINKGO := $(TOOLS_BIN_DIR)/ginkgo
 KUBECTL := $(TOOLS_BIN_DIR)/kubectl
 SETUP_ENVTEST := $(TOOLS_BIN_DIR)/setup_envs
+CONTROLLER_GEN := $(TOOLS_BIN_DIR)/controller-gen
 
 $(GOLANGCI_LINT): $(TOOLS_DIR)/go.mod # Build golangci-lint from tools folder.
 	cd $(TOOLS_DIR); $(GOBUILD) -tags=tools -o $(subst hack/tools/,,$@) github.com/golangci/golangci-lint/cmd/golangci-lint
@@ -42,6 +48,9 @@ $(KUBECTL):
 $(SETUP_ENVTEST): $(TOOLS_DIR)/go.mod # Build setup-envtest from tools folder.
 	cd $(TOOLS_DIR); $(GOBUILD) -tags=tools -o $(subst hack/tools/,,$@) sigs.k8s.io/controller-runtime/tools/setup-envtest
 
+$(CONTROLLER_GEN): $(TOOLS_DIR) # Build controller-gen from tools folder.
+	cd $(TOOLS_DIR); $(GOBUILD) -tags=tools -o $(subst hack/tools/,,$@) sigs.k8s.io/controller-tools/cmd/controller-gen
+
 .PHONY: help
 help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
@@ -49,11 +58,47 @@ help: ## Display this help.
 ##@ Tools
 
 .PHONY: tools
-tools: $(GOLANGCI_LINT) $(GOIMPORTS) $(GINKGO) $(KUBECTL)  $(SETUP_ENVTEST) ## build all tools
+tools: $(GOLANGCI_LINT) $(GOIMPORTS) $(GINKGO) $(KUBECTL)  $(SETUP_ENVTEST) $(CONTROLLER_GEN) ## build all tools
 
 .PHONY: clean
 clean: ## Remove all built tools
 	rm -rf $(TOOLS_BIN_DIR)/*
+
+##@ generate
+
+.PHONY: generate-modules
+generate-modules: ## Run go mod tidy to ensure modules are up to date
+	GOPRIVATE=github.com/projectsveltos go mod tidy
+	cd $(TOOLS_DIR); GOPRIVATE=github.com/projectsveltos go mod tidy
+
+.PHONY: generate
+generate: ## Run all generate-manifests-*, generate-go-deepcopy-*
+	$(MAKE) generate-modules generate-manifests generate-go-deepcopy
+
+.PHONY: generate-go-deepcopy
+generate-go-deepcopy: $(CONTROLLER_GEN) ## Run all generate-go-deepcopy-* targets
+	$(CONTROLLER_GEN) \
+		object:headerFile=./hack/boilerplate.go.txt \
+		paths=./api/...
+
+.PHONY: generate-manifests
+generate-manifests: $(CONTROLLER_GEN) $(KUSTOMIZE) ## Generate manifests e.g. CRD, RBAC etc. for core
+	$(CONTROLLER_GEN) \
+		paths=./api/... \
+		crd:crdVersions=v1 \
+		output:crd:dir=./config/crd/bases \
+		output:webhook:dir=./config/webhook \
+		webhook
+
+##@ docker
+PKEY ?= id_rsa
+
+.PHONY: docker-build
+docker-build: ## Build the docker image for sveltosctl
+	mkdir -p .ssh; cp -rf $(HOME)/.ssh/* .ssh/; cp -rf $(HOME)/.gitconfig .
+	docker build --pull --network=host --build-arg PKEY=$(PKEY) --build-arg LDFLAGS="$(LDFLAGS)" --build-arg ARCH=$(ARCH) -t $(REGISTRY)/$(IMAGE_NAME)-$(ARCH):$(TAG) -f Dockerfile . \
+	&& rm -rf .ssh &&  rm -f .gitconfig
+
 
 ##@ Build
 

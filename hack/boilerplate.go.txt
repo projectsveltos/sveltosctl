@@ -1,6 +1,3 @@
-//go:build tools
-// +build tools
-
 /*
 Copyright 2022. projectsveltos.io. All rights reserved.
 
@@ -16,17 +13,3 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
-// This package imports things required by build scripts, to force `go mod` to see them as
-// dependencies
-package tools
-
-import (
-	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
-	_ "github.com/onsi/ginkgo/v2/ginkgo"
-	_ "golang.org/x/oauth2/google"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/azure"
-	_ "sigs.k8s.io/controller-runtime/tools/setup-envtest"
-	_ "sigs.k8s.io/controller-tools/cmd/controller-gen"
-	_ "sigs.k8s.io/kind"
-)

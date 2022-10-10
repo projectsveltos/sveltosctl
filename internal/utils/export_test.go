@@ -18,6 +18,7 @@ package utils
 
 import (
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -29,5 +30,14 @@ func GetK8sAccess(scheme *runtime.Scheme, c client.Client) *k8sAccess {
 		client:     c,
 		clientset:  nil,
 		restConfig: nil,
+	}
+}
+
+func GetK8sAccessWithRestConfig(scheme *runtime.Scheme, c client.Client, restConfig *rest.Config) *k8sAccess {
+	return &k8sAccess{
+		scheme:     scheme,
+		client:     c,
+		clientset:  nil,
+		restConfig: restConfig,
 	}
 }

@@ -23,5 +23,5 @@ const (
 	// LogDebug is the debug level
 	LogDebug = 2
 	// LogVerbose is an extra level more verbose than Debug
-	LogVerbose = 4
+	LogVerbose = 5
 )
