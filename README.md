@@ -75,3 +75,57 @@ Usage:
      --cluster=<name>        Show which features would change in cluster with name. If not specified all cluster names are considered.
      --clusterprofile=<name> Show which features would change because of this clusterprofile. If not specified all clusterprofile names are considered.
 ```
+
+### Snapshot
+
+When running sveltosctl as pod in the management cluster, it can take configuration snapshot.
+Define a Snapshot instance, following for instance will take a snaphost every hour.
+
+```
+apiVersion: utils.projectsveltos.io/v1alpha1
+kind: Snapshot
+metadata:
+  name: hourly
+spec:
+  schedule: "00 * * * *"
+  storage: /snapshot
+```
+
+CLI snapshot list can be used to display all available snapshots:
+
+```
+./sveltosctl snapshot list --snapshot=hourly 
++-----------------+---------------------+
+| SNAPSHOT POLICY |        DATE         |
++-----------------+---------------------+
+| hourly          | 2022-10-10:22:00:00 |
+| hourly          | 2022-10-10:23:00:00 |
++-----------------+---------------------+
+```
+
+CLI snapshot diff can be used to display all changes between two snapshots:
+
+```
+kubectl exec -it -n projectsveltos                      sveltosctl-0   -- ./sveltosctl snapshot diff --snapshot=hourly  --from-sample=2022-10-10:22:00:00 --to-sample=2022-10-10:23:00:00 
++-------------------------------------+--------------------------+-----------+----------------+----------+------------------------------------+
+|               CLUSTER               |      RESOURCE TYPE       | NAMESPACE |      NAME      |  ACTION  |              MESSAGE               |
++-------------------------------------+--------------------------+-----------+----------------+----------+------------------------------------+
+| default/sveltos-management-workload | helm release             | mysql     | mysql          | added    |                                    |
+| default/sveltos-management-workload | helm release             | nginx     | nginx-latest   | added    |                                    |
+| default/sveltos-management-workload | helm release             | kyverno   | kyverno-latest | modified | To version: v2.5.0 From            |
+|                                     |                          |           |                |          | version v2.5.3                     |
+| default/sveltos-management-workload | /Pod                     | default   | nginx          | added    |                                    |
+| default/sveltos-management-workload | kyverno.io/ClusterPolicy |           | no-gateway     | modified | To see diff compare ConfigMap      |
+|                                     |                          |           |                |          | default/kyverno-disallow-gateway-2 |
+|                                     |                          |           |                |          | in the from folderwith ConfigMap   |
+|                                     |                          |           |                |          | default/kyverno-disallow-gateway-2 |
+|                                     |                          |           |                |          | in the to folder                   |
++-------------------------------------+--------------------------+-----------+----------------+----------+------------------------------------+
+```
+
+Finally, snapshot rollback can be used to bring system back in time to a given taken snapshot.
+Following will bring system back to the state it had at 22:00
+
+```
+kubectl exec -it -n projectsveltos                      sveltosctl-0   -- ./sveltosctl snapshot rollback --snapshot=hourly  --sample=2022-10-10:22:00:00
+```
