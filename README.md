@@ -96,7 +96,7 @@ spec:
 CLI snapshot list can be used to display all available snapshots:
 
 ```
-./sveltosctl snapshot list --snapshot=hourly 
+kubectl exec -it -n projectsveltos sveltosctl-0 -- ./sveltosctl snapshot list --snapshot=hourly 
 +-----------------+---------------------+
 | SNAPSHOT POLICY |        DATE         |
 +-----------------+---------------------+
@@ -110,7 +110,7 @@ CLI snapshot list can be used to display all available snapshots:
 CLI snapshot diff can be used to display all changes between two snapshots:
 
 ```
-kubectl exec -it -n projectsveltos                      sveltosctl-0   -- ./sveltosctl snapshot diff --snapshot=hourly  --from-sample=2022-10-10:22:00:00 --to-sample=2022-10-10:23:00:00 
+kubectl exec -it -n projectsveltos sveltosctl-0 -- ./sveltosctl snapshot diff --snapshot=hourly  --from-sample=2022-10-10:22:00:00 --to-sample=2022-10-10:23:00:00 
 +-------------------------------------+--------------------------+-----------+----------------+----------+------------------------------------+
 |               CLUSTER               |      RESOURCE TYPE       | NAMESPACE |      NAME      |  ACTION  |              MESSAGE               |
 +-------------------------------------+--------------------------+-----------+----------------+----------+------------------------------------+
@@ -133,5 +133,5 @@ Finally, snapshot rollback can be used to bring system back in time to a given t
 Following will bring system back to the state it had at 22:00
 
 ```
-kubectl exec -it -n projectsveltos                      sveltosctl-0   -- ./sveltosctl snapshot rollback --snapshot=hourly  --sample=2022-10-10:22:00:00
+kubectl exec -it -n projectsveltos sveltosctl-0 -- ./sveltosctl snapshot rollback --snapshot=hourly  --sample=2022-10-10:22:00:00
 ```
