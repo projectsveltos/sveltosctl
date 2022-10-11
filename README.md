@@ -76,7 +76,7 @@ Usage:
      --clusterprofile=<name> Show which features would change because of this clusterprofile. If not specified all clusterprofile names are considered.
 ```
 
-### Snapshot
+## Snapshot
 
 When running sveltosctl as pod in the management cluster, it can take configuration snapshot.
 Define a Snapshot instance, following for instance will take a snaphost every hour.
@@ -91,6 +91,8 @@ spec:
   storage: /snapshot
 ```
 
+### list
+  
 CLI snapshot list can be used to display all available snapshots:
 
 ```
@@ -102,6 +104,8 @@ CLI snapshot list can be used to display all available snapshots:
 | hourly          | 2022-10-10:23:00:00 |
 +-----------------+---------------------+
 ```
+
+### diff
 
 CLI snapshot diff can be used to display all changes between two snapshots:
 
@@ -122,6 +126,8 @@ kubectl exec -it -n projectsveltos                      sveltosctl-0   -- ./svel
 |                                     |                          |           |                |          | in the to folder                   |
 +-------------------------------------+--------------------------+-----------+----------------+----------+------------------------------------+
 ```
+
+### rollback
 
 Finally, snapshot rollback can be used to bring system back in time to a given taken snapshot.
 Following will bring system back to the state it had at 22:00
