@@ -200,7 +200,7 @@ func (d *deployer) GetNamespacedResources(snapshotFolder, kind string, logger lo
 	for i := range files {
 		if files[i].IsDir() {
 			namespaceDirectory := filepath.Join(snapshotFolder, files[i].Name())
-			r, err := getResourcesForKind(namespaceDirectory, kind, logger)
+			r, err := d.getResourcesForKind(namespaceDirectory, kind, logger)
 			if err != nil {
 				return nil, err
 			}
@@ -238,10 +238,10 @@ func (d *deployer) GetClusterResources(snapshotFolder, kind string, logger logr.
 		return nil, fmt.Errorf("%s", msg)
 	}
 
-	return getResourcesForKind(snapshotFolder, kind, logger)
+	return d.getResourcesForKind(snapshotFolder, kind, logger)
 }
 
-func getResourcesForKind(directory, kind string, logger logr.Logger) ([]*unstructured.Unstructured, error) {
+func (d *deployer) getResourcesForKind(directory, kind string, logger logr.Logger) ([]*unstructured.Unstructured, error) {
 	// Each directory, contains one subdirectory per Kind
 	// For instance /<whatever>/<snapshotInstanceName>/<dateSnaphostTaken>/<namespaceName>/<kindName>
 	// within such directory there all resources of that type found at the time snapshot was taken
@@ -273,7 +273,7 @@ func getResourcesForKind(directory, kind string, logger logr.Logger) ([]*unstruc
 		if err != nil {
 			return nil, err
 		}
-		u, err := getUnstructured(content)
+		u, err := d.GetUnstructured(content)
 		if err != nil {
 			return nil, err
 		}
@@ -284,8 +284,8 @@ func getResourcesForKind(directory, kind string, logger logr.Logger) ([]*unstruc
 	return result, nil
 }
 
-// getUnstructured returns an unstructured given a []bytes containing it
-func getUnstructured(object []byte) (*unstructured.Unstructured, error) {
+// GetUnstructured returns an unstructured given a []bytes containing it
+func (d *deployer) GetUnstructured(object []byte) (*unstructured.Unstructured, error) {
 	request := &unstructured.Unstructured{}
 	universalDeserializer := scheme.Codecs.UniversalDeserializer()
 	_, _, err := universalDeserializer.Decode(object, nil, request)

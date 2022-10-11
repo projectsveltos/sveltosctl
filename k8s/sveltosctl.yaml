@@ -106,6 +106,13 @@ rules:
       - get
       - list
       - watch
+      - update
+  - apiGroups: ["utils.projectsveltos.io"]
+    resources:
+    - snapshots/finalizers
+    verbs:
+    - patch
+    - update      
   - apiGroups: ["utils.projectsveltos.io"]
     resources:
       - snapshots/status

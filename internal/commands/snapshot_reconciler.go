@@ -64,9 +64,11 @@ func SnapshotReconciler(ctx context.Context, req reconcile.Request) (reconcile.R
 func reconcileDelete(ctx context.Context, snapshotInstance *utilsv1alpha1.Snapshot,
 	logger logr.Logger) (reconcile.Result, error) {
 
+	logger.V(logs.LogInfo).Info("reconcileDelete")
 	snapshotClient := snapshotter.GetClient()
 	err := snapshotClient.CleanupEntries(snapshotInstance)
 	if err != nil {
+		logger.V(logs.LogInfo).Info(fmt.Sprintf("failed to cleanup: %s", err))
 		return ctrl.Result{}, err
 	}
 
@@ -85,9 +87,11 @@ func reconcileDelete(ctx context.Context, snapshotInstance *utilsv1alpha1.Snapsh
 func reconcileNormal(ctx context.Context, snapshotInstance *utilsv1alpha1.Snapshot,
 	logger logr.Logger) (reconcile.Result, error) {
 
+	logger.V(logs.LogInfo).Info("reconcileNormal")
 	accessInstance := utils.GetAccessInstance()
 	if !controllerutil.ContainsFinalizer(snapshotInstance, utilsv1alpha1.SnapshotFinalizer) {
 		if err := addFinalizer(ctx, snapshotInstance); err != nil {
+			logger.V(logs.LogInfo).Info(fmt.Sprintf("failed to add finalizer: %s", err))
 			return reconcile.Result{}, err
 		}
 	}

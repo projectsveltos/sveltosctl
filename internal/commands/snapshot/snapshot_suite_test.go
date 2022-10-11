@@ -26,6 +26,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2/klogr"
 	"sigs.k8s.io/cluster-api/util"
@@ -85,6 +86,11 @@ func randomString() string {
 
 func addTypeInformationToObject(obj client.Object) error {
 	scheme, err := utils.GetScheme()
+	if err != nil {
+		return err
+	}
+	// Following are needed by test only
+	err = rbacv1.AddToScheme(scheme)
 	if err != nil {
 		return err
 	}

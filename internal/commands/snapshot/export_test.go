@@ -35,4 +35,5 @@ var (
 	RollbackClusters                = rollbackClusters
 	RollbackClusterProfile          = rollbackClusterProfile
 	RollbackConfigurationToSnapshot = rollbackConfigurationToSnapshot
+	GetResourceFromResourceOwner    = getResourceFromResourceOwner
 )

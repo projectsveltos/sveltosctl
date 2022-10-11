@@ -25,12 +25,15 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
+	"github.com/gdexlab/go-render/render"
 	"github.com/olekukonko/tablewriter"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2/klogr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -39,6 +42,7 @@ import (
 	configv1alpha1 "github.com/projectsveltos/cluster-api-feature-manager/api/v1alpha1"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/commands/snapshot"
+	"github.com/projectsveltos/sveltosctl/internal/snapshotter"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -87,7 +91,7 @@ var _ = Describe("Snapshot Diff", func() {
 		os.Stdout = w
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
-		err = snapshot.ListSnapshotDiffs(context.TODO(), snapshotInstance.Name, timeOne, timeTwo, "", "", klogr.New())
+		err = snapshot.ListSnapshotDiffs(context.TODO(), snapshotInstance.Name, timeOne, timeTwo, "", "", false, klogr.New())
 		Expect(err).To(BeNil())
 
 		w.Close()
@@ -137,10 +141,10 @@ var _ = Describe("Snapshot Diff", func() {
 			},
 		}
 		table := tablewriter.NewWriter(os.Stdout)
-		Expect(snapshot.ListDiffInClusterConfigurations(
+		Expect(snapshot.ListDiffInClusterConfigurations("", "",
 			[]*configv1alpha1.ClusterConfiguration{oldClusterConfiguration},
 			[]*configv1alpha1.ClusterConfiguration{newClusterConfiguration},
-			table, klogr.New())).To(Succeed())
+			false, table, klogr.New())).To(Succeed())
 
 		result := fmt.Sprintf("table: %v\n", table)
 		for i := range newClusterConfiguration.Status.ClusterProfileResources {
@@ -163,8 +167,8 @@ var _ = Describe("Snapshot Diff", func() {
 			},
 		}
 		table := tablewriter.NewWriter(os.Stdout)
-		snapshot.ListClusterConfigurationDiff(oldClusterConfiguration,
-			newClusterConfiguration, table, klogr.New())
+		Expect(snapshot.ListClusterConfigurationDiff("", "", oldClusterConfiguration,
+			newClusterConfiguration, false, table, klogr.New())).To(Succeed())
 
 		result := fmt.Sprintf("table: %v\n", table)
 		for i := range newClusterConfiguration.Status.ClusterProfileResources {
@@ -204,26 +208,53 @@ var _ = Describe("Snapshot Diff", func() {
 		oldResources := []configv1alpha1.Resource{*generateResource()}
 		newResources := []configv1alpha1.Resource{*generateResource(), *generateResource()}
 
-		added, modified, deleted, message := snapshot.ResourceDifference(oldResources, newResources)
+		added, modified, deleted, err :=
+			snapshot.ResourceDifference("", "", oldResources, newResources, false, klogr.New())
+		Expect(err).To(BeNil())
 		Expect(len(added)).To(Equal(2))
 		Expect(len(modified)).To(Equal(0))
 		Expect(len(deleted)).To(Equal(1))
-		Expect(len(message)).To(Equal(0))
 	})
 
 	It("resourceDifference lists modified resources between two slices of resources", func() {
-		oldResource := generateResource()
-		oldResources := []configv1alpha1.Resource{*oldResource}
-		newResource := *oldResource
-		t := metav1.Time{Time: time.Now().Add(time.Second * time.Duration(2))}
-		newResource.LastAppliedTime = &t
-		newResources := []configv1alpha1.Resource{newResource}
+		name := randomString()
+		namespace := randomString()
 
-		added, modified, deleted, message := snapshot.ResourceDifference(oldResources, newResources)
+		oldFolder, err := os.MkdirTemp("", randomString())
+		Expect(err).To(BeNil())
+		clusterRole := getClusterRole()
+		oldConfigMap := createConfigMapWithPolicy(namespace, name, render.AsCode(clusterRole))
+		Expect(snapshotter.DumpObject(oldConfigMap, oldFolder, klogr.New())).To(Succeed())
+
+		newFolder, err := os.MkdirTemp("", randomString())
+		Expect(err).To(BeNil())
+		clusterRole.Rules = []rbacv1.PolicyRule{
+			{Verbs: []string{"create", "get"}, APIGroups: []string{"cert-manager.io"}, Resources: []string{"certificaterequests"}},
+		}
+		newConfigMap := createConfigMapWithPolicy(namespace, name, render.AsCode(clusterRole))
+		Expect(snapshotter.DumpObject(newConfigMap, newFolder, klogr.New())).To(Succeed())
+
+		oldResource := &configv1alpha1.Resource{
+			Kind:            "ClusterRole",
+			Name:            clusterRole.GetName(),
+			LastAppliedTime: &metav1.Time{Time: time.Now()},
+			Owner: corev1.ObjectReference{
+				Kind:      string(configv1alpha1.ConfigMapReferencedResourceKind),
+				Name:      oldConfigMap.Name,
+				Namespace: oldConfigMap.Namespace,
+			},
+		}
+
+		newResource := *oldResource
+		newResource.LastAppliedTime = &metav1.Time{Time: time.Now().Add(time.Second * time.Duration(2))}
+
+		added, modified, deleted, err :=
+			snapshot.ResourceDifference(oldFolder, newFolder, []configv1alpha1.Resource{*oldResource},
+				[]configv1alpha1.Resource{newResource}, false, klogr.New())
+		Expect(err).To(BeNil())
 		Expect(len(added)).To(Equal(0))
-		Expect(len(modified)).To(Equal(1))
 		Expect(len(deleted)).To(Equal(0))
-		Expect(len(message)).To(Equal(1))
+		Expect(len(modified)).To(Equal(1))
 	})
 
 	It("addChartEntry adds chart entries to table", func() {
@@ -262,7 +293,7 @@ var _ = Describe("Snapshot Diff", func() {
 		resources = append(resources, generateResource())
 
 		table := tablewriter.NewWriter(os.Stdout)
-		snapshot.AddResourceEntry(nil, clusterConfiguration, resources, "added", nil, table)
+		snapshot.AddResourceEntry(nil, clusterConfiguration, resources, "added", table)
 
 		Expect(table.NumLines()).To(Equal(2))
 		result := fmt.Sprintf("table: %v\n", table)
@@ -296,6 +327,40 @@ var _ = Describe("Snapshot Diff", func() {
 
 		Expect(len(charts)).To(Equal(chartNumber))
 		Expect(len(resources)).To(Equal(resourceNumber))
+	})
+
+	It("getResourceFromResourceOwner returns the resource contained in the Owner", func() {
+		folder, err := os.MkdirTemp("", randomString())
+		Expect(err).To(BeNil())
+		By(fmt.Sprintf("using folder %s", folder))
+		clusterRole := getClusterRole()
+
+		Expect(addTypeInformationToObject(clusterRole)).To(Succeed())
+
+		name := randomString()
+		namespace := randomString()
+		configMap := createConfigMapWithPolicy(namespace, name, render.AsCode(clusterRole))
+		Expect(snapshotter.DumpObject(configMap, folder, klogr.New())).To(Succeed())
+		By(fmt.Sprintf("Dumped ConfigMap %s/%s", configMap.Namespace, configMap.Name))
+
+		clusterRoleGroup := "rbac.authorization.k8s.io/v1"
+		clusterRoleKind := "ClusterRole"
+		resource := &configv1alpha1.Resource{
+			Name:  clusterRole.Name,
+			Group: clusterRoleGroup,
+			Kind:  clusterRoleKind,
+			Owner: corev1.ObjectReference{
+				Kind:      string(configv1alpha1.ConfigMapReferencedResourceKind),
+				Name:      configMap.Name,
+				Namespace: configMap.Namespace,
+			},
+		}
+
+		policy, err := snapshot.GetResourceFromResourceOwner(folder, resource)
+		Expect(err).To(BeNil())
+		Expect(policy).To(ContainSubstring(clusterRole.Name))
+		Expect(policy).To(ContainSubstring(clusterRoleGroup))
+		Expect(policy).To(ContainSubstring(clusterRoleKind))
 	})
 })
 
@@ -411,4 +476,39 @@ func verifyResource(result string, resources *configv1alpha1.Resource) {
 	}
 
 	Expect(found).To(BeTrue())
+}
+
+// createConfigMapWithPolicy creates a configMap with Data policies
+func createConfigMapWithPolicy(namespace, configMapName string, policyStrs ...string) *corev1.ConfigMap {
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      configMapName,
+		},
+		Data: map[string]string{},
+	}
+	for i := range policyStrs {
+		key := fmt.Sprintf("policy%d.yaml", i)
+		if utf8.Valid([]byte(policyStrs[i])) {
+			cm.Data[key] = policyStrs[i]
+		} else {
+			cm.BinaryData[key] = []byte(policyStrs[i])
+		}
+	}
+
+	Expect(addTypeInformationToObject(cm)).To(Succeed())
+
+	return cm
+}
+
+func getClusterRole() *rbacv1.ClusterRole {
+	return &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: randomString(),
+		},
+		Rules: []rbacv1.PolicyRule{
+			{Verbs: []string{"create", "get"}, APIGroups: []string{"cert-manager.io"}, Resources: []string{"certificaterequests"}},
+			{Verbs: []string{"create", "delete"}, APIGroups: []string{""}, Resources: []string{"namespaces", "deployments"}},
+		},
+	}
 }
