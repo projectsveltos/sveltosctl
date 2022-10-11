@@ -323,9 +323,10 @@ func listClusterConfigurationDiff(fromFolder, toFolder string, fromClusterConfig
 	addChartEntry(fromClusterConfiguration, toClusterConfiguration, chartModified, "modified", modifiedChartMessage, table)
 	addChartEntry(fromClusterConfiguration, toClusterConfiguration, chartDeleted, "deleted", nil, table)
 
-	addResourceEntry(fromClusterConfiguration, toClusterConfiguration, resourceAdded, "added", table)
-	addResourceEntry(fromClusterConfiguration, toClusterConfiguration, resourceModified, "modified", table)
-	addResourceEntry(fromClusterConfiguration, toClusterConfiguration, resourceDeleted, "deleted", table)
+	addResourceEntry(fromClusterConfiguration, toClusterConfiguration, resourceAdded, "added", "", table)
+	addResourceEntry(fromClusterConfiguration, toClusterConfiguration, resourceModified, "modified",
+		"use --raw-diff option to see diff", table)
+	addResourceEntry(fromClusterConfiguration, toClusterConfiguration, resourceDeleted, "deleted", "", table)
 	return nil
 }
 
@@ -354,7 +355,7 @@ func addChartEntry(fromClusterConfiguration, toClusterConfiguration *configv1alp
 }
 
 func addResourceEntry(fromClusterConfiguration, toClusterConfiguration *configv1alpha1.ClusterConfiguration,
-	resources []*configv1alpha1.Resource, action string,
+	resources []*configv1alpha1.Resource, action, msg string,
 	table *tablewriter.Table) {
 
 	clusterInfo := func(fromClusterConfiguration, toClusterConfiguration *configv1alpha1.ClusterConfiguration) string {
@@ -369,7 +370,7 @@ func addResourceEntry(fromClusterConfiguration, toClusterConfiguration *configv1
 			clusterInfo(fromClusterConfiguration, toClusterConfiguration),
 			fmt.Sprintf("%s/%s", resources[i].Group, resources[i].Kind),
 			resources[i].Namespace, resources[i].Name,
-			action, "use --raw-diff option to see diff"))
+			action, msg))
 	}
 }
 

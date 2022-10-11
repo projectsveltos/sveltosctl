@@ -96,7 +96,7 @@ var _ = Describe("Features", func() {
 		/*
 			// This is an example of how the table needs to look like
 			+-------------------------------------+---------------+-----------+----------------+---------+--------------------+------------------+
-			|               CLUSTER               | RESOURCE TYPE | NAMESPACE |      NAME      | VERSION |             TIME   | CLUSTER FEATURES |
+			|               CLUSTER               | RESOURCE TYPE | NAMESPACE |      NAME      | VERSION |             TIME   | CLUSTER PROFILE  |
 			+-------------------------------------+---------------+-----------+----------------+---------+--------------------+------------------+
 			| default/sveltos-management-workload | helm chart    | kyverno   | kyverno-latest | v2.5.0  | 2022-09-30 11:48:45| active           |
 			+-------------------------------------+---------------+-----------+----------------+---------+--------------------+------------------+
