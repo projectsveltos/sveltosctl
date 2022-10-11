@@ -18,6 +18,7 @@ package snapshot
 
 import (
 	"context"
+	"encoding/base64"
 	"flag"
 	"fmt"
 	"os"
@@ -27,7 +28,11 @@ import (
 
 	"github.com/docopt/docopt-go"
 	"github.com/go-logr/logr"
+	"github.com/hexops/gotextdiff"
+	"github.com/hexops/gotextdiff/myers"
+	"github.com/hexops/gotextdiff/span"
 	"github.com/olekukonko/tablewriter"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -79,7 +84,7 @@ func doConsiderCluster(currentCluster, passedCluster string) bool {
 // - list of helm chart (configured, upgraded, removed)
 // - list of kubernetes resources (configured, upgraded, removed)
 func listSnapshotDiffs(ctx context.Context, snapshotName, fromSample, toSample,
-	passedNamespace, passedCluster string,
+	passedNamespace, passedCluster string, rawDiff bool,
 	logger logr.Logger) error {
 
 	logger.V(logs.LogVerbose).Info(fmt.Sprintf("finding diff between %s and %s", fromSample, toSample))
@@ -98,18 +103,18 @@ func listSnapshotDiffs(ctx context.Context, snapshotName, fromSample, toSample,
 		return err
 	}
 
-	folderFrom := filepath.Join(*artifactFolder, fromSample)
+	fromFolder := filepath.Join(*artifactFolder, fromSample)
 	// Get the two directories containing the collected snaphosts
-	_, err = os.Stat(folderFrom)
+	_, err = os.Stat(fromFolder)
 	if os.IsNotExist(err) {
 		logger.V(logs.LogVerbose).Info(fmt.Sprintf("Folder %s does not exist for snapshot instance: %s",
 			fromSample, snapshotName))
 		return err
 	}
 
-	folderTo := filepath.Join(*artifactFolder, toSample)
+	toFolder := filepath.Join(*artifactFolder, toSample)
 	// Get the two directories containing the collected snaphosts
-	_, err = os.Stat(folderTo)
+	_, err = os.Stat(toFolder)
 	if os.IsNotExist(err) {
 		logger.V(logs.LogVerbose).Info(fmt.Sprintf("Folder %s does not exist for snapshot instance: %s",
 			toSample, snapshotName))
@@ -119,43 +124,45 @@ func listSnapshotDiffs(ctx context.Context, snapshotName, fromSample, toSample,
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"CLUSTER", "RESOURCE TYPE", "NAMESPACE", "NAME", "ACTION", "MESSAGE"})
 
-	err = listSnapshotDiffsBewteenSamples(folderFrom, folderTo, passedNamespace, passedCluster,
+	err = listSnapshotDiffsBewteenSamples(fromFolder, toFolder, passedNamespace, passedCluster, rawDiff,
 		table, logger)
 	if err != nil {
 		return err
 	}
 
-	table.Render()
+	if !rawDiff {
+		table.Render()
+	}
 
 	return nil
 }
 
-func listSnapshotDiffsBewteenSamples(folderFrom, folderTo, passedNamespace, passedCluster string,
-	table *tablewriter.Table, logger logr.Logger) error {
+func listSnapshotDiffsBewteenSamples(fromFolder, toFolder, passedNamespace, passedCluster string,
+	rawDiff bool, table *tablewriter.Table, logger logr.Logger) error {
 
 	// Following maps contain per Cluster corresponding ClusterConfiguration at the time snapshot was taken
 	// There is one ClusterConfigurations per Cluster
 	snapshotClient := snapshotter.GetClient()
-	fromClusterConfigurationMap, err := snapshotClient.GetNamespacedResources(folderFrom,
+	fromClusterConfigurationMap, err := snapshotClient.GetNamespacedResources(fromFolder,
 		configv1alpha1.ClusterConfigurationKind, logger)
 	if err != nil {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to collect ClusterConfigurations from folder %s", folderFrom))
+		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to collect ClusterConfigurations from folder %s", fromFolder))
 		return err
 	}
 	logger.V(logs.LogVerbose).Info(fmt.Sprintf("found %d namespaces with at least one ClusterConfiguration in folder %s",
-		len(fromClusterConfigurationMap), folderFrom))
+		len(fromClusterConfigurationMap), fromFolder))
 
-	toClusterConfigurationMap, err := snapshotClient.GetNamespacedResources(folderTo,
+	toClusterConfigurationMap, err := snapshotClient.GetNamespacedResources(toFolder,
 		configv1alpha1.ClusterConfigurationKind, logger)
 	if err != nil {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to collect ClusterConfigurations from folder %s", folderTo))
+		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to collect ClusterConfigurations from folder %s", toFolder))
 		return err
 	}
 	logger.V(logs.LogVerbose).Info(fmt.Sprintf("found %d namespaces with at least one ClusterConfiguration in folder %s",
-		len(toClusterConfigurationMap), folderFrom))
+		len(toClusterConfigurationMap), fromFolder))
 
-	err = listFeatureDiff(fromClusterConfigurationMap, toClusterConfigurationMap, passedNamespace, passedCluster,
-		table, logger)
+	err = listFeatureDiff(fromFolder, toFolder, fromClusterConfigurationMap, toClusterConfigurationMap,
+		passedNamespace, passedCluster, rawDiff, table, logger)
 	if err != nil {
 		return nil
 	}
@@ -163,14 +170,15 @@ func listSnapshotDiffsBewteenSamples(folderFrom, folderTo, passedNamespace, pass
 	return nil
 }
 
-func listFeatureDiff(fromClusterConfigurationMap, toClusterConfigurationMap map[string][]*unstructured.Unstructured,
-	passedNamespace, passedCluster string, table *tablewriter.Table, logger logr.Logger) error {
+func listFeatureDiff(fromFolder, toFolder string,
+	fromClusterConfigurationMap, toClusterConfigurationMap map[string][]*unstructured.Unstructured,
+	passedNamespace, passedCluster string, rawDiff bool, table *tablewriter.Table, logger logr.Logger) error {
 
 	for k := range toClusterConfigurationMap {
 		if doConsiderNamespace(k, passedNamespace) {
 			logger.V(logs.LogVerbose).Info(fmt.Sprintf("finding feature diff for clusters in namespace %s", k))
-			err := listFeatureDiffInNamespace(k, fromClusterConfigurationMap, toClusterConfigurationMap, passedCluster,
-				table, logger)
+			err := listFeatureDiffInNamespace(fromFolder, toFolder, k, fromClusterConfigurationMap, toClusterConfigurationMap,
+				passedCluster, rawDiff, table, logger)
 			if err != nil {
 				return err
 			}
@@ -183,8 +191,8 @@ func listFeatureDiff(fromClusterConfigurationMap, toClusterConfigurationMap map[
 			if _, ok := toClusterConfigurationMap[k]; ok {
 				continue
 			}
-			err := listFeatureDiffInNamespace(k, fromClusterConfigurationMap, toClusterConfigurationMap, passedCluster,
-				table, logger)
+			err := listFeatureDiffInNamespace(fromFolder, toFolder, k, fromClusterConfigurationMap, toClusterConfigurationMap,
+				passedCluster, rawDiff, table, logger)
 			if err != nil {
 				return err
 			}
@@ -194,8 +202,9 @@ func listFeatureDiff(fromClusterConfigurationMap, toClusterConfigurationMap map[
 	return nil
 }
 
-func listFeatureDiffInNamespace(namespace string, fromClusterConfigurationMap, toClusterConfigurationMap map[string][]*unstructured.Unstructured,
-	passedCluster string, table *tablewriter.Table, logger logr.Logger) error {
+func listFeatureDiffInNamespace(fromFolder, toFolder, namespace string,
+	fromClusterConfigurationMap, toClusterConfigurationMap map[string][]*unstructured.Unstructured,
+	passedCluster string, rawDiff bool, table *tablewriter.Table, logger logr.Logger) error {
 
 	logger.V(logs.LogVerbose).Info(fmt.Sprintf("get ClusterConfigurations in namespace %s in to folder", namespace))
 	toClusterConfigurations, err := getClusterConfigurationsInNamespace(namespace, passedCluster, toClusterConfigurationMap, logger)
@@ -212,7 +221,7 @@ func listFeatureDiffInNamespace(namespace string, fromClusterConfigurationMap, t
 	logger.V(logs.LogVerbose).Info(fmt.Sprintf("got %d ClusterConfigurations in namespace %s in from folder", len(fromClusterConfigurations), namespace))
 
 	logger.V(logs.LogVerbose).Info(fmt.Sprintf("finding diff for ClusterConfigurations in namespace %s", namespace))
-	err = listDiffInClusterConfigurations(fromClusterConfigurations, toClusterConfigurations, table, logger)
+	err = listDiffInClusterConfigurations(fromFolder, toFolder, fromClusterConfigurations, toClusterConfigurations, rawDiff, table, logger)
 	if err != nil {
 		return err
 	}
@@ -245,8 +254,8 @@ func getClusterConfigurationsInNamespace(namespace, passedCluster string, cluste
 	return results, nil
 }
 
-func listDiffInClusterConfigurations(fromClusterConfigurations, toClusterConfigurations []*configv1alpha1.ClusterConfiguration,
-	table *tablewriter.Table, logger logr.Logger) error {
+func listDiffInClusterConfigurations(fromFolder, toFolder string, fromClusterConfigurations, toClusterConfigurations []*configv1alpha1.ClusterConfiguration,
+	rawDiff bool, table *tablewriter.Table, logger logr.Logger) error {
 
 	// Create maps
 	fromClusterConfigurationMaps := make(map[string]*configv1alpha1.ClusterConfiguration)
@@ -262,20 +271,26 @@ func listDiffInClusterConfigurations(fromClusterConfigurations, toClusterConfigu
 	}
 
 	for to := range toClusterConfigurationMaps {
-		listClusterConfigurationDiff(fromClusterConfigurationMaps[to], toClusterConfigurationMaps[to], table, logger)
+		if err := listClusterConfigurationDiff(fromFolder, toFolder, fromClusterConfigurationMaps[to],
+			toClusterConfigurationMaps[to], rawDiff, table, logger); err != nil {
+			return err
+		}
 	}
 
 	for from := range fromClusterConfigurationMaps {
 		if _, ok := toClusterConfigurationMaps[from]; !ok {
-			listClusterConfigurationDiff(fromClusterConfigurationMaps[from], toClusterConfigurationMaps[from], table, logger)
+			if err := listClusterConfigurationDiff(fromFolder, toFolder, fromClusterConfigurationMaps[from],
+				toClusterConfigurationMaps[from], rawDiff, table, logger); err != nil {
+				return err
+			}
 		}
 	}
 
 	return nil
 }
 
-func listClusterConfigurationDiff(fromClusterConfiguration, toClusterConfiguration *configv1alpha1.ClusterConfiguration,
-	table *tablewriter.Table, logger logr.Logger) {
+func listClusterConfigurationDiff(fromFolder, toFolder string, fromClusterConfiguration, toClusterConfiguration *configv1alpha1.ClusterConfiguration,
+	rawDiff bool, table *tablewriter.Table, logger logr.Logger) error {
 
 	toCharts := make([]configv1alpha1.Chart, 0)
 	toResources := make([]configv1alpha1.Resource, 0)
@@ -298,16 +313,20 @@ func listClusterConfigurationDiff(fromClusterConfiguration, toClusterConfigurati
 	// Evaluate the diff
 	chartAdded, chartModified, chartDeleted, modifiedChartMessage :=
 		chartDifference(fromCharts, toCharts)
-	resourceAdded, resourceModified, resourceDeleted, modifiedResourceMessage :=
-		resourceDifference(fromResources, toResources)
+	resourceAdded, resourceModified, resourceDeleted, err :=
+		resourceDifference(fromFolder, toFolder, fromResources, toResources, rawDiff, logger)
+	if err != nil {
+		return err
+	}
 
 	addChartEntry(fromClusterConfiguration, toClusterConfiguration, chartAdded, "added", nil, table)
 	addChartEntry(fromClusterConfiguration, toClusterConfiguration, chartModified, "modified", modifiedChartMessage, table)
 	addChartEntry(fromClusterConfiguration, toClusterConfiguration, chartDeleted, "deleted", nil, table)
 
-	addResourceEntry(fromClusterConfiguration, toClusterConfiguration, resourceAdded, "added", nil, table)
-	addResourceEntry(fromClusterConfiguration, toClusterConfiguration, resourceModified, "modified", modifiedResourceMessage, table)
-	addResourceEntry(fromClusterConfiguration, toClusterConfiguration, resourceDeleted, "deleted", nil, table)
+	addResourceEntry(fromClusterConfiguration, toClusterConfiguration, resourceAdded, "added", table)
+	addResourceEntry(fromClusterConfiguration, toClusterConfiguration, resourceModified, "modified", table)
+	addResourceEntry(fromClusterConfiguration, toClusterConfiguration, resourceDeleted, "deleted", table)
+	return nil
 }
 
 func addChartEntry(fromClusterConfiguration, toClusterConfiguration *configv1alpha1.ClusterConfiguration,
@@ -335,7 +354,7 @@ func addChartEntry(fromClusterConfiguration, toClusterConfiguration *configv1alp
 }
 
 func addResourceEntry(fromClusterConfiguration, toClusterConfiguration *configv1alpha1.ClusterConfiguration,
-	resources []*configv1alpha1.Resource, action string, message map[configv1alpha1.Resource]string,
+	resources []*configv1alpha1.Resource, action string,
 	table *tablewriter.Table) {
 
 	clusterInfo := func(fromClusterConfiguration, toClusterConfiguration *configv1alpha1.ClusterConfiguration) string {
@@ -346,15 +365,11 @@ func addResourceEntry(fromClusterConfiguration, toClusterConfiguration *configv1
 	}
 
 	for i := range resources {
-		msg := ""
-		if message != nil {
-			msg = message[*resources[i]]
-		}
 		table.Append(genSnapshotDiffRow(
 			clusterInfo(fromClusterConfiguration, toClusterConfiguration),
 			fmt.Sprintf("%s/%s", resources[i].Group, resources[i].Kind),
 			resources[i].Namespace, resources[i].Name,
-			action, msg))
+			action, "use --raw-diff option to see diff"))
 	}
 }
 
@@ -403,8 +418,8 @@ func chartDifference(from, to []configv1alpha1.Chart) (added, modified, deleted 
 }
 
 // resourceDifference returns differences between from and to
-func resourceDifference(from, to []configv1alpha1.Resource) (added, modified, deleted []*configv1alpha1.Resource,
-	modifiedMessage map[configv1alpha1.Resource]string) {
+func resourceDifference(fromFolder, toFolder string, from, to []configv1alpha1.Resource, rawDiff bool,
+	logger logr.Logger) (added, modified, deleted []*configv1alpha1.Resource, err error) {
 
 	resourceInfo := func(resource *configv1alpha1.Resource) string {
 		return fmt.Sprintf("%s:%s:%s/%s", resource.Group, resource.Kind, resource.Namespace, resource.Name)
@@ -425,28 +440,35 @@ func resourceDifference(from, to []configv1alpha1.Resource) (added, modified, de
 	var addedResources []*configv1alpha1.Resource
 	var deletedResources []*configv1alpha1.Resource
 	var modifiedResources []*configv1alpha1.Resource
-	modifiedMessage = make(map[configv1alpha1.Resource]string)
 
 	for k := range toResourceMap {
+		logger.V(logs.LogVerbose).Info(fmt.Sprintf("analyzing resource %s/%s %s/%s",
+			toResourceMap[k].Group, toResourceMap[k].Kind, toResourceMap[k].Namespace, toResourceMap[k].Name))
 		v, ok := fromResourceMap[k]
 		if !ok {
 			addedResources = append(addedResources, toResourceMap[k])
-		} else if !reflect.DeepEqual(v, toResourceMap[k]) {
-			modifiedResources = append(modifiedResources, toResourceMap[k])
-			msg := fmt.Sprintf("To see diff compare %s %s/%s in the from folder ", v.Owner.Kind, v.Owner.Namespace, v.Owner.Name)
-			msg += fmt.Sprintf("with %s %s/%s in the to folder", toResourceMap[k].Owner.Kind, toResourceMap[k].Owner.Namespace, toResourceMap[k].Owner.Name)
-			modifiedMessage[*toResourceMap[k]] = msg
+		} else if !reflect.DeepEqual(*v, *(toResourceMap[k])) {
+			var diff bool
+			diff, err = hasDiff(fromFolder, toFolder, v, toResourceMap[k], rawDiff)
+			if err != nil {
+				return nil, nil, nil, err
+			}
+			if diff {
+				modifiedResources = append(modifiedResources, toResourceMap[k])
+			}
 		}
 	}
 
 	for k := range fromResourceMap {
+		logger.V(logs.LogVerbose).Info(fmt.Sprintf("analyzing resource %s/%s %s/%s",
+			fromResourceMap[k].Group, fromResourceMap[k].Kind, fromResourceMap[k].Namespace, fromResourceMap[k].Name))
 		_, ok := toResourceMap[k]
 		if !ok {
 			deletedResources = append(deletedResources, fromResourceMap[k])
 		}
 	}
 
-	return addedResources, modifiedResources, deletedResources, modifiedMessage
+	return addedResources, modifiedResources, deletedResources, nil
 }
 
 func appendChartsAndResources(cpr *configv1alpha1.ClusterProfileResource, charts []configv1alpha1.Chart,
@@ -467,16 +489,136 @@ func appendChartsAndResources(cpr *configv1alpha1.ClusterProfileResource, charts
 	return charts, resources
 }
 
+// hasDiff returns true if any diff exist
+func hasDiff(fromFolder, toFolder string, from, to *configv1alpha1.Resource, rawDiff bool) (bool, error) {
+	fromResource, err := getResourceFromResourceOwner(fromFolder, from)
+	if err != nil {
+		return false, err
+	}
+
+	toResource, err := getResourceFromResourceOwner(toFolder, to)
+	if err != nil {
+		return false, err
+	}
+
+	objectInfo := fmt.Sprintf("%s %s/%s", from.Kind, from.Namespace, from.Name)
+	edits := myers.ComputeEdits(span.URIFromPath(objectInfo), fromResource, toResource)
+	resourceInfo := fmt.Sprintf("%s/%s ", from.Group, from.Kind)
+	if from.Namespace == "" {
+		resourceInfo += from.Name
+	} else {
+		resourceInfo += fmt.Sprintf("%s/%s", from.Namespace, from.Name)
+	}
+	diff := fmt.Sprint(gotextdiff.ToUnified(fmt.Sprintf("%s from %s", resourceInfo, fromFolder),
+		fmt.Sprintf("%s from %s", resourceInfo, toFolder),
+		fromResource, edits))
+
+	if rawDiff {
+		//nolint: forbidigo // print diff
+		fmt.Println(diff)
+	}
+
+	return diff != "", nil
+}
+
+func getResourceFromResourceOwner(folder string, resource *configv1alpha1.Resource) (string, error) {
+	ownerPath := buildOwnerPath(folder, resource)
+
+	owner, err := getResourceOwner(ownerPath)
+	if err != nil {
+		return "", err
+	}
+
+	var data map[string]string
+	if owner.DeepCopy().GroupVersionKind().Kind == string(configv1alpha1.ConfigMapReferencedResourceKind) {
+		var configMap corev1.ConfigMap
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(owner.UnstructuredContent(), &configMap)
+		if err != nil {
+			return "", err
+		}
+		data = configMap.Data
+	} else {
+		var secret corev1.Secret
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(owner.UnstructuredContent(), &secret)
+		if err != nil {
+			return "", err
+		}
+		data = make(map[string]string)
+		for key, value := range secret.Data {
+			data[key], err = decode(value)
+			if err != nil {
+				return "", err
+			}
+		}
+	}
+
+	for k := range data {
+		elements := strings.Split(data[k], "---")
+		for i := range elements {
+			if elements[i] == "" {
+				continue
+			}
+
+			// We cannot get unstructured for the policy
+			// as that will require scheme knows about it
+			// and we don't know what type of policies are contained
+			// in each ConfigMap/Secret. So just try to find string
+			if strings.Contains(elements[i], resource.Group) &&
+				strings.Contains(elements[i], resource.Kind) &&
+				strings.Contains(elements[i], resource.Namespace) &&
+				strings.Contains(elements[i], resource.Name) {
+
+				return elements[i], nil
+			}
+		}
+	}
+
+	return "", fmt.Errorf("resource %s %s/%s not found in %s",
+		resource.Kind, resource.Namespace, resource.Name, ownerPath)
+}
+
+func decode(encoded []byte) (string, error) {
+	decoded, err := base64.StdEncoding.DecodeString(string(encoded))
+	if err != nil {
+		return "", err
+	}
+
+	return string(decoded), nil
+}
+
+func buildOwnerPath(folder string, resource *configv1alpha1.Resource) string {
+	return filepath.Join(folder,
+		resource.Owner.Namespace,
+		resource.Owner.Kind,
+		fmt.Sprintf("%s.yaml", resource.Owner.Name))
+}
+
+func getResourceOwner(ownerFile string) (*unstructured.Unstructured, error) {
+	content, err := os.ReadFile(ownerFile)
+	if err != nil {
+		return nil, err
+	}
+
+	instance := snapshotter.GetClient()
+	u, err := instance.GetUnstructured(content)
+	if err != nil {
+		return nil, err
+	}
+
+	return u, nil
+}
+
 // Diff lists differences between two snapshots
 func Diff(ctx context.Context, args []string, logger logr.Logger) error {
 	doc := `Usage:
-	sveltosctl snapshot diff [options] --snapshot=<name> --from-sample=<name> --to-sample=<name> [--namespace=<name>] [--cluster=<name>] [--verbose]
+	sveltosctl snapshot diff [options] --snapshot=<name> --from-sample=<name> --to-sample=<name> [--namespace=<name>] [--raw-diff] [--cluster=<name>] [--verbose]
 
      --snapshot=<name>      Name of the Snapshot instance
      --from-sample=<name>   Name of the directory containing this sample (use sveltosctl snapshot list to see all collected snapshosts)
      --to-sample=<name>     Name of the directory containing this sample (use sveltosctl snapshot list to see all collected snapshosts)
      --namespace=<name>     Show features differences for clusters in this namespace. If not specified all namespaces are considered.
      --cluster=<name>       Show features differences for clusters with name. If not specified all cluster names are considered.
+     --raw-diff             With this flag, for each referenced ConfigMap/Secret, diff will be displayed.
 
 Options:
   -h --help                  Show this screen.
@@ -521,5 +663,7 @@ Description:
 		cluster = passedCluster.(string)
 	}
 
-	return listSnapshotDiffs(ctx, snapshostName, fromSample, toSample, namespace, cluster, logger)
+	rawDiff := parsedArgs["--raw-diff"].(bool)
+
+	return listSnapshotDiffs(ctx, snapshostName, fromSample, toSample, namespace, cluster, rawDiff, logger)
 }

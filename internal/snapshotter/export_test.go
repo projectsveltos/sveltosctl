@@ -23,8 +23,7 @@ var (
 	ProcessRequests  = processRequests
 	CollectSnapshot  = collectSnapshot
 
-	GetUnstructured            = getUnstructured
-	GetResourcesForKind        = getResourcesForKind
+	GetResourcesForKind        = (*deployer).getResourcesForKind
 	AddTypeInformationToObject = addTypeInformationToObject
 )
 

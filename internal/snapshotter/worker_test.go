@@ -232,7 +232,8 @@ func recursiveSearchDir(dir string, objects map[string]bool) {
 		} else {
 			content, err := os.ReadFile(path.Join(dir, files[i].Name()))
 			Expect(err).To(BeNil())
-			u, err := snapshotter.GetUnstructured(content)
+			instance := snapshotter.GetClient()
+			u, err := instance.GetUnstructured(content)
 			Expect(err).To(BeNil())
 			objects[objectToString(u)] = true
 		}

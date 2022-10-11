@@ -236,8 +236,9 @@ var _ = Describe("Client", func() {
 		Expect(os.IsNotExist(err)).To(BeTrue())
 	})
 
-	It("getUnstructured returns unstructured", func() {
-		u, err := snapshotter.GetUnstructured([]byte(clusterConfigurationInstance))
+	It("GetUnstructured returns unstructured", func() {
+		instance := snapshotter.GetClient()
+		u, err := instance.GetUnstructured([]byte(clusterConfigurationInstance))
 		Expect(err).To(BeNil())
 		Expect(u).ToNot(BeNil())
 		Expect(u.GetKind()).To(Equal(configv1alpha1.ClusterConfigurationKind))
@@ -255,7 +256,8 @@ var _ = Describe("Client", func() {
 		for i := range files {
 			namespaceFolder := filepath.Join(snapshotFolder, files[i].Name())
 			By(fmt.Sprintf("finding resources in folder %s", namespaceFolder))
-			list, err := snapshotter.GetResourcesForKind(namespaceFolder, configv1alpha1.ClusterConfigurationKind, klogr.New())
+			instance := snapshotter.GetClient()
+			list, err := snapshotter.GetResourcesForKind(instance, namespaceFolder, configv1alpha1.ClusterConfigurationKind, klogr.New())
 			Expect(err).To(BeNil())
 			Expect(list).ToNot(BeNil())
 			Expect(len(list)).ToNot(BeZero())
@@ -272,7 +274,8 @@ var _ = Describe("Client", func() {
 		Expect(len(files)).ToNot(BeZero())
 
 		By(fmt.Sprintf("finding resources in folder %s", snapshotFolder))
-		list, err := snapshotter.GetResourcesForKind(snapshotFolder, configv1alpha1.ClusterProfileKind, klogr.New())
+		instance := snapshotter.GetClient()
+		list, err := snapshotter.GetResourcesForKind(instance, snapshotFolder, configv1alpha1.ClusterProfileKind, klogr.New())
 		Expect(err).To(BeNil())
 		Expect(list).ToNot(BeNil())
 		Expect(len(list)).ToNot(BeZero())

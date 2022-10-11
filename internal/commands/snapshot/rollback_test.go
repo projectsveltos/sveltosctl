@@ -368,7 +368,7 @@ var _ = Describe("Snapshot Rollback", func() {
 		name := randomString()
 		namespace := randomString()
 
-		configMap, err := getUnstructured([]byte(fmt.Sprintf(configMapWithPolicy, namespace, name)))
+		configMap, err := GetUnstructured([]byte(fmt.Sprintf(configMapWithPolicy, namespace, name)))
 		Expect(err).To(BeNil())
 		Expect(snapshotter.DumpObject(configMap, folder, klogr.New())).To(Succeed())
 
@@ -391,7 +391,7 @@ var _ = Describe("Snapshot Rollback", func() {
 
 		name := randomString()
 
-		clusterProfile, err := getUnstructured([]byte(fmt.Sprintf(clusterProfileTemplate, name)))
+		clusterProfile, err := GetUnstructured([]byte(fmt.Sprintf(clusterProfileTemplate, name)))
 		Expect(err).To(BeNil())
 		Expect(snapshotter.DumpObject(clusterProfile, folder, klogr.New())).To(Succeed())
 
@@ -505,8 +505,8 @@ func createDirectoryWithObjects(snapshotName, snapshotStorage string, objects []
 	return snapshotDir
 }
 
-// getUnstructured returns an unstructured given a []bytes containing it
-func getUnstructured(object []byte) (*unstructured.Unstructured, error) {
+// GetUnstructured returns an unstructured given a []bytes containing it
+func GetUnstructured(object []byte) (*unstructured.Unstructured, error) {
 	request := &unstructured.Unstructured{}
 
 	universalDeserializer := kubectlscheme.Codecs.UniversalDeserializer()
