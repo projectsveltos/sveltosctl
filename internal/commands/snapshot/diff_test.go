@@ -293,7 +293,7 @@ var _ = Describe("Snapshot Diff", func() {
 		resources = append(resources, generateResource())
 
 		table := tablewriter.NewWriter(os.Stdout)
-		snapshot.AddResourceEntry(nil, clusterConfiguration, resources, "added", table)
+		snapshot.AddResourceEntry(nil, clusterConfiguration, resources, "added", "", table)
 
 		Expect(table.NumLines()).To(Equal(2))
 		result := fmt.Sprintf("table: %v\n", table)

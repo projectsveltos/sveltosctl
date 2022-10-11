@@ -17,7 +17,7 @@ Displayed information contains:
 ```
 ./bin/sveltosctl show features
 +-------------------------------------+---------------+-----------+----------------+---------+-------------------------------+------------------+
-|               CLUSTER               | RESOURCE TYPE | NAMESPACE |      NAME      | VERSION |             TIME              | CLUSTER FEATURES |
+|               CLUSTER               | RESOURCE TYPE | NAMESPACE |      NAME      | VERSION |             TIME              | CLUSTER PROFILE |
 +-------------------------------------+---------------+-----------+----------------+---------+-------------------------------+------------------+
 | default/sveltos-management-workload | helm chart    | kyverno   | kyverno-latest | v2.5.0  | 2022-09-30 11:48:45 -0700 PDT | clusterfeature1  |
 | default/sveltos-management-workload | :Pod          | default   | nginx          | N/A     | 2022-09-30 13:41:05 -0700 PDT | clusterfeature2  |
@@ -48,7 +48,7 @@ Here is an example of outcome
 ```
 ./bin/sveltosctl show dryrun
 +-------------------------------------+--------------------------+-----------+----------------+-----------+--------------------------------+------------------+
-|               CLUSTER               |      RESOURCE TYPE       | NAMESPACE |      NAME      |  ACTION   |            MESSAGE             | CLUSTER FEATURES |
+|               CLUSTER               |      RESOURCE TYPE       | NAMESPACE |      NAME      |  ACTION   |            MESSAGE             | CLUSTER PROFILE |
 +-------------------------------------+--------------------------+-----------+----------------+-----------+--------------------------------+------------------+
 | default/sveltos-management-workload | helm release             | kyverno   | kyverno-latest | Install   |                                | dryrun           |
 | default/sveltos-management-workload | helm release             | nginx     | nginx-latest   | Install   |                                | dryrun           |

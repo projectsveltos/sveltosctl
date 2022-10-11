@@ -57,7 +57,7 @@ func displayDryRun(ctx context.Context, passedNamespace, passedCluster, passedCl
 	logger logr.Logger) error {
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"CLUSTER", "RESOURCE TYPE", "NAMESPACE", "NAME", "ACTION", "MESSAGE", "CLUSTER FEATURES"})
+	table.SetHeader([]string{"CLUSTER", "RESOURCE TYPE", "NAMESPACE", "NAME", "ACTION", "MESSAGE", "CLUSTER PROFILE"})
 
 	if err := displayDryRunInNamespaces(ctx, passedNamespace, passedCluster,
 		passedClusterProfile, table, logger); err != nil {
