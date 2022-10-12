@@ -19,4 +19,5 @@ package show
 var (
 	DisplayFeatures = displayFeatures
 	DisplayDryRun   = displayDryRun
+	ShowUsage       = showUsage
 )
