@@ -72,6 +72,25 @@ Usage:
      --clusterprofile=<name> Show features deployed because of this clusterprofile. If not specified all clusterprofile names are considered.
 ```
 
+## Display usage
+
+show usage displays following information:
+1. which CAPI clusters are currently a match for a ClusterProfile
+2. for ConfigMap/Secret referenced by at least by ClusterProfile, in which CAPI clusters their content is currently deployed.
+
+Such information is useful to see what CAPI clusters would be affected by a change before making such a change.
+
+```
+./bin/sveltosctl show usage 
++----------------+--------------------+----------------------------+-------------------------------------+
+| RESOURCE KIND  | RESOURCE NAMESPACE |       RESOURCE NAME        |              CLUSTERS               |
++----------------+--------------------+----------------------------+-------------------------------------+
+| ClusterProfile |                    | mgianluc                   | default/sveltos-management-workload |
+| ConfigMap      | default            | kyverno-disallow-gateway-2 | default/sveltos-management-workload |
++----------------+--------------------+----------------------------+-------------------------------------+
+```
+
+
 ## Display outcome of ClusterProfile's in DryRun mode
 
 A ClusterProfile can be set in DryRun mode. While in DryRun mode, nothing gets deployed/withdrawn to/from matching CAPI clusters. A report is instead generated listing what would happen if ClusterProfile sync mode would be changed from DryRun to Continuous.
