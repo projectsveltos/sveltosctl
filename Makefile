@@ -74,6 +74,7 @@ generate-modules: ## Run go mod tidy to ensure modules are up to date
 .PHONY: generate
 generate: ## Run all generate-manifests-*, generate-go-deepcopy-*
 	$(MAKE) generate-modules generate-manifests generate-go-deepcopy
+	cp config/crd/bases/* k8s/
 
 .PHONY: generate-go-deepcopy
 generate-go-deepcopy: $(CONTROLLER_GEN) ## Run all generate-go-deepcopy-* targets
