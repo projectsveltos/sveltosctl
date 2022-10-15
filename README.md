@@ -197,7 +197,7 @@ kubectl exec -it -n projectsveltos sveltosctl-0 -- ./sveltosctl snapshot diff --
 +-------------------------------------+--------------------------+-----------+----------------+----------+------------------------------------+
 ```
 
-To see Sveltos CLI for snapshot in action, have a look at this [video](https://youtu.be/yUms9gxh_n8)
+To see Sveltos CLI for snapshot in action, have a look at this [video](https://youtu.be/ALcp1_Nj9r4)
 
 ### rollback
 
