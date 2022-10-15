@@ -215,3 +215,23 @@ kubectl exec -it -n projectsveltos sveltosctl-0 -- ./sveltosctl snapshot rollbac
 ```
 
 To see Sveltos CLI for snapshot in action, have a look at this [video](https://youtu.be/sTo6RcWP1BQ)
+  
+## Contributing
+If you have questions, noticed any bug or want to get the latest project news, you can connect with us in the following ways:
+1. Open a bug/feature enhancement on github;
+
+## License
+
+Copyright 2022.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
