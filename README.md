@@ -219,6 +219,7 @@ To see Sveltos CLI for snapshot in action, have a look at this [video](https://y
 ## Contributing
 If you have questions, noticed any bug or want to get the latest project news, you can connect with us in the following ways:
 1. Open a bug/feature enhancement on github;
+2. Chat with us on the Slack in the [#projectsveltos](https://projectsveltos.slack.com/archives/C046L9HFJFP) channel;
 
 ## License
 
