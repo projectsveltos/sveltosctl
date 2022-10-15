@@ -197,6 +197,8 @@ kubectl exec -it -n projectsveltos sveltosctl-0 -- ./sveltosctl snapshot diff --
 +-------------------------------------+--------------------------+-----------+----------------+----------+------------------------------------+
 ```
 
+To see Sveltos CLI for snapshot in action, have a look at this [video](https://youtu.be/yUms9gxh_n8)
+
 ### rollback
 
 Rollback is when a previous configuration snapshot is used to replace the current configuration deployed by ClusterProfiles. This can be done on the granularity of:. 
@@ -211,3 +213,5 @@ Following for instance will bring system back to the state it had at 22:00
 ```
 kubectl exec -it -n projectsveltos sveltosctl-0 -- ./sveltosctl snapshot rollback --snapshot=hourly  --sample=2022-10-10:22:00:00
 ```
+
+To see Sveltos CLI for snapshot in action, have a look at this [video](https://youtu.be/sTo6RcWP1BQ)
