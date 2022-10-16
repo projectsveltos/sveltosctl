@@ -46,7 +46,8 @@ spec:
       serviceAccountName: sveltosctl
       containers:
       - name: sveltosctl
-        image: projectsveltos/sveltosctl-amd64:dev
+        image: gianlucam76/sveltosctl-amd64:dev
+        imagePullPolicy: IfNotPresent
         command:
           - /sveltosctl
         args:
@@ -59,6 +60,12 @@ spec:
         volumeMounts:
         - mountPath: /snapshot
           name: snapshot
+        - mountPath: /etc/localtime
+          name: tz-config
+      volumes:
+      - hostPath:
+          path: /usr/share/zoneinfo/America/Los_Angeles
+        name: tz-config
   volumeClaimTemplates:
   - metadata:
       name: snapshot

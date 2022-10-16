@@ -8,7 +8,7 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
-REGISTRY ?= projectsveltos
+REGISTRY ?= gianlucam76
 IMAGE_NAME ?= sveltosctl
 export SVELTOSCTL_IMG ?= $(REGISTRY)/$(IMAGE_NAME) 
 TAG ?= dev
@@ -20,7 +20,7 @@ TOOLS_DIR := hack/tools
 TOOLS_BIN_DIR := $(TOOLS_DIR)/bin
 BIN_DIR := bin
 
-LDFLAGS := ""
+LDFLAGS := $(shell source ./hack/version.sh; version::ldflags)
 
 GOBUILD=go build
 

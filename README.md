@@ -13,7 +13,13 @@ If you decide to run it as a binary:
 2. run`make build`
 3. Use `./bin/sveltosctl --help` to see help message
 
-If you decide to run it as a pod in the management cluster, YAML is in k8s subdirectory. Please keep in mind it requires a PersistentVolume. So modify this section accordingly before posting the YAML.
+If you decide to run it as a pod in the management cluster, YAML is in manifest subdirectory.
+
+```
+kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/master/manifest/
+```
+
+Please keep in mind it requires a PersistentVolume. So modify this section accordingly before posting the YAML.
 
 ```
   volumeClaimTemplates:
@@ -30,6 +36,16 @@ If you decide to run it as a pod in the management cluster, YAML is in k8s subdi
 Once the pod is running,
 ```
  kubectl exec -it -n projectsveltos sveltosctl-0   -- ./sveltosctl
+```
+
+You might also want to change the timezone of sveltosctl pod by using specific timezone config and hostPath volume to set specific timezone. Currently:
+
+```
+  volumes:
+  - hostPath:
+      path: /usr/share/zoneinfo/America/Los_Angeles
+      type: File
+    name: tz-config
 ```
 
 ## Features
