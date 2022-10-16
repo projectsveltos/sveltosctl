@@ -37,7 +37,7 @@ LABEL name="Sveltos CLI tool" \
       release="1" \
       summary="Sveltos CLI tool" \
       description="sveltoctl is a command line tool used to visualize information on deployed features." \
-      maintainer="mgianluc@cisco.com"
+      maintainer=""
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
