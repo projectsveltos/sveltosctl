@@ -102,9 +102,9 @@ var _ = Describe("Usage", func() {
 		verifyClusterProfileUsage(lines, clusterProfile1)
 		verifyClusterProfileUsage(lines, clusterProfile2)
 		verifyUsage(lines, string(configv1alpha1.ConfigMapReferencedResourceKind),
-			configMap.Namespace, configMap.Name, clusterProfile1.Status.MatchingClusterRefs[0])
+			configMap.Namespace, configMap.Name, &clusterProfile1.Status.MatchingClusterRefs[0])
 		verifyUsage(lines, string(configv1alpha1.SecretReferencedResourceKind),
-			secret.Namespace, secret.Name, clusterProfile2.Status.MatchingClusterRefs[0])
+			secret.Namespace, secret.Name, &clusterProfile2.Status.MatchingClusterRefs[0])
 		os.Stdout = old
 	})
 })
@@ -112,11 +112,11 @@ var _ = Describe("Usage", func() {
 func verifyClusterProfileUsage(lines []string, clusterProfile *configv1alpha1.ClusterProfile) {
 	for i := range clusterProfile.Status.MatchingClusterRefs {
 		verifyUsage(lines, configv1alpha1.ClusterProfileKind, "", clusterProfile.Name,
-			clusterProfile.Status.MatchingClusterRefs[i])
+			&clusterProfile.Status.MatchingClusterRefs[i])
 	}
 }
 
-func verifyUsage(lines []string, kind, namespace, name string, matchingCluster corev1.ObjectReference) {
+func verifyUsage(lines []string, kind, namespace, name string, matchingCluster *corev1.ObjectReference) {
 	clusterInfo := fmt.Sprintf("%s/%s", matchingCluster.Namespace, matchingCluster.Name)
 	found := false
 	for i := range lines {

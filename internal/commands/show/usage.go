@@ -214,11 +214,13 @@ func getSecrets(passedNamespace, passedName string, clusterProfile *configv1alph
 func shouldAddPolicyRef(passedNamespace, passedName string, pr *configv1alpha1.PolicyRef) bool {
 	if passedNamespace != "" &&
 		pr.Namespace != passedNamespace {
+
 		return false
 	}
 
 	if passedName != "" &&
 		pr.Name != passedName {
+
 		return false
 	}
 
@@ -230,9 +232,12 @@ func Usage(ctx context.Context, args []string, logger logr.Logger) error {
 	doc := `Usage:
   sveltosctl show usage [options] [--kind=<name>] [--namespace=<resourceNamespace>] [--name=<resourceName>] [--verbose]
 
-     --kind=<name>                    Show usage information for resources of this Kind only. If not specified, ClusterProfile and referenced ConfigMap and Secret are considered.
-     --namespace=<resourceNamespace>  Show usage information for resources in this namespace only. If not specified all namespaces are considered.
-     --name=<resourceName>            Show usage information for resources with this name only. If not specified all ClusterProfiles/ConfigMaps/Secrets are considered.
+     --kind=<name>                    Show usage information for resources of this Kind only.
+                                      If not specified, ClusterProfile and referenced ConfigMap and Secret are considered.
+     --namespace=<resourceNamespace>  Show usage information for resources in this namespace only.
+                                      If not specified all namespaces are considered.
+     --name=<resourceName>            Show usage information for resources with this name only.
+                                      If not specified all ClusterProfiles/ConfigMaps/Secrets are considered.
 
 Options:
   -h --help                  Show this screen.
@@ -281,6 +286,7 @@ Description:
 		if kind != configv1alpha1.ClusterProfileKind &&
 			kind != string(configv1alpha1.ConfigMapReferencedResourceKind) &&
 			kind != string(configv1alpha1.SecretReferencedResourceKind) {
+
 			return fmt.Errorf("possible values for kind are: %s, %s, %s",
 				configv1alpha1.ClusterProfileKind,
 				string(configv1alpha1.ConfigMapReferencedResourceKind),

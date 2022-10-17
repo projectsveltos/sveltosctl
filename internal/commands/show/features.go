@@ -149,9 +149,12 @@ func Features(ctx context.Context, args []string, logger logr.Logger) error {
 	doc := `Usage:
   sveltosctl show features [options] [--namespace=<name>] [--cluster=<name>] [--clusterprofile=<name>] [--verbose]
 
-     --namespace=<name>      Show features deployed in clusters in this namespace. If not specified all namespaces are considered.
-     --cluster=<name>        Show features deployed in cluster with name. If not specified all cluster names are considered.
-     --clusterprofile=<name> Show features deployed because of this clusterprofile. If not specified all clusterprofile names are considered.
+     --namespace=<name>      Show features deployed in clusters in this namespace.
+                             If not specified all namespaces are considered.
+     --cluster=<name>        Show features deployed in cluster with name.
+                             If not specified all cluster names are considered.
+     --clusterprofile=<name> Show features deployed because of this clusterprofile.
+                             If not specified all clusterprofile names are considered.
 
 Options:
   -h --help                  Show this screen.

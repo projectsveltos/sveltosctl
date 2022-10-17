@@ -144,9 +144,12 @@ func DryRun(ctx context.Context, args []string, logger logr.Logger) error {
 	doc := `Usage:
   sveltosctl show dryrun [options] [--namespace=<name>] [--cluster=<name>] [--clusterprofile=<name>] [--verbose]
 
-     --namespace=<name>      Show which features would change in clusters in this namespace. If not specified all namespaces are considered.
-     --cluster=<name>        Show which features would change in cluster with name. If not specified all cluster names are considered.
-     --clusterprofile=<name> Show which features would change because of this clusterprofile. If not specified all clusterprofile names are considered.
+     --namespace=<name>      Show which features would change in clusters in this namespace.
+                             If not specified all namespaces are considered.
+     --cluster=<name>        Show which features would change in cluster with name.
+                             If not specified all cluster names are considered.
+     --clusterprofile=<name> Show which features would change because of this clusterprofile.
+                             If not specified all clusterprofile names are considered.
 
 Options:
   -h --help                  Show this screen.
