@@ -615,10 +615,14 @@ func Diff(ctx context.Context, args []string, logger logr.Logger) error {
 	sveltosctl snapshot diff [options] --snapshot=<name> --from-sample=<name> --to-sample=<name> [--namespace=<name>] [--raw-diff] [--cluster=<name>] [--verbose]
 
      --snapshot=<name>      Name of the Snapshot instance
-     --from-sample=<name>   Name of the directory containing this sample (use sveltosctl snapshot list to see all collected snapshosts)
-     --to-sample=<name>     Name of the directory containing this sample (use sveltosctl snapshot list to see all collected snapshosts)
-     --namespace=<name>     Show features differences for clusters in this namespace. If not specified all namespaces are considered.
-     --cluster=<name>       Show features differences for clusters with name. If not specified all cluster names are considered.
+     --from-sample=<name>   Name of the directory containing this sample.
+                            Use sveltosctl snapshot list to see all collected snapshosts.
+     --to-sample=<name>     Name of the directory containing this sample.
+                            Use sveltosctl snapshot list to see all collected snapshosts.
+     --namespace=<name>     Show features differences for clusters in this namespace.
+                            If not specified all namespaces are considered.
+     --cluster=<name>       Show features differences for clusters with name.
+                            If not specified all cluster names are considered.
      --raw-diff             With this flag, for each referenced ConfigMap/Secret, diff will be displayed.
 
 Options:

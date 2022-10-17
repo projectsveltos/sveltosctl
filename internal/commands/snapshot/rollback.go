@@ -361,10 +361,14 @@ func Rollback(ctx context.Context, args []string, logger logr.Logger) error {
 	sveltosctl snapshot rollback [options] --snapshot=<name> --sample=<name> [--namespace=<name>] [--clusterprofile=<name>] [--cluster=<name>] [--verbose]
 
      --snapshot=<name>       Name of the Snapshot instance
-     --sample=<name>         Name of the directory containing this sample (use sveltosctl snapshot list to see all collected snapshosts)
-     --namespace=<name>      Rollbacks only ConfigMaps/Secrets and Cluster labels in this namespace. If not specified all namespaces are considered.
-     --cluster=<name>        Rollback only clusters with this name. If not specified all clusters are updated.
-     --clusterprofile=<name> Rollback only clusterprofile with this name. If not specified all clusterprofiles are updated.
+     --sample=<name>         Name of the directory containing this sample.
+                             Use sveltosctl snapshot list to see all collected snapshosts.
+     --namespace=<name>      Rollbacks only ConfigMaps/Secrets and Cluster labels in this namespace.
+                             If not specified all namespaces are considered.
+     --cluster=<name>        Rollback only clusters with this name.
+                             If not specified all clusters are updated.
+     --clusterprofile=<name> Rollback only clusterprofile with this name.
+                             If not specified all clusterprofiles are updated.
 
 Options:
   -h --help                  Show this screen.
