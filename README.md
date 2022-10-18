@@ -1,6 +1,6 @@
 [![CI](https://github.com/projectsveltos/sveltosctl/actions/workflows/main.yaml/badge.svg)](https://github.com/projectsveltos/sveltosctl/actions)
 [![Go Report Card](https://goreportcard.com/badge/github.com/projectsveltos/sveltosctl)](https://goreportcard.com/report/github.com/projectsveltos/sveltosctl)
-[![Slack](https://img.shields.io/badge/join%20slack-%23projectsveltos-green)](https://projectsveltos.slack.com/archives/C046L9HFJFP)
+[![Slack](https://img.shields.io/badge/join%20slack-%23projectsveltos-brighteen)](https://projectsveltos.slack.com/archives/C046L9HFJFP)
 
 
 # sveltosctl
