@@ -1,6 +1,7 @@
 [![CI](https://github.com/projectsveltos/sveltosctl/actions/workflows/main.yaml/badge.svg)](https://github.com/projectsveltos/sveltosctl/actions)
 [![Go Report Card](https://goreportcard.com/badge/github.com/projectsveltos/sveltosctl)](https://goreportcard.com/report/github.com/projectsveltos/sveltosctl)
-[![Slack](https://img.shields.io/badge/join%20slack-%23projectsveltos-brighteen)](https://projectsveltos.slack.com/archives/C046L9HFJFP)
+[![Slack](https://img.shields.io/badge/join%20slack-%23projectsveltos-brighteen)](http://projectsveltos.slack.com/)
+[![License](https://img.shields.io/badge/license-Apache-blue.svg)](LICENSE)
 
 
 # sveltosctl
@@ -21,9 +22,9 @@ If you decide to run it as a binary:
 If you decide to run it as a pod in the management cluster, YAML is in manifest subdirectory.
 
 ```
-kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/master/manifest/utils.projectsveltos.io_snapshots.yaml
+kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/v0.1.0/manifest/utils.projectsveltos.io_snapshots.yaml
 
-kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/master/manifest/sveltosctl.yaml
+kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/v0.1.0/manifest/sveltosctl.yaml
 ```
 
 Please keep in mind it requires a PersistentVolume. So modify this section accordingly before posting the YAML.
