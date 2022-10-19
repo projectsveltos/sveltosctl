@@ -1,10 +1,13 @@
 [![CI](https://github.com/projectsveltos/sveltosctl/actions/workflows/main.yaml/badge.svg)](https://github.com/projectsveltos/sveltosctl/actions)
 [![Go Report Card](https://goreportcard.com/badge/github.com/projectsveltos/sveltosctl)](https://goreportcard.com/report/github.com/projectsveltos/sveltosctl)
-[![Slack](https://img.shields.io/badge/join%20slack-%23projectsveltos-brighteen)](http://projectsveltos.slack.com/)
+[![Slack](https://img.shields.io/badge/join%20slack-%23projectsveltos-brighteen)](https://join.slack.com/t/projectsveltos/shared_invite/zt-1hraownbr-W8NTs6LTimxLPB8Erj8Q6Q)
 [![License](https://img.shields.io/badge/license-Apache-blue.svg)](LICENSE)
 
 
 # sveltosctl
+
+<img src="https://raw.githubusercontent.com/projectsveltos/sveltos-manager/master/logos/logo.png" width="100">
+
 a CLI to nicely display resources/helm charts info in CAPI Cluster deployed using [ClusterProfile](https://github.com/projectsveltos/cluster-api-feature-manager). It also provides the ability to generate configuration snapshots and rollback system to a previously taken configuration snapshot.
 
 It assumes:
@@ -243,7 +246,7 @@ To see Sveltos CLI for snapshot in action, have a look at this [video](https://y
 ## Contributing
 If you have questions, noticed any bug or want to get the latest project news, you can connect with us in the following ways:
 1. Open a bug/feature enhancement on github;
-2. Chat with us on the Slack in the [#projectsveltos](https://projectsveltos.slack.com/archives/C046L9HFJFP) channel;
+2. Chat with us on the Slack in the [#projectsveltos](https://join.slack.com/t/projectsveltos/shared_invite/zt-1hraownbr-W8NTs6LTimxLPB8Erj8Q6Q) channel;
 
 ## License
 
