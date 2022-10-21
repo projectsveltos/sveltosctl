@@ -46,7 +46,7 @@ spec:
       serviceAccountName: sveltosctl
       containers:
       - name: sveltosctl
-        image: gianlucam76/sveltosctl-amd64:dev
+        image: gianlucam76/sveltosctl-amd64:main
         imagePullPolicy: IfNotPresent
         command:
           - /sveltosctl
