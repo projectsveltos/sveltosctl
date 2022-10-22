@@ -6,7 +6,7 @@
 
 # sveltosctl
 
-<img src="https://raw.githubusercontent.com/projectsveltos/sveltos-manager/master/logos/logo.png" width="100">
+<img src="https://raw.githubusercontent.com/projectsveltos/sveltos-manager/main/logos/logo.png" width="200">
 
 a CLI to nicely display resources/helm charts info in CAPI Cluster deployed using [ClusterProfile](https://github.com/projectsveltos/cluster-api-feature-manager). It also provides the ability to generate configuration snapshots and rollback system to a previously taken configuration snapshot.
 
@@ -25,9 +25,9 @@ If you decide to run it as a binary:
 If you decide to run it as a pod in the management cluster, YAML is in manifest subdirectory.
 
 ```
-kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/master/manifest/utils.projectsveltos.io_snapshots.yaml
+kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/main/manifest/utils.projectsveltos.io_snapshots.yaml
 
-kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/master/manifest/sveltosctl.yaml
+kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/main/manifest/sveltosctl.yaml
 ```
 
 Please keep in mind it requires a PersistentVolume. So modify this section accordingly before posting the YAML.
