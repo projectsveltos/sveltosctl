@@ -8,20 +8,24 @@
 
 <img src="https://raw.githubusercontent.com/projectsveltos/sveltos-manager/main/logos/logo.png" width="200">
 
-a CLI to nicely display resources/helm charts info in CAPI Cluster deployed using [ClusterProfile](https://github.com/projectsveltos/cluster-api-feature-manager). It also provides the ability to generate configuration snapshots and rollback system to a previously taken configuration snapshot.
+**sveltosctl** is the command line client for Sveltos. **sveltosctl** nicely displays resources and helm charts info in CAPI Kubernetes Cluster deployed using [ClusterProfile](https://github.com/projectsveltos/sveltos-manager). It also provides the ability to generate configuration snapshots and rollback system to a previously taken configuration snapshot.
 
 It assumes:
 1. there is a management cluster with [ClusterAPI](https://github.com/kubernetes-sigs/cluster-api);
-2. [ClusterProfile](https://github.com/projectsveltos/cluster-api-feature-manager) are used to programmatically define which resources/helm charts need to be deployed in which CAPI Clusters;
-3. management cluster can be accessed (it can be run as binary though it is advised to run it as pod in a management cluster to get access to all of its features).
+2. [ClusterProfile](https://github.com/projectsveltos/cluster-api-feature-manager) is used to programmatically define which resources/helm charts need to be deployed in which CAPI Clusters;
+3. management cluster can be accessed 
+ 
+> Note: sveltosctl can run as binary though it is advised to run it as pod in a management cluster to get access to all of its features.
 
 ## Quick start
 
+### Run sveltosctl as a binary
 If you decide to run it as a binary:
 1. make sure management cluster can be accessed;
 2. run`make build`
 3. Use `./bin/sveltosctl --help` to see help message
 
+### Run sveltosctl as a pod
 If you decide to run it as a pod in the management cluster, YAML is in manifest subdirectory.
 
 ```
@@ -59,16 +63,16 @@ You might also want to change the timezone of sveltosctl pod by using specific t
     name: tz-config
 ```
 
-## Features
+## Features List
 - Display all resources and helm releases deployed in each CAPI Cluster by ClusterProfile;
 - Display the effect of a ClusterProfile in DryRun mode;
 - List all snapshots taken;
 - Display diff between two taken snapshots;
 - Rollback system to a previously taken snapshot configuration.
 
-## Display deployed resources/helm releases
+## Display deployed resources and helm releases
 
-show features can be used to display list of resources/helm releases deployed in CAPI clusters.
+**show features** can be used to display list of resources/helm releases deployed in CAPI clusters.
 Displayed information contains:
 1. the CAPI Cluster in the form <namespace>/<name>
 2. resource/helm chart information
@@ -84,7 +88,7 @@ Displayed information contains:
 +-------------------------------------+---------------+-----------+----------------+---------+-------------------------------+------------------+
 ```
 
-show feature command has some argurments which allow filtering by:
+**show features** command has some argurments which allow filtering by:
 1. clusters' namespace
 2. clusters' name
 3. ClusterProfile 
@@ -101,7 +105,7 @@ Usage:
 
 ## Display usage
 
-show usage displays following information:
+**show usage** displays following information:
 1. which CAPI clusters are currently a match for a ClusterProfile
 2. for ConfigMap/Secret referenced by at least by ClusterProfile, in which CAPI clusters their content is currently deployed.
 
@@ -140,7 +144,7 @@ Here is an example of outcome
 ```
 
 
-show dryrun command has some argurments which allow filtering by:
+**show dryrun** command has some argurments which allow filtering by:
 1. clusters' namespace
 2. clusters' name
 3. ClusterProfile 
@@ -190,7 +194,7 @@ The snapshot contains the configuration at the time of the snapshot stored. Each
 
 ### list
   
-CLI snapshot list can be used to display all available snapshots:
+**snapshot list** can be used to display all available snapshots:
 
 ```
 kubectl exec -it -n projectsveltos sveltosctl-0 -- ./sveltosctl snapshot list --snapshot=hourly 
@@ -204,7 +208,7 @@ kubectl exec -it -n projectsveltos sveltosctl-0 -- ./sveltosctl snapshot list --
 
 ### diff
 
-CLI snapshot diff can be used to display all the configuration changes between two snapshots:
+**snapshot diff** can be used to display all the configuration changes between two snapshots:
 
 ```
 kubectl exec -it -n projectsveltos sveltosctl-0 -- ./sveltosctl snapshot diff --snapshot=hourly  --from-sample=2022-10-10:22:00:00 --to-sample=2022-10-10:23:00:00 
