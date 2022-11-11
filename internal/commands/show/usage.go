@@ -27,8 +27,9 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/olekukonko/tablewriter"
 
-	configv1alpha1 "github.com/projectsveltos/cluster-api-feature-manager/api/v1alpha1"
-	"github.com/projectsveltos/sveltosctl/internal/logs"
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
+	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -117,7 +118,7 @@ func showUsageForConfigMaps(ctx context.Context, passedNamespace, passedName str
 		return err
 	}
 
-	result := make(map[configv1alpha1.PolicyRef][]string)
+	result := make(map[libsveltosv1alpha1.PolicyRef][]string)
 
 	for i := range cps.Items {
 		cp := &cps.Items[i]
@@ -143,7 +144,7 @@ func showUsageForSecrets(ctx context.Context, passedNamespace, passedName string
 		return err
 	}
 
-	result := make(map[configv1alpha1.PolicyRef][]string)
+	result := make(map[libsveltosv1alpha1.PolicyRef][]string)
 
 	for i := range cps.Items {
 		cp := &cps.Items[i]
@@ -160,9 +161,9 @@ func showUsageForSecrets(ctx context.Context, passedNamespace, passedName string
 }
 
 func getConfigMaps(passedNamespace, passedName string, clusterProfile *configv1alpha1.ClusterProfile,
-	result map[configv1alpha1.PolicyRef][]string, logger logr.Logger) {
+	result map[libsveltosv1alpha1.PolicyRef][]string, logger logr.Logger) {
 
-	configMaps := make([]configv1alpha1.PolicyRef, 0)
+	configMaps := make([]libsveltosv1alpha1.PolicyRef, 0)
 	for i := range clusterProfile.Spec.PolicyRefs {
 		pr := &clusterProfile.Spec.PolicyRefs[i]
 		if pr.Kind == string(configv1alpha1.ConfigMapReferencedResourceKind) {
@@ -186,9 +187,9 @@ func getConfigMaps(passedNamespace, passedName string, clusterProfile *configv1a
 }
 
 func getSecrets(passedNamespace, passedName string, clusterProfile *configv1alpha1.ClusterProfile,
-	result map[configv1alpha1.PolicyRef][]string, logger logr.Logger) {
+	result map[libsveltosv1alpha1.PolicyRef][]string, logger logr.Logger) {
 
-	secrets := make([]configv1alpha1.PolicyRef, 0)
+	secrets := make([]libsveltosv1alpha1.PolicyRef, 0)
 	for i := range clusterProfile.Spec.PolicyRefs {
 		pr := &clusterProfile.Spec.PolicyRefs[i]
 		if pr.Kind == string(configv1alpha1.SecretReferencedResourceKind) {
@@ -211,7 +212,7 @@ func getSecrets(passedNamespace, passedName string, clusterProfile *configv1alph
 	}
 }
 
-func shouldAddPolicyRef(passedNamespace, passedName string, pr *configv1alpha1.PolicyRef) bool {
+func shouldAddPolicyRef(passedNamespace, passedName string, pr *libsveltosv1alpha1.PolicyRef) bool {
 	if passedNamespace != "" &&
 		pr.Namespace != passedNamespace {
 

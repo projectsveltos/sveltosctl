@@ -14,14 +14,27 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package logs
+package loglevel_test
 
-// Following are log severity levels to be used in this repo
-const (
-	// LogInfo is the info level
-	LogInfo = 0
-	// LogDebug is the debug level
-	LogDebug = 2
-	// LogVerbose is an extra level more verbose than Debug
-	LogVerbose = 5
+import (
+	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 )
+
+func TestShow(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "LogLevel Suite")
+}
+
+func getDebuggingConfiguration() *libsveltosv1alpha1.DebuggingConfiguration {
+	return &libsveltosv1alpha1.DebuggingConfiguration{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "default",
+		},
+	}
+}

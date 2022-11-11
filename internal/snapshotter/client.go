@@ -28,8 +28,8 @@ import (
 	"k8s.io/kubectl/pkg/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
-	"github.com/projectsveltos/sveltosctl/internal/logs"
 )
 
 var (

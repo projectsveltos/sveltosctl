@@ -27,8 +27,8 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/olekukonko/tablewriter"
 
-	configv1alpha1 "github.com/projectsveltos/cluster-api-feature-manager/api/v1alpha1"
-	"github.com/projectsveltos/sveltosctl/internal/logs"
+	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
+	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 

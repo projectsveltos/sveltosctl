@@ -36,9 +36,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
+	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/commands/snapshot"
-	"github.com/projectsveltos/sveltosctl/internal/logs"
 	"github.com/projectsveltos/sveltosctl/internal/snapshotter"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )

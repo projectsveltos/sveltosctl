@@ -10,14 +10,15 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo/v2 v2.1.6
 	github.com/onsi/gomega v1.20.1
-	github.com/projectsveltos/cluster-api-feature-manager v0.1.0-alpha.0.20221018165002-6c8261d24090
+	github.com/projectsveltos/libsveltos v0.0.0-20221110001102-ffa4c1113682
+	github.com/projectsveltos/sveltos-manager v0.1.1-0.20221110212734-26f041c98245
 	github.com/robfig/cron v1.2.0
-	k8s.io/api v0.25.2
-	k8s.io/apimachinery v0.25.2
-	k8s.io/client-go v0.25.2
+	k8s.io/api v0.25.3
+	k8s.io/apimachinery v0.25.3
+	k8s.io/client-go v0.25.3
 	k8s.io/klog/v2 v2.80.1
-	k8s.io/kubectl v0.25.2
-	sigs.k8s.io/cluster-api v1.2.4
+	k8s.io/kubectl v0.25.3
+	sigs.k8s.io/cluster-api v1.2.5
 	sigs.k8s.io/controller-runtime v0.13.0
 	sigs.k8s.io/yaml v1.3.0
 )
@@ -115,6 +116,7 @@ require (
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/cobra v1.5.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/stretchr/objx v0.4.0 // indirect
 	github.com/totherme/unstructured v0.0.0-20170821094912-3faf2d56d8b8 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
@@ -122,10 +124,10 @@ require (
 	github.com/xlab/treeprint v1.1.0 // indirect
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e // indirect
-	golang.org/x/net v0.0.0-20220722155237-a158d28d115b // indirect
+	golang.org/x/net v0.0.0-20220906165146-f3363e06e74c // indirect
 	golang.org/x/oauth2 v0.0.0-20220622183110-fd043fe589d2 // indirect
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
-	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f // indirect
+	golang.org/x/sys v0.0.0-20220728004956-3c1f35247d10 // indirect
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20220609170525-579cf78fd858 // indirect
@@ -140,8 +142,8 @@ require (
 	helm.sh/helm/v3 v3.9.4 // indirect
 	k8s.io/apiextensions-apiserver v0.25.2 // indirect
 	k8s.io/apiserver v0.25.2 // indirect
-	k8s.io/cli-runtime v0.25.2 // indirect
-	k8s.io/component-base v0.25.2 // indirect
+	k8s.io/cli-runtime v0.25.3 // indirect
+	k8s.io/component-base v0.25.3 // indirect
 	k8s.io/kube-openapi v0.0.0-20220803162953-67bda5d908f1 // indirect
 	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed // indirect
 	oras.land/oras-go v1.2.0 // indirect
