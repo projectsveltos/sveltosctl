@@ -35,7 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	configv1alpha1 "github.com/projectsveltos/cluster-api-feature-manager/api/v1alpha1"
+	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/commands/snapshot"
 	"github.com/projectsveltos/sveltosctl/internal/snapshotter"
 	"github.com/projectsveltos/sveltosctl/internal/utils"

@@ -17,39 +17,42 @@ limitations under the License.
 package commands
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
 	"strings"
 
-	"github.com/docopt/docopt-go"
+	docopt "github.com/docopt/docopt-go"
 	"github.com/go-logr/logr"
 
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
+	"github.com/projectsveltos/sveltosctl/internal/commands/loglevel"
 )
 
-var (
-	gitVersion string
-	gitCommit  string
-)
-
-func Version(args []string, logger logr.Logger) error {
+// LogLevel allows changing log verbosity.
+func LogLevel(ctx context.Context, args []string, logger logr.Logger) error {
 	doc := `Usage:
-  sveltosctl version
+	sveltosctl log-level <command> [<args>...]
+
+	show          Show current log severity configuration.
+	set           Set log severity.
+	unset         Remove log severity setting for a given component.
 
 Options:
-  -h --help             Show this screen.
- 
+	-h --help      Show this screen.
+
 Description:
-  Display the version of sveltosctl.
-`
+	See 'sveltosctl log-level <command> --help' to read about a specific subcommand.
+  `
+
 	parser := &docopt.Parser{
 		HelpHandler:   docopt.PrintHelpAndExit,
 		OptionsFirst:  true,
 		SkipHelpFlags: false,
 	}
 
-	_, err := parser.ParseArgs(doc, nil, "1.0")
+	opts, err := parser.ParseArgs(doc, nil, "1.0")
 	if err != nil {
 		var userError docopt.UserError
 		if errors.As(err, &userError) {
@@ -61,8 +64,20 @@ Description:
 		os.Exit(1)
 	}
 
-	logger.V(logs.LogInfo).Info(fmt.Sprintf("Client Version:   %s", gitVersion))
-	logger.V(logs.LogInfo).Info(fmt.Sprintf("Git commit:       %s", gitCommit))
+	command := opts["<command>"].(string)
+	arguments := append([]string{"logLevel", command}, opts["<args>"].([]string)...)
+
+	switch command {
+	case "show":
+		return loglevel.Show(ctx, arguments)
+	case "set":
+		return loglevel.Set(ctx, arguments)
+	case "unset":
+		return loglevel.Unset(ctx, arguments)
+	default:
+		//nolint: forbidigo // print doc
+		fmt.Println(doc)
+	}
 
 	return nil
 }

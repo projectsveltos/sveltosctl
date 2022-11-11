@@ -34,9 +34,10 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	configv1alpha1 "github.com/projectsveltos/cluster-api-feature-manager/api/v1alpha1"
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
+	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
-	"github.com/projectsveltos/sveltosctl/internal/logs"
 )
 
 // k8sAccess is used to access resources in the management cluster.
@@ -97,7 +98,9 @@ func addToScheme(scheme *runtime.Scheme) error {
 	if err := clusterv1.AddToScheme(scheme); err != nil {
 		return err
 	}
-
+	if err := libsveltosv1alpha1.AddToScheme(scheme); err != nil {
+		return err
+	}
 	return nil
 }
 
