@@ -106,6 +106,12 @@ rules:
       - list
       - create
       - update
+  - apiGroups: ["lib.projectsveltos.io"]
+    resources:
+      - classifiers
+    verbs:
+      - get
+      - list 
   - apiGroups: ["utils.projectsveltos.io"]
     resources:
       - snapshots
