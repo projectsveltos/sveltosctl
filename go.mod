@@ -10,8 +10,8 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo/v2 v2.1.6
 	github.com/onsi/gomega v1.20.1
-	github.com/projectsveltos/libsveltos v0.0.0-20221110001102-ffa4c1113682
-	github.com/projectsveltos/sveltos-manager v0.1.1-0.20221110212734-26f041c98245
+	github.com/projectsveltos/libsveltos v0.0.0-20221113000336-e18d1eb12dcb
+	github.com/projectsveltos/sveltos-manager v0.1.1-0.20221112020252-c6442657fa8f
 	github.com/robfig/cron v1.2.0
 	k8s.io/api v0.25.3
 	k8s.io/apimachinery v0.25.3

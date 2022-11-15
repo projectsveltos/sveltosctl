@@ -271,6 +271,28 @@ func collectSnapshot(ctx context.Context, c client.Client, snapshotName string, 
 	if err != nil {
 		return err
 	}
+	err = dumpClassifiers(ctx, folder, logger)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func dumpClassifiers(ctx context.Context, folder string, logger logr.Logger) error {
+	logger.V(logs.LogVerbose).Info("storing Classifiers")
+	classifiers, err := utils.GetAccessInstance().ListClassifiers(ctx, logger)
+	if err != nil {
+		return err
+	}
+	logger.V(logs.LogVerbose).Info(fmt.Sprintf("found %d Classifiers", len(classifiers.Items)))
+	for i := range classifiers.Items {
+		cl := &classifiers.Items[i]
+		err = DumpObject(cl, folder, logger)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
