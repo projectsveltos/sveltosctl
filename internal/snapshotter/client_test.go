@@ -28,7 +28,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2/klogr"
 
-	configv1alpha1 "github.com/projectsveltos/cluster-api-feature-manager/api/v1alpha1"
+	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/snapshotter"
 )

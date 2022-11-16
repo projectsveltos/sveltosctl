@@ -12,7 +12,7 @@
 
 It assumes:
 1. there is a management cluster with [ClusterAPI](https://github.com/kubernetes-sigs/cluster-api);
-2. [ClusterProfile](https://github.com/projectsveltos/cluster-api-feature-manager) is used to programmatically define which resources/helm charts need to be deployed in which CAPI Clusters;
+2. [ClusterProfile](https://github.com/projectsveltos/sveltos-manager) is used to programmatically define which resources/helm charts need to be deployed in which CAPI Clusters;
 3. management cluster can be accessed 
  
 > Note: sveltosctl can run as binary though it is advised to run it as pod in a management cluster to get access to all of its features.
@@ -29,9 +29,9 @@ If you decide to run it as a binary:
 If you decide to run it as a pod in the management cluster, YAML is in manifest subdirectory.
 
 ```
-kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/main/manifest/utils.projectsveltos.io_snapshots.yaml
+kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/v0.2.0/manifest/utils.projectsveltos.io_snapshots.yaml
 
-kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/main/manifest/sveltosctl.yaml
+kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/v0.2.0/manifest/sveltosctl.yaml
 ```
 
 Please keep in mind it requires a PersistentVolume. So modify this section accordingly before posting the YAML.
@@ -68,7 +68,8 @@ You might also want to change the timezone of sveltosctl pod by using specific t
 - Display the effect of a ClusterProfile in DryRun mode;
 - List all snapshots taken;
 - Display diff between two taken snapshots;
-- Rollback system to a previously taken snapshot configuration.
+- Rollback system to a previously taken snapshot configuration;
+- Change Sveltos PODs log level without restarting PODs.
 
 ## Display deployed resources and helm releases
 
@@ -121,6 +122,24 @@ Such information is useful to see what CAPI clusters would be affected by a chan
 +----------------+--------------------+----------------------------+-------------------------------------+
 ```
 
+## Log severity settings
+**log-level** used to display and change log severity in Sveltos PODs without restarting them.
+
+Following for instance change log severity for the Classifier POD to debug
+
+```
+./bin/sveltosctl log-level set --component=Classifier --debug
+```
+
+Show can be used to display current log severity settings
+
+```
+./bin/sveltosctl log-level show                              
++------------+---------------+
+| COMPONENT  |   VERBOSITY   |
++------------+---------------+
+| Classifier | LogLevelDebug |
+```
 
 ## Display outcome of ClusterProfile's in DryRun mode
 

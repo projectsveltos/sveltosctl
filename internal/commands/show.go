@@ -26,8 +26,8 @@ import (
 	docopt "github.com/docopt/docopt-go"
 	"github.com/go-logr/logr"
 
+	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	"github.com/projectsveltos/sveltosctl/internal/commands/show"
-	"github.com/projectsveltos/sveltosctl/internal/logs"
 )
 
 // Show takes keyword then calls subcommand.

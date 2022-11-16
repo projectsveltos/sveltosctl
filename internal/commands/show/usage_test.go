@@ -33,27 +33,28 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2/klogr"
 
-	configv1alpha1 "github.com/projectsveltos/cluster-api-feature-manager/api/v1alpha1"
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/commands/show"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
 var _ = Describe("Usage", func() {
 	It("showUsage displays per resource, associated list of CAPI clusters", func() {
-		configMap := configv1alpha1.PolicyRef{
+		configMap := libsveltosv1alpha1.PolicyRef{
 			Namespace: randomString(),
 			Name:      randomString(),
 			Kind:      string(configv1alpha1.ConfigMapReferencedResourceKind),
 		}
 
-		secret := configv1alpha1.PolicyRef{
+		secret := libsveltosv1alpha1.PolicyRef{
 			Namespace: randomString(),
 			Name:      randomString(),
 			Kind:      string(configv1alpha1.SecretReferencedResourceKind),
 		}
 
 		clusterProfile1 := generateClusterProfile()
-		clusterProfile1.Spec.PolicyRefs = []configv1alpha1.PolicyRef{
+		clusterProfile1.Spec.PolicyRefs = []libsveltosv1alpha1.PolicyRef{
 			configMap,
 		}
 		clusterProfile1.Status.MatchingClusterRefs = []corev1.ObjectReference{
@@ -61,7 +62,7 @@ var _ = Describe("Usage", func() {
 		}
 
 		clusterProfile2 := generateClusterProfile()
-		clusterProfile2.Spec.PolicyRefs = []configv1alpha1.PolicyRef{
+		clusterProfile2.Spec.PolicyRefs = []libsveltosv1alpha1.PolicyRef{
 			secret,
 		}
 		clusterProfile2.Status.MatchingClusterRefs = []corev1.ObjectReference{

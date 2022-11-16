@@ -11,7 +11,7 @@ endif
 REGISTRY ?= gianlucam76
 IMAGE_NAME ?= sveltosctl
 export SVELTOSCTL_IMG ?= $(REGISTRY)/$(IMAGE_NAME) 
-TAG ?= main 
+TAG ?= v0.2.0
 ARCH ?= amd64
 
 # Directories.

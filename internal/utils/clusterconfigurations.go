@@ -23,8 +23,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	configv1alpha1 "github.com/projectsveltos/cluster-api-feature-manager/api/v1alpha1"
-	"github.com/projectsveltos/sveltosctl/internal/logs"
+	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
+	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 )
 
 // ListClusterConfigurations returns all current ClusterConfigurations in a namespace (if specified)

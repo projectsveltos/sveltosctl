@@ -24,6 +24,8 @@ import (
 
 var AddToScheme = addToScheme
 
+const DefaultInstanceName = defaultInstanceName
+
 func GetK8sAccess(scheme *runtime.Scheme, c client.Client) *k8sAccess {
 	return &k8sAccess{
 		scheme:     scheme,

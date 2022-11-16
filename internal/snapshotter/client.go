@@ -19,6 +19,7 @@ package snapshotter
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sync"
@@ -28,8 +29,8 @@ import (
 	"k8s.io/kubectl/pkg/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
-	"github.com/projectsveltos/sveltosctl/internal/logs"
 )
 
 var (
@@ -167,17 +168,8 @@ func (d *deployer) GetCollectedSnapshotFolder(snapshotInstance *utilsv1alpha1.Sn
 func (d *deployer) GetNamespacedResources(snapshotFolder, kind string, logger logr.Logger,
 ) (map[string][]*unstructured.Unstructured, error) {
 
-	file, err := os.Open(snapshotFolder)
+	fileInfo, err := getFileInfo(snapshotFolder, logger)
 	if err != nil {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to open directory %s. Err: %v",
-			snapshotFolder, err))
-		return nil, err
-	}
-
-	fileInfo, err := file.Stat()
-	if err != nil {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to get FileInfo for %s. Err: %v",
-			snapshotFolder, err))
 		return nil, err
 	}
 
@@ -218,17 +210,25 @@ func (d *deployer) GetNamespacedResources(snapshotFolder, kind string, logger lo
 func (d *deployer) GetClusterResources(snapshotFolder, kind string, logger logr.Logger,
 ) ([]*unstructured.Unstructured, error) {
 
-	file, err := os.Open(snapshotFolder)
+	fileInfo, err := getFileInfo(snapshotFolder, logger)
 	if err != nil {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to open directory %s. Err: %v",
-			snapshotFolder, err))
 		return nil, err
 	}
 
-	fileInfo, err := file.Stat()
+	if !fileInfo.IsDir() {
+		msg := fmt.Sprintf("file %s is not a snapshot directory", snapshotFolder)
+		logger.V(logs.LogVerbose).Info(msg)
+		return nil, fmt.Errorf("%s", msg)
+	}
+
+	return d.getResourcesForKind(snapshotFolder, kind, logger)
+}
+
+func (d *deployer) GetClassifierResources(snapshotFolder, kind string, logger logr.Logger,
+) ([]*unstructured.Unstructured, error) {
+
+	fileInfo, err := getFileInfo(snapshotFolder, logger)
 	if err != nil {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to get FileInfo for %s. Err: %v",
-			snapshotFolder, err))
 		return nil, err
 	}
 
@@ -333,4 +333,22 @@ func (d *deployer) CleanupEntries(snapshotInstance *utilsv1alpha1.Snapshot) erro
 
 	artifactFolder := getArtifactFolderName(snapshotInstance)
 	return os.RemoveAll(artifactFolder)
+}
+
+func getFileInfo(snapshotFolder string, logger logr.Logger) (fs.FileInfo, error) {
+	file, err := os.Open(snapshotFolder)
+	if err != nil {
+		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to open directory %s. Err: %v",
+			snapshotFolder, err))
+		return nil, err
+	}
+
+	fileInfo, err := file.Stat()
+	if err != nil {
+		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to get FileInfo for %s. Err: %v",
+			snapshotFolder, err))
+		return nil, err
+	}
+
+	return fileInfo, nil
 }

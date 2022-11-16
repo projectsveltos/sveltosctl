@@ -21,16 +21,16 @@ import (
 
 	"github.com/go-logr/logr"
 
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 )
 
-// ListClusterReports returns all current ClusterProfiles
-func (a *k8sAccess) ListClusterProfiles(ctx context.Context,
-	logger logr.Logger) (*configv1alpha1.ClusterProfileList, error) {
+// ListClassifiers returns all current Classifiers
+func (a *k8sAccess) ListClassifiers(ctx context.Context,
+	logger logr.Logger) (*libsveltosv1alpha1.ClassifierList, error) {
 
-	logger.V(logs.LogVerbose).Info("Get all ClusterProfiles")
-	clusterProfiles := &configv1alpha1.ClusterProfileList{}
-	err := a.client.List(ctx, clusterProfiles)
-	return clusterProfiles, err
+	logger.V(logs.LogVerbose).Info("Get all Classifiers")
+	classifiers := &libsveltosv1alpha1.ClassifierList{}
+	err := a.client.List(ctx, classifiers)
+	return classifiers, err
 }
