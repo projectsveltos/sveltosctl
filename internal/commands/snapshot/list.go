@@ -27,7 +27,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/olekukonko/tablewriter"
 
-	"github.com/projectsveltos/sveltosctl/internal/logs"
+	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	"github.com/projectsveltos/sveltosctl/internal/snapshotter"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 

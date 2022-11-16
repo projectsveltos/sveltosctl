@@ -33,8 +33,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	"github.com/projectsveltos/sveltosctl/internal/commands"
-	"github.com/projectsveltos/sveltosctl/internal/logs"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -46,6 +46,7 @@ func main() {
                   or for ClusterProfiles in DryRun mode, what changes would take effect if the ClusterProfile
                   mode was to be moved out of DryRun mode.
     snapshot      Displays collected snaphost. Visualize diffs between two collected snapshots.
+    log-level     Allows changing the log verbosity.
     version       Display the version of sveltosctl.
 
 Options:
@@ -96,6 +97,8 @@ Description:
 			err = commands.Show(ctx, args, logger)
 		case "snapshot":
 			err = commands.Snapshot(ctx, args, logger)
+		case "log-level":
+			err = commands.LogLevel(ctx, args, logger)
 		case "version":
 			err = commands.Version(args, logger)
 		default:

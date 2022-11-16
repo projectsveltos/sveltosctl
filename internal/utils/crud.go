@@ -28,7 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/dynamic"
 
-	"github.com/projectsveltos/sveltosctl/internal/logs"
+	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

@@ -28,25 +28,36 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
-var _ = Describe("ClusterProfile", func() {
-	It("ListClusterProfiles returns list of all clusterProfiles", func() {
+var _ = Describe("Classifier", func() {
+	It("ListClassifiers returns list of all classifiers", func() {
 		initObjects := []client.Object{}
 
 		for i := 0; i < 10; i++ {
-			clusterProfile := &configv1alpha1.ClusterProfile{
+			classifier := &libsveltosv1alpha1.Classifier{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: randomString(),
 				},
-				Spec: configv1alpha1.ClusterProfileSpec{
-					ClusterSelector: configv1alpha1.Selector("zone:west"),
-					SyncMode:        configv1alpha1.SyncModeContinuous,
+				Spec: libsveltosv1alpha1.ClassifierSpec{
+					ClassifierLabels: []libsveltosv1alpha1.ClassifierLabel{
+						{Key: randomString(), Value: randomString()},
+					},
+					KubernetesVersionConstraints: []libsveltosv1alpha1.KubernetesVersionConstraint{
+						{Version: randomString(), Comparison: string(libsveltosv1alpha1.ComparisonEqual)},
+					},
+					DeployedResourceConstraints: []libsveltosv1alpha1.DeployedResourceConstraint{
+						{
+							Group:   randomString(),
+							Version: randomString(),
+							Kind:    randomString(),
+						},
+					},
 				},
 			}
-			initObjects = append(initObjects, clusterProfile)
+			initObjects = append(initObjects, classifier)
 		}
 
 		scheme := runtime.NewScheme()
@@ -54,8 +65,8 @@ var _ = Describe("ClusterProfile", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		k8sAccess := utils.GetK8sAccess(scheme, c)
-		clusterProfiles, err := k8sAccess.ListClusterProfiles(context.TODO(), klogr.New())
+		classifiers, err := k8sAccess.ListClassifiers(context.TODO(), klogr.New())
 		Expect(err).To(BeNil())
-		Expect(len(clusterProfiles.Items)).To(Equal(len(initObjects)))
+		Expect(len(classifiers.Items)).To(Equal(len(initObjects)))
 	})
 })

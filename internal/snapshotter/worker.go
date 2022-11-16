@@ -36,9 +36,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
-	configv1alpha1 "github.com/projectsveltos/cluster-api-feature-manager/api/v1alpha1"
+	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
+	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
-	"github.com/projectsveltos/sveltosctl/internal/logs"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -271,6 +271,28 @@ func collectSnapshot(ctx context.Context, c client.Client, snapshotName string, 
 	if err != nil {
 		return err
 	}
+	err = dumpClassifiers(ctx, folder, logger)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func dumpClassifiers(ctx context.Context, folder string, logger logr.Logger) error {
+	logger.V(logs.LogVerbose).Info("storing Classifiers")
+	classifiers, err := utils.GetAccessInstance().ListClassifiers(ctx, logger)
+	if err != nil {
+		return err
+	}
+	logger.V(logs.LogVerbose).Info(fmt.Sprintf("found %d Classifiers", len(classifiers.Items)))
+	for i := range classifiers.Items {
+		cl := &classifiers.Items[i]
+		err = DumpObject(cl, folder, logger)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

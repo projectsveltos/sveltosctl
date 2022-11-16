@@ -14,23 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package loglevel
 
-import (
-	"context"
-
-	"github.com/go-logr/logr"
-
-	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
+var (
+	ShowLogSettings              = showLogSettings
+	UpdateDebuggingConfiguration = updateDebuggingConfiguration
+	UnsetDebuggingConfiguration  = unsetDebuggingConfiguration
 )
-
-// ListClusterReports returns all current ClusterProfiles
-func (a *k8sAccess) ListClusterProfiles(ctx context.Context,
-	logger logr.Logger) (*configv1alpha1.ClusterProfileList, error) {
-
-	logger.V(logs.LogVerbose).Info("Get all ClusterProfiles")
-	clusterProfiles := &configv1alpha1.ClusterProfileList{}
-	err := a.client.List(ctx, clusterProfiles)
-	return clusterProfiles, err
-}

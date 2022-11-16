@@ -19,6 +19,7 @@ package snapshot
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -38,9 +39,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2/klogr"
 
-	configv1alpha1 "github.com/projectsveltos/cluster-api-feature-manager/api/v1alpha1"
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
+	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
-	"github.com/projectsveltos/sveltosctl/internal/logs"
 	"github.com/projectsveltos/sveltosctl/internal/snapshotter"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -59,6 +61,13 @@ var (
 			resourceName,
 			action,
 			message,
+		}
+	}
+
+	genClassifierDiffRow = func(classifierName, action string) []string {
+		return []string{
+			classifierName,
+			action,
 		}
 	}
 )
@@ -121,17 +130,111 @@ func listSnapshotDiffs(ctx context.Context, snapshotName, fromSample, toSample,
 		return err
 	}
 
+	err = listClusterResourcesDiff(fromFolder, toFolder, passedNamespace, passedCluster, rawDiff, logger)
+	if err != nil {
+		return err
+	}
+
+	err = listClassifiersDiff(fromFolder, toFolder, rawDiff, logger)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func listClassifiersDiff(fromFolder, toFolder string, rawDiff bool, logger logr.Logger) error {
+	snapshotClient := snapshotter.GetClient()
+	fromClassifiers, err := snapshotClient.GetClusterResources(fromFolder, libsveltosv1alpha1.ClassifierKind, logger)
+	if err != nil {
+		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to collect Classifiers from folder %s", fromFolder))
+		return err
+	}
+	logger.V(logs.LogVerbose).Info(fmt.Sprintf("found %d Classifiers in folder %s", len(fromClassifiers), fromFolder))
+
+	toClassifiers, err := snapshotClient.GetClusterResources(toFolder, libsveltosv1alpha1.ClassifierKind, logger)
+	if err != nil {
+		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to collect Classifiers from folder %s", toFolder))
+		return err
+	}
+	logger.V(logs.LogVerbose).Info(fmt.Sprintf("found %d Classifiers in folder %s", len(toClassifiers), toFolder))
+
+	fromClassifierMap := make(map[string]*unstructured.Unstructured, len(fromClassifiers))
+	for i := range fromClassifiers {
+		cl := fromClassifiers[i]
+		fromClassifierMap[cl.GetName()] = cl
+	}
+
+	toClassifierMap := make(map[string]*unstructured.Unstructured, len(toClassifiers))
+	for i := range toClassifiers {
+		cl := toClassifiers[i]
+		toClassifierMap[cl.GetName()] = cl
+	}
+
+	err = showClassifiersDiff(fromClassifierMap, toClassifierMap, rawDiff, logger)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func showClassifiersDiff(fromClassifierMap, toClassifierMap map[string]*unstructured.Unstructured, rawDiff bool,
+	logger logr.Logger) error {
+
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"CLASSIFIER", "ACTION"})
+
+	for clName := range toClassifierMap {
+		v, ok := fromClassifierMap[clName]
+		if !ok {
+			table.Append(genClassifierDiffRow(clName, "added"))
+			continue
+		}
+		hasDiff, err := hasClassifierDiff(v, toClassifierMap[clName], rawDiff, logger)
+		if err != nil {
+			return err
+		}
+		if hasDiff {
+			table.Append(genClassifierDiffRow(clName, "modified"))
+		}
+	}
+
+	for clName := range fromClassifierMap {
+		_, ok := toClassifierMap[clName]
+		if !ok {
+			table.Append(genClassifierDiffRow(clName, "removed"))
+		}
+	}
+
+	if !rawDiff {
+		if table.NumLines() > 0 {
+			table.Render()
+		}
+	}
+
+	return nil
+}
+
+func listClusterResourcesDiff(fromFolder, toFolder, passedNamespace, passedCluster string, rawDiff bool,
+	logger logr.Logger) error {
+
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"CLUSTER", "RESOURCE TYPE", "NAMESPACE", "NAME", "ACTION", "MESSAGE"})
 
-	err = listSnapshotDiffsBewteenSamples(fromFolder, toFolder, passedNamespace, passedCluster, rawDiff,
+	err := listSnapshotDiffsBewteenSamples(fromFolder, toFolder, passedNamespace, passedCluster, rawDiff,
 		table, logger)
 	if err != nil {
 		return err
 	}
 
 	if !rawDiff {
-		table.Render()
+		if table.NumLines() > 0 {
+			table.Render()
+		} else {
+			//nolint: forbidigo // indicating no diff
+			fmt.Println("no changes detected in clusters")
+		}
 	}
 
 	return nil
@@ -520,6 +623,53 @@ func hasDiff(fromFolder, toFolder string, from, to *configv1alpha1.Resource, raw
 	}
 
 	return diff != "", nil
+}
+
+// hasClassifierDiff returns true if any diff exist between two Classifiers
+func hasClassifierDiff(from, to *unstructured.Unstructured, rawDiff bool, logger logr.Logger) (bool, error) {
+	var fromClassifier libsveltosv1alpha1.Classifier
+	err := runtime.DefaultUnstructuredConverter.
+		FromUnstructured(from.UnstructuredContent(), &fromClassifier)
+	if err != nil {
+		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to convert unstructured to Classifier. Err: %v", err))
+		return false, err
+	}
+
+	var toClassifier libsveltosv1alpha1.Classifier
+	err = runtime.DefaultUnstructuredConverter.
+		FromUnstructured(to.UnstructuredContent(), &toClassifier)
+	if err != nil {
+		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to convert unstructured to Classifier. Err: %v", err))
+		return false, err
+	}
+	if !reflect.DeepEqual(fromClassifier.Spec, toClassifier.Spec) {
+		objectInfo := fmt.Sprintf("%s %s", fromClassifier.Kind, fromClassifier.Name)
+
+		fromJSON, err := json.MarshalIndent(fromClassifier.Spec, "", "  ")
+		if err != nil {
+			logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to convert Classifier to JSON. Err: %v", err))
+			return false, err
+		}
+
+		toJSON, err := json.MarshalIndent(toClassifier.Spec, "", "  ")
+		if err != nil {
+			logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to convert Classifier to JSON. Err: %v", err))
+			return false, err
+		}
+
+		edits := myers.ComputeEdits(span.URIFromPath(objectInfo), string(fromJSON), string(toJSON))
+		diff := fmt.Sprint(gotextdiff.ToUnified(fmt.Sprintf("Classifier %s", fromClassifier.Name),
+			fmt.Sprintf("Classifier %s", toClassifier.Name),
+			string(fromJSON), edits))
+
+		if rawDiff {
+			//nolint: forbidigo // print diff
+			fmt.Println(diff)
+		}
+
+		return true, nil
+	}
+	return false, nil
 }
 
 func getResourceFromResourceOwner(folder string, resource *configv1alpha1.Resource) (string, error) {

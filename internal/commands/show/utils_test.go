@@ -23,7 +23,7 @@ import (
 
 	"sigs.k8s.io/cluster-api/util"
 
-	configv1alpha1 "github.com/projectsveltos/cluster-api-feature-manager/api/v1alpha1"
+	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 )
 
 // addDeployedHelmCharts adds provided charts as deployed in clusterConfiguration status
