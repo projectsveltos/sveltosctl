@@ -6,7 +6,7 @@
 
 # sveltosctl
 
-<img src="https://raw.githubusercontent.com/projectsveltos/sveltos-manager/master/logos/logo.png" width="200">
+<img src="https://raw.githubusercontent.com/projectsveltos/sveltos-manager/main/logos/logo.png" width="200">
 
 **sveltosctl** is the command line client for Sveltos. **sveltosctl** nicely displays resources and helm charts info in CAPI Kubernetes Cluster deployed using [ClusterProfile](https://github.com/projectsveltos/sveltos-manager). It also provides the ability to generate configuration snapshots and rollback system to a previously taken configuration snapshot.
 
