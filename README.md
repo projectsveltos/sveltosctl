@@ -63,13 +63,20 @@ You might also want to change the timezone of sveltosctl pod by using specific t
     name: tz-config
 ```
 
-## Features List
-- Display all resources and helm releases deployed in each CAPI Cluster by ClusterProfile;
-- Display the effect of a ClusterProfile in DryRun mode;
-- List all snapshots taken;
-- Display diff between two taken snapshots;
-- Rollback system to a previously taken snapshot configuration;
-- Change Sveltos PODs log level without restarting PODs.
+- [sveltosctl](#sveltosctl)
+  - [Quick start](#quick-start)
+    - [Run sveltosctl as a binary](#run-sveltosctl-as-a-binary)
+    - [Run sveltosctl as a pod](#run-sveltosctl-as-a-pod)
+  - [Display deployed resources and helm releases](#display-deployed-resources-and-helm-releases)
+  - [Display usage](#display-usage)
+  - [Log severity settings](#log-severity-settings)
+  - [Display outcome of ClusterProfile in DryRun mode](#display-outcome-of-clusterprofile-in-dryrun-mode)
+  - [Snapshot](#snapshot)
+    - [list](#list)
+    - [diff](#diff)
+    - [rollback](#rollback)
+  - [Contributing](#contributing)
+  - [License](#license)
 
 ## Display deployed resources and helm releases
 
@@ -141,8 +148,9 @@ Show can be used to display current log severity settings
 | Classifier | LogLevelDebug |
 ```
 
-## Display outcome of ClusterProfile's in DryRun mode
+## Display outcome of ClusterProfile in DryRun mode
 
+See [video](https://youtu.be/gfWN_QJAL6k).
 A ClusterProfile can be set in DryRun mode. While in DryRun mode, nothing gets deployed/withdrawn to/from matching CAPI clusters. A report is instead generated listing what would happen if ClusterProfile sync mode would be changed from DryRun to Continuous.
 
 Here is an example of outcome
