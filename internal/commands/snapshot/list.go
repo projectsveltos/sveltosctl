@@ -71,7 +71,7 @@ func displaySnapshots(ctx context.Context, passedSnapshotName string,
 	table *tablewriter.Table, logger logr.Logger) error {
 
 	snapshotList := &utilsv1alpha1.SnapshotList{}
-	logger.V(logs.LogVerbose).Info("List all Snapshot instances")
+	logger.V(logs.LogDebug).Info("List all Snapshot instances")
 	instance := utils.GetAccessInstance()
 	err := instance.ListResources(ctx, snapshotList)
 	if err != nil {
@@ -92,7 +92,7 @@ func displaySnapshots(ctx context.Context, passedSnapshotName string,
 func displaySnapshot(snapshotInstance *utilsv1alpha1.Snapshot,
 	table *tablewriter.Table, logger logr.Logger) error {
 
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("Considering Snapshot instance %s", snapshotInstance.Name))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering Snapshot instance %s", snapshotInstance.Name))
 	snapshotClient := snapshotter.GetClient()
 	results, err := snapshotClient.ListSnapshots(snapshotInstance, logger)
 	if err != nil {
@@ -132,7 +132,7 @@ Description:
 	_ = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogInfo))
 	verbose := parsedArgs["--verbose"].(bool)
 	if verbose {
-		err = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogVerbose))
+		err = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogDebug))
 		if err != nil {
 			return err
 		}

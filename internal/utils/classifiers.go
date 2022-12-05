@@ -29,7 +29,7 @@ import (
 func (a *k8sAccess) ListClassifiers(ctx context.Context,
 	logger logr.Logger) (*libsveltosv1alpha1.ClassifierList, error) {
 
-	logger.V(logs.LogVerbose).Info("Get all Classifiers")
+	logger.V(logs.LogDebug).Info("Get all Classifiers")
 	classifiers := &libsveltosv1alpha1.ClassifierList{}
 	err := a.client.List(ctx, classifiers)
 	return classifiers, err
