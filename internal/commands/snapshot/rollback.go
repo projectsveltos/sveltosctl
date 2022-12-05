@@ -46,7 +46,7 @@ func rollbackConfiguration(ctx context.Context,
 	snapshotName, sample, passedNamespace, passedCluster, passedClusterProfile, passedClassifier string,
 	logger logr.Logger) error {
 
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("Getting Snapshot %s", snapshotName))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("Getting Snapshot %s", snapshotName))
 
 	// Get the directory containing the collected snapshots for Snapshot instance snapshotName
 	instance := utils.GetAccessInstance()
@@ -56,7 +56,7 @@ func rollbackConfiguration(ctx context.Context,
 		return err
 	}
 
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("Getting snapshot folder for %s", sample))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("Getting snapshot folder for %s", sample))
 	snapshotClient := snapshotter.GetClient()
 	artifactFolder, err := snapshotClient.GetCollectedSnapshotFolder(snapshotInstance, logger)
 	if err != nil {
@@ -67,7 +67,7 @@ func rollbackConfiguration(ctx context.Context,
 	// Get the two directories containing the collected snaphosts
 	_, err = os.Stat(folder)
 	if os.IsNotExist(err) {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("Folder %s does not exist for snapshot instance: %s",
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("Folder %s does not exist for snapshot instance: %s",
 			folder, snapshotName))
 		return err
 	}
@@ -110,13 +110,13 @@ func getAndRollbackConfigMaps(ctx context.Context, folder, passedNamespace strin
 	snapshotClient := snapshotter.GetClient()
 	cmMap, err := snapshotClient.GetNamespacedResources(folder, "ConfigMap", logger)
 	if err != nil {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to collect ConfigMaps from folder %s", folder))
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect ConfigMaps from folder %s", folder))
 		return err
 	}
 
 	for ns := range cmMap {
 		if passedNamespace == "" || ns == passedNamespace {
-			logger.V(logs.LogVerbose).Info(fmt.Sprintf("rollback ConfigMaps in namespace %s", ns))
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("rollback ConfigMaps in namespace %s", ns))
 			err = rollbackConfigMaps(ctx, cmMap[ns], logger)
 			if err != nil {
 				return err
@@ -131,13 +131,13 @@ func getAndRollbackSecrets(ctx context.Context, folder, passedNamespace string, 
 	snapshotClient := snapshotter.GetClient()
 	secretMap, err := snapshotClient.GetNamespacedResources(folder, "Secret", logger)
 	if err != nil {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to collect Secret from folder %s", folder))
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect Secret from folder %s", folder))
 		return err
 	}
 
 	for ns := range secretMap {
 		if passedNamespace == "" || ns == passedNamespace {
-			logger.V(logs.LogVerbose).Info(fmt.Sprintf("rollback ConfigMaps in namespace %s", ns))
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("rollback ConfigMaps in namespace %s", ns))
 			err = rollbackSecrets(ctx, secretMap[ns], logger)
 			if err != nil {
 				return err
@@ -152,13 +152,13 @@ func getAndRollbackClusters(ctx context.Context, folder, passedNamespace, passed
 	snapshotClient := snapshotter.GetClient()
 	clusterMap, err := snapshotClient.GetNamespacedResources(folder, "Cluster", logger)
 	if err != nil {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to collect Cluster from folder %s", folder))
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect Cluster from folder %s", folder))
 		return err
 	}
 
 	for ns := range clusterMap {
 		if passedNamespace == "" || ns == passedNamespace {
-			logger.V(logs.LogVerbose).Info(fmt.Sprintf("rollback Clusters in namespace %s", ns))
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("rollback Clusters in namespace %s", ns))
 			err = rollbackClusters(ctx, clusterMap[ns], passedCluster, logger)
 			if err != nil {
 				return err
@@ -173,14 +173,14 @@ func getAndRollbackClusterProfiles(ctx context.Context, folder, passedClusterPro
 	snapshotClient := snapshotter.GetClient()
 	clusterProfiles, err := snapshotClient.GetClusterResources(folder, configv1alpha1.ClusterProfileKind, logger)
 	if err != nil {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to collect ClusterProfile from folder %s", folder))
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect ClusterProfile from folder %s", folder))
 		return err
 	}
 
 	for i := range clusterProfiles {
 		cp := clusterProfiles[i]
 		if passedClusterProfile == "" || cp.GetName() == passedClusterProfile {
-			logger.V(logs.LogVerbose).Info(fmt.Sprintf("rollback ClusterProfile %s", cp.GetName()))
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("rollback ClusterProfile %s", cp.GetName()))
 			err = rollbackClusterProfile(ctx, cp, logger)
 			if err != nil {
 				return err
@@ -195,14 +195,14 @@ func getAndRollbackClassifiers(ctx context.Context, folder, passedClassifier str
 	snapshotClient := snapshotter.GetClient()
 	classifiers, err := snapshotClient.GetClassifierResources(folder, libsveltosv1alpha1.ClassifierKind, logger)
 	if err != nil {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to collect ClusterProfile from folder %s", folder))
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect ClusterProfile from folder %s", folder))
 		return err
 	}
 
 	for i := range classifiers {
 		cl := classifiers[i]
 		if passedClassifier == "" || cl.GetName() == passedClassifier {
-			logger.V(logs.LogVerbose).Info(fmt.Sprintf("rollback Classifier %s", cl.GetName()))
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("rollback Classifier %s", cl.GetName()))
 			err = rollbackClassifier(ctx, cl, logger)
 			if err != nil {
 				return err
@@ -236,7 +236,7 @@ func rollbackConfigMap(ctx context.Context, resource *unstructured.Unstructured,
 		currentConfigMap)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.V(logs.LogVerbose).Info(fmt.Sprintf("Creating ConfigMap %s/%s",
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("Creating ConfigMap %s/%s",
 				resource.GetNamespace(), resource.GetName()))
 			return instance.CreateResource(ctx, resource)
 		}
@@ -253,7 +253,7 @@ func rollbackConfigMap(ctx context.Context, resource *unstructured.Unstructured,
 	currentConfigMap.Data = passedConfigMap.Data
 	currentConfigMap.BinaryData = passedConfigMap.BinaryData
 
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("Updating ConfigMap %s/%s",
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("Updating ConfigMap %s/%s",
 		resource.GetNamespace(), resource.GetName()))
 	return instance.UpdateResource(ctx, currentConfigMap)
 }
@@ -281,7 +281,7 @@ func rollbackSecret(ctx context.Context, resource *unstructured.Unstructured, lo
 		currentSecret)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.V(logs.LogVerbose).Info(fmt.Sprintf("Creating Secret %s/%s",
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("Creating Secret %s/%s",
 				resource.GetNamespace(), resource.GetName()))
 			return instance.CreateResource(ctx, resource)
 		}
@@ -298,7 +298,7 @@ func rollbackSecret(ctx context.Context, resource *unstructured.Unstructured, lo
 	currentSecret.Data = passedSecret.Data
 	currentSecret.StringData = passedSecret.StringData
 
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("Updating Secret %s/%s",
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("Updating Secret %s/%s",
 		resource.GetNamespace(), resource.GetName()))
 	return instance.UpdateResource(ctx, currentSecret)
 }
@@ -308,7 +308,7 @@ func rollbackClusters(ctx context.Context, resources []*unstructured.Unstructure
 
 	for i := range resources {
 		if passedCluster == "" || resources[i].GetName() == passedCluster {
-			logger.V(logs.LogVerbose).Info(fmt.Sprintf("rollback Cluster %s", resources[i].GetName()))
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("rollback Cluster %s", resources[i].GetName()))
 			err := rollbackCluster(ctx, resources[i], logger)
 			if err != nil {
 				return err
@@ -330,7 +330,7 @@ func rollbackCluster(ctx context.Context, resource *unstructured.Unstructured, l
 		currentCluster)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.V(logs.LogVerbose).Info(fmt.Sprintf("Cluster %s does not exist anymore.",
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("Cluster %s does not exist anymore.",
 				resource.GetName()))
 			return nil
 		}
@@ -346,7 +346,7 @@ func rollbackCluster(ctx context.Context, resource *unstructured.Unstructured, l
 
 	currentCluster.Labels = passedCluster.Labels
 
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("Updating Cluster %s",
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("Updating Cluster %s",
 		resource.GetName()))
 	return instance.UpdateResource(ctx, currentCluster)
 }
@@ -362,7 +362,7 @@ func rollbackClusterProfile(ctx context.Context, resource *unstructured.Unstruct
 		types.NamespacedName{Name: resource.GetName()}, currentClusterProfile)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.V(logs.LogVerbose).Info(fmt.Sprintf("Creating ClusterProfile %s",
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("Creating ClusterProfile %s",
 				resource.GetName()))
 			return instance.CreateResource(ctx, resource)
 		}
@@ -378,7 +378,7 @@ func rollbackClusterProfile(ctx context.Context, resource *unstructured.Unstruct
 
 	currentClusterProfile.Spec = passedClusterProfile.Spec
 
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("Updating ClusterProfile %s",
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("Updating ClusterProfile %s",
 		resource.GetName()))
 	return instance.UpdateResource(ctx, currentClusterProfile)
 }
@@ -394,7 +394,7 @@ func rollbackClassifier(ctx context.Context, resource *unstructured.Unstructured
 		types.NamespacedName{Name: resource.GetName()}, currentClassifier)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.V(logs.LogVerbose).Info(fmt.Sprintf("Creating Classifier %s",
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("Creating Classifier %s",
 				resource.GetName()))
 			return instance.CreateResource(ctx, resource)
 		}
@@ -410,7 +410,7 @@ func rollbackClassifier(ctx context.Context, resource *unstructured.Unstructured
 
 	currentClassifier.Spec = passedClassifier.Spec
 
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("Updating Classifier %s",
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("Updating Classifier %s",
 		resource.GetName()))
 	return instance.UpdateResource(ctx, currentClassifier)
 }
@@ -449,7 +449,7 @@ Description:
 
 	parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
 	if err != nil {
-		logger.V(logs.LogVerbose).Error(err, "failed to parse args")
+		logger.V(logs.LogDebug).Error(err, "failed to parse args")
 		return fmt.Errorf(
 			"invalid option: 'sveltosctl %s'. Use flag '--help' to read about a specific subcommand. Error: %w",
 			strings.Join(args, " "),
@@ -460,7 +460,7 @@ Description:
 	_ = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogInfo))
 	verbose := parsedArgs["--verbose"].(bool)
 	if verbose {
-		err = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogVerbose))
+		err = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogDebug))
 		if err != nil {
 			return err
 		}

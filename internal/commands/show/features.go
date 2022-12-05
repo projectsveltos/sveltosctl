@@ -83,7 +83,7 @@ func displayFeaturesInNamespaces(ctx context.Context, passedNamespace, passedClu
 	for i := range namespaces.Items {
 		ns := &namespaces.Items[i]
 		if doConsiderNamespace(ns, passedNamespace) {
-			logger.V(logs.LogVerbose).Info(fmt.Sprintf("Considering namespace: %s", ns.Name))
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering namespace: %s", ns.Name))
 			err = displayFeaturesInNamespace(ctx, ns.Name, passedCluster, passedClusterProfile,
 				table, logger)
 			if err != nil {
@@ -101,7 +101,7 @@ func displayFeaturesInNamespace(ctx context.Context, namespace, passedCluster, p
 	instance := utils.GetAccessInstance()
 
 	logger = logger.WithValues("namespace", namespace)
-	logger.V(logs.LogVerbose).Info("Get all ClusterConfiguration")
+	logger.V(logs.LogDebug).Info("Get all ClusterConfiguration")
 	clusterConfigurations, err := instance.ListClusterConfigurations(ctx, namespace, logger)
 	if err != nil {
 		return err
@@ -110,7 +110,7 @@ func displayFeaturesInNamespace(ctx context.Context, namespace, passedCluster, p
 	for i := range clusterConfigurations.Items {
 		cc := &clusterConfigurations.Items[i]
 		if doConsiderClusterConfiguration(cc, passedCluster) {
-			logger.V(logs.LogVerbose).Info(fmt.Sprintf("Considering ClusterConfiguration: %s", cc.Name))
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering ClusterConfiguration: %s", cc.Name))
 			displayFeaturesForCluster(cc, passedClusterProfile, table, logger)
 		}
 	}
@@ -125,7 +125,7 @@ func displayFeaturesForCluster(clusterConfiguration *configv1alpha1.ClusterConfi
 	helmCharts := instance.GetHelmReleases(clusterConfiguration, logger)
 
 	logger = logger.WithValues("clusterConfiguration", clusterConfiguration.Name)
-	logger.V(logs.LogVerbose).Info("Get ClusterConfiguration")
+	logger.V(logs.LogDebug).Info("Get ClusterConfiguration")
 	clusterInfo := fmt.Sprintf("%s/%s", clusterConfiguration.Namespace, clusterConfiguration.Name)
 	for chart := range helmCharts {
 		if doConsiderClusterProfile(helmCharts[chart], passedClusterProfile) {
@@ -179,7 +179,7 @@ Description:
 	_ = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogInfo))
 	verbose := parsedArgs["--verbose"].(bool)
 	if verbose {
-		err = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogVerbose))
+		err = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogDebug))
 		if err != nil {
 			return err
 		}

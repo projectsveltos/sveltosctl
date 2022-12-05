@@ -63,7 +63,7 @@ func (a *k8sAccess) UpdateResourceWithDynamicResourceInterface(ctx context.Conte
 
 	l := logger.WithValues("resourceNamespace", object.GetNamespace(),
 		"resourceName", object.GetName(), "resourceGVK", object.GetObjectKind().GroupVersionKind())
-	l.V(logs.LogVerbose).Info("deploying policy")
+	l.V(logs.LogDebug).Info("deploying policy")
 
 	data, err := runtime.Encode(unstructured.UnstructuredJSONScheme, object)
 	if err != nil {

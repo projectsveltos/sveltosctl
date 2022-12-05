@@ -106,7 +106,7 @@ func addToScheme(scheme *runtime.Scheme) error {
 
 // ListNamespaces gets all namespaces.
 func (a *k8sAccess) ListNamespaces(ctx context.Context, logger logr.Logger) (*corev1.NamespaceList, error) {
-	logger.V(logs.LogVerbose).Info("Get all Namespaces")
+	logger.V(logs.LogDebug).Info("Get all Namespaces")
 	list := &corev1.NamespaceList{}
 	err := a.client.List(ctx, list, &client.ListOptions{})
 	return list, err
