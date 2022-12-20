@@ -42,12 +42,13 @@ func main() {
 	doc := `Usage:
 	sveltosctl [options] <command> [<args>...]
 
-    show          Display information on deployed policies (resources and helm releases) in each cluster
-                  or for ClusterProfiles in DryRun mode, what changes would take effect if the ClusterProfile
-                  mode was to be moved out of DryRun mode.
-    snapshot      Displays collected snaphost. Visualize diffs between two collected snapshots.
-    log-level     Allows changing the log verbosity.
-    version       Display the version of sveltosctl.
+    show           Display information on deployed policies (resources and helm releases) in each cluster
+                   or for ClusterProfiles in DryRun mode, what changes would take effect if the ClusterProfile
+                   mode was to be moved out of DryRun mode.
+    snapshot       Displays collected snaphost. Visualize diffs between two collected snapshots.
+    onboard        Onboard an existing non CAPI cluster by creating all necessary internal resources.
+    log-level      Allows changing the log verbosity.
+    version        Display the version of sveltosctl.
 
 Options:
 	-h --help          Show this screen.
@@ -97,6 +98,8 @@ Description:
 			err = commands.Show(ctx, args, logger)
 		case "snapshot":
 			err = commands.Snapshot(ctx, args, logger)
+		case "onboard":
+			err = commands.OnboardCluster(ctx, args, logger)
 		case "log-level":
 			err = commands.LogLevel(ctx, args, logger)
 		case "version":
