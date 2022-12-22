@@ -25,7 +25,18 @@ import (
 
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
+	"github.com/projectsveltos/sveltos-manager/controllers"
 )
+
+func (a *k8sAccess) GetClusterNameFromClusterConfiguration(clusterConfiguration *configv1alpha1.ClusterConfiguration) string {
+	clusterName := clusterConfiguration.Name
+	if clusterConfiguration.Labels != nil {
+		if v, ok := clusterConfiguration.Labels[controllers.ClusterLabelName]; ok {
+			clusterName = v
+		}
+	}
+	return clusterName
+}
 
 // ListClusterConfigurations returns all current ClusterConfigurations in a namespace (if specified)
 func (a *k8sAccess) ListClusterConfigurations(ctx context.Context, namespace string,

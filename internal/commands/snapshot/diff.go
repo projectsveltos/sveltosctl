@@ -436,11 +436,14 @@ func listClusterConfigurationDiff(fromFolder, toFolder string, fromClusterConfig
 func addChartEntry(fromClusterConfiguration, toClusterConfiguration *configv1alpha1.ClusterConfiguration,
 	charts []*configv1alpha1.Chart, action string, message map[configv1alpha1.Chart]string, table *tablewriter.Table) {
 
+	instance := utils.GetAccessInstance()
 	clusterInfo := func(fromClusterConfiguration, toClusterConfiguration *configv1alpha1.ClusterConfiguration) string {
 		if toClusterConfiguration != nil {
-			return fmt.Sprintf("%s/%s", toClusterConfiguration.Namespace, toClusterConfiguration.Name)
+			clusterName := instance.GetClusterNameFromClusterConfiguration(toClusterConfiguration)
+			return fmt.Sprintf("%s/%s", toClusterConfiguration.Namespace, clusterName)
 		}
-		return fmt.Sprintf("%s/%s", fromClusterConfiguration.Namespace, fromClusterConfiguration.Name)
+		clusterName := instance.GetClusterNameFromClusterConfiguration(fromClusterConfiguration)
+		return fmt.Sprintf("%s/%s", fromClusterConfiguration.Namespace, clusterName)
 	}
 
 	for i := range charts {

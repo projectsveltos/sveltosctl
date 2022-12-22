@@ -30,10 +30,10 @@ import (
 	"github.com/projectsveltos/sveltosctl/internal/commands/onboard"
 )
 
-// OnboardCluster takes care of importing a non CAPI cluster.
-func OnboardCluster(ctx context.Context, args []string, logger logr.Logger) error {
+// RegisterCluster takes care of importing a non CAPI cluster.
+func RegisterCluster(ctx context.Context, args []string, logger logr.Logger) error {
 	doc := `Usage:
-	sveltosctl onboard <command> [<args>...]
+	sveltosctl register <command> [<args>...]
 
 	cluster       Imports a non CAPI cluster.
 
@@ -41,7 +41,7 @@ Options:
 	-h --help      Show this screen.
 
 Description:
-	See 'sveltosctl onboard <command> --help' to read about a specific subcommand.
+	See 'sveltosctl register <command> --help' to read about a specific subcommand.
   `
 
 	parser := &docopt.Parser{
@@ -67,7 +67,7 @@ Description:
 
 	switch command {
 	case "cluster":
-		return onboard.OnboardCluster(ctx, arguments, logger)
+		return onboard.RegisterCluster(ctx, arguments, logger)
 	default:
 		//nolint: forbidigo // print doc
 		fmt.Println(doc)

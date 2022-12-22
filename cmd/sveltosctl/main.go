@@ -46,7 +46,7 @@ func main() {
                    or for ClusterProfiles in DryRun mode, what changes would take effect if the ClusterProfile
                    mode was to be moved out of DryRun mode.
     snapshot       Displays collected snaphost. Visualize diffs between two collected snapshots.
-    onboard        Onboard an existing non CAPI cluster by creating all necessary internal resources.
+    register       Onboard an existing non CAPI cluster by creating all necessary internal resources.
     log-level      Allows changing the log verbosity.
     version        Display the version of sveltosctl.
 
@@ -98,8 +98,8 @@ Description:
 			err = commands.Show(ctx, args, logger)
 		case "snapshot":
 			err = commands.Snapshot(ctx, args, logger)
-		case "onboard":
-			err = commands.OnboardCluster(ctx, args, logger)
+		case "register":
+			err = commands.RegisterCluster(ctx, args, logger)
 		case "log-level":
 			err = commands.LogLevel(ctx, args, logger)
 		case "version":
