@@ -106,10 +106,10 @@ func createSecret(ctx context.Context, clusterNamespace, secretName, kubeconfigP
 	return instance.CreateResource(ctx, secret)
 }
 
-// OnboardCluster takes care of creating all necessary internal resources to import a cluster
-func OnboardCluster(ctx context.Context, args []string, logger logr.Logger) error {
+// RegisterCluster takes care of creating all necessary internal resources to import a cluster
+func RegisterCluster(ctx context.Context, args []string, logger logr.Logger) error {
 	doc := `Usage:
-  sveltosctl onboard cluster [options] --namespace=<name> --cluster=<name> --kubeconfig=<file> [--verbose]
+  sveltosctl register cluster [options] --namespace=<name> --cluster=<name> --kubeconfig=<file> [--verbose]
 
      --namespace=<name>      Cluster namespace
      --cluster=<name>        Cluster name

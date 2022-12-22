@@ -126,7 +126,10 @@ func displayFeaturesForCluster(clusterConfiguration *configv1alpha1.ClusterConfi
 
 	logger = logger.WithValues("clusterConfiguration", clusterConfiguration.Name)
 	logger.V(logs.LogDebug).Info("Get ClusterConfiguration")
-	clusterInfo := fmt.Sprintf("%s/%s", clusterConfiguration.Namespace, clusterConfiguration.Name)
+
+	clusterName := instance.GetClusterNameFromClusterConfiguration(clusterConfiguration)
+
+	clusterInfo := fmt.Sprintf("%s/%s", clusterConfiguration.Namespace, clusterName)
 	for chart := range helmCharts {
 		if doConsiderClusterProfile(helmCharts[chart], passedClusterProfile) {
 			table.Append(genFeatureRow(clusterInfo, "helm chart", chart.Namespace, chart.ReleaseName, chart.ChartVersion,
