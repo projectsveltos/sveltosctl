@@ -35,6 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/commands/snapshot"
 	"github.com/projectsveltos/sveltosctl/internal/snapshotter"
@@ -273,8 +274,8 @@ var _ = Describe("Snapshot Rollback", func() {
 		updateClusterLabels(currentCluster)
 
 		// Rollback
-		Expect(snapshot.RollbackClusters(context.TODO(),
-			[]*unstructured.Unstructured{cluster}, "", klogr.New())).To(Succeed())
+		Expect(snapshot.RollbackClusters(context.TODO(), []*unstructured.Unstructured{cluster}, "",
+			libsveltosv1alpha1.ClusterTypeCapi, klogr.New())).To(Succeed())
 
 		Expect(instance.GetResource(context.TODO(),
 			types.NamespacedName{Namespace: namespace, Name: name}, currentCluster)).To(Succeed())

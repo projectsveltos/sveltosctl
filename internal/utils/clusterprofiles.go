@@ -29,7 +29,7 @@ import (
 func (a *k8sAccess) ListClusterProfiles(ctx context.Context,
 	logger logr.Logger) (*configv1alpha1.ClusterProfileList, error) {
 
-	logger.V(logs.LogVerbose).Info("Get all ClusterProfiles")
+	logger.V(logs.LogDebug).Info("Get all ClusterProfiles")
 	clusterProfiles := &configv1alpha1.ClusterProfileList{}
 	err := a.client.List(ctx, clusterProfiles)
 	return clusterProfiles, err

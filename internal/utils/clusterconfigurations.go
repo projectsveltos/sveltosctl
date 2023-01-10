@@ -25,7 +25,18 @@ import (
 
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
+	"github.com/projectsveltos/sveltos-manager/controllers"
 )
+
+func (a *k8sAccess) GetClusterNameFromClusterConfiguration(clusterConfiguration *configv1alpha1.ClusterConfiguration) string {
+	clusterName := clusterConfiguration.Name
+	if clusterConfiguration.Labels != nil {
+		if v, ok := clusterConfiguration.Labels[controllers.ClusterLabelName]; ok {
+			clusterName = v
+		}
+	}
+	return clusterName
+}
 
 // ListClusterConfigurations returns all current ClusterConfigurations in a namespace (if specified)
 func (a *k8sAccess) ListClusterConfigurations(ctx context.Context, namespace string,
@@ -35,7 +46,7 @@ func (a *k8sAccess) ListClusterConfigurations(ctx context.Context, namespace str
 		client.InNamespace(namespace),
 	}
 
-	logger.V(logs.LogVerbose).Info("Get all ClusterConfigurations")
+	logger.V(logs.LogDebug).Info("Get all ClusterConfigurations")
 	clusterConfigurations := &configv1alpha1.ClusterConfigurationList{}
 	err := a.client.List(ctx, clusterConfigurations, listOptions...)
 	return clusterConfigurations, err
@@ -46,7 +57,7 @@ func (a *k8sAccess) GetClusterConfiguration(ctx context.Context,
 	clusterNamespace, clusterName string, logger logr.Logger) (*configv1alpha1.ClusterConfiguration, error) {
 
 	logger = logger.WithValues("namespace", clusterNamespace, "cluster", clusterName)
-	logger.V(logs.LogVerbose).Info("Get ClusterConfiguration")
+	logger.V(logs.LogDebug).Info("Get ClusterConfiguration")
 	clusterConfiguration := &configv1alpha1.ClusterConfiguration{}
 	err := a.client.Get(ctx, types.NamespacedName{Namespace: clusterNamespace, Name: clusterName},
 		clusterConfiguration)
@@ -62,7 +73,7 @@ func (a *k8sAccess) GetHelmReleases(clusterConfiguration *configv1alpha1.Cluster
 
 	results := make(map[configv1alpha1.Chart][]string)
 
-	logger.V(logs.LogVerbose).Info("Get Helm Releases deployed in the cluster")
+	logger.V(logs.LogDebug).Info("Get Helm Releases deployed in the cluster")
 	for i := range clusterConfiguration.Status.ClusterProfileResources {
 		r := clusterConfiguration.Status.ClusterProfileResources[i]
 		a.addDeployedCharts(r.ClusterProfileName, r.Features, results)
@@ -80,7 +91,7 @@ func (a *k8sAccess) GetResources(clusterConfiguration *configv1alpha1.ClusterCon
 
 	results := make(map[configv1alpha1.Resource][]string)
 
-	logger.V(logs.LogVerbose).Info("Get resources deployed in the cluster")
+	logger.V(logs.LogDebug).Info("Get resources deployed in the cluster")
 	for i := range clusterConfiguration.Status.ClusterProfileResources {
 		r := clusterConfiguration.Status.ClusterProfileResources[i]
 		a.addDeployedResources(r.ClusterProfileName, r.Features, results)

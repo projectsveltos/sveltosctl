@@ -88,27 +88,27 @@ func (d *deployer) Collect(ctx context.Context, snapshotName string) error {
 	// Search if request is in dirty. Drop it if already there
 	for i := range d.dirty {
 		if d.dirty[i] == snapshotName {
-			d.log.V(logs.LogVerbose).Info("request is already present in dirty")
+			d.log.V(logs.LogDebug).Info("request is already present in dirty")
 			return nil
 		}
 	}
 
 	// Since we got a new request, if a result was saved, clear it.
-	d.log.V(logs.LogVerbose).Info("removing result from previous request if any")
+	d.log.V(logs.LogDebug).Info("removing result from previous request if any")
 	delete(d.results, snapshotName)
 
-	d.log.V(logs.LogVerbose).Info("request added to dirty")
+	d.log.V(logs.LogDebug).Info("request added to dirty")
 	d.dirty = append(d.dirty, snapshotName)
 
 	// Push to queue if not already in progress
 	for i := range d.inProgress {
 		if d.inProgress[i] == snapshotName {
-			d.log.V(logs.LogVerbose).Info("request is already in inProgress")
+			d.log.V(logs.LogDebug).Info("request is already in inProgress")
 			return nil
 		}
 	}
 
-	d.log.V(logs.LogVerbose).Info("request added to jobQueue")
+	d.log.V(logs.LogDebug).Info("request added to jobQueue")
 	req := requestParams{key: snapshotName}
 	d.jobQueue = append(d.jobQueue, req)
 
@@ -152,13 +152,13 @@ func (d *deployer) ListSnapshots(snapshotInstance *utilsv1alpha1.Snapshot,
 func (d *deployer) GetCollectedSnapshotFolder(snapshotInstance *utilsv1alpha1.Snapshot,
 	logger logr.Logger) (*string, error) {
 
-	logger.V(logs.LogVerbose).Info(
+	logger.V(logs.LogDebug).Info(
 		fmt.Sprintf("getting directory containing collected snapshots for instance: %s", snapshotInstance.Name))
 
 	artifactFolder := getArtifactFolderName(snapshotInstance)
 
 	if _, err := os.Stat(artifactFolder); os.IsNotExist(err) {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("directory %s not found", artifactFolder))
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("directory %s not found", artifactFolder))
 		return nil, err
 	}
 
@@ -175,13 +175,13 @@ func (d *deployer) GetNamespacedResources(snapshotFolder, kind string, logger lo
 
 	if !fileInfo.IsDir() {
 		msg := fmt.Sprintf("file %s is not a snapshot directory", snapshotFolder)
-		logger.V(logs.LogVerbose).Info(msg)
+		logger.V(logs.LogDebug).Info(msg)
 		return nil, fmt.Errorf("%s", msg)
 	}
 
 	files, err := os.ReadDir(snapshotFolder)
 	if err != nil {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to list subdirectories in %s. Err: %v",
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to list subdirectories in %s. Err: %v",
 			snapshotFolder, err))
 		return nil, err
 	}
@@ -197,7 +197,7 @@ func (d *deployer) GetNamespacedResources(snapshotFolder, kind string, logger lo
 				return nil, err
 			}
 			if len(r) > 0 {
-				logger.V(logs.LogVerbose).Info(fmt.Sprintf("found %d resources of kind %s in namespace %s (folder %s)",
+				logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d resources of kind %s in namespace %s (folder %s)",
 					len(r), kind, files[i].Name(), namespaceDirectory))
 				result[files[i].Name()] = r
 			}
@@ -217,7 +217,7 @@ func (d *deployer) GetClusterResources(snapshotFolder, kind string, logger logr.
 
 	if !fileInfo.IsDir() {
 		msg := fmt.Sprintf("file %s is not a snapshot directory", snapshotFolder)
-		logger.V(logs.LogVerbose).Info(msg)
+		logger.V(logs.LogDebug).Info(msg)
 		return nil, fmt.Errorf("%s", msg)
 	}
 
@@ -234,7 +234,7 @@ func (d *deployer) GetClassifierResources(snapshotFolder, kind string, logger lo
 
 	if !fileInfo.IsDir() {
 		msg := fmt.Sprintf("file %s is not a snapshot directory", snapshotFolder)
-		logger.V(logs.LogVerbose).Info(msg)
+		logger.V(logs.LogDebug).Info(msg)
 		return nil, fmt.Errorf("%s", msg)
 	}
 
@@ -247,17 +247,17 @@ func (d *deployer) getResourcesForKind(directory, kind string, logger logr.Logge
 	// within such directory there all resources of that type found at the time snapshot was taken
 
 	kindPath := filepath.Join(directory, kind)
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("find resource of kind %s in folder %s", kind, kindPath))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("find resource of kind %s in folder %s", kind, kindPath))
 
 	if _, err := os.Stat(kindPath); os.IsNotExist(err) {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("Subdirectory %s contains no resource of kind %s",
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("Subdirectory %s contains no resource of kind %s",
 			directory, kind))
 		return nil, nil
 	}
 
 	files, err := os.ReadDir(kindPath)
 	if err != nil {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to list subdirectories in %s. Err: %v",
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to list subdirectories in %s. Err: %v",
 			kindPath, err))
 		return nil, err
 	}
@@ -267,7 +267,7 @@ func (d *deployer) getResourcesForKind(directory, kind string, logger logr.Logge
 		if files[i].IsDir() {
 			continue
 		}
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("collecting %s resources in directory %s",
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("collecting %s resources in directory %s",
 			kind, kindPath))
 		content, err := os.ReadFile(filepath.Join(kindPath, files[i].Name()))
 		if err != nil {
@@ -303,7 +303,7 @@ func (d *deployer) IsInProgress(snapshotName string) bool {
 
 	for i := range d.inProgress {
 		if d.inProgress[i] == snapshotName {
-			d.log.V(logs.LogVerbose).Info("request is already in inProgress")
+			d.log.V(logs.LogDebug).Info("request is already in inProgress")
 			return true
 		}
 	}
@@ -338,14 +338,14 @@ func (d *deployer) CleanupEntries(snapshotInstance *utilsv1alpha1.Snapshot) erro
 func getFileInfo(snapshotFolder string, logger logr.Logger) (fs.FileInfo, error) {
 	file, err := os.Open(snapshotFolder)
 	if err != nil {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to open directory %s. Err: %v",
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to open directory %s. Err: %v",
 			snapshotFolder, err))
 		return nil, err
 	}
 
 	fileInfo, err := file.Stat()
 	if err != nil {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to get FileInfo for %s. Err: %v",
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to get FileInfo for %s. Err: %v",
 			snapshotFolder, err))
 		return nil, err
 	}

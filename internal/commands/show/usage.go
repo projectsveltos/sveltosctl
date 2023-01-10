@@ -101,7 +101,7 @@ func getMatchingClusters(clusterProfile *configv1alpha1.ClusterProfile) []string
 }
 
 func showUsageForClusterProfile(clusterProfile *configv1alpha1.ClusterProfile, table *tablewriter.Table, logger logr.Logger) {
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("Considering ClusterProfile %s", clusterProfile.Name))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering ClusterProfile %s", clusterProfile.Name))
 
 	clusters := getMatchingClusters(clusterProfile)
 
@@ -122,7 +122,7 @@ func showUsageForConfigMaps(ctx context.Context, passedNamespace, passedName str
 
 	for i := range cps.Items {
 		cp := &cps.Items[i]
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("Collect referenced ConfigMaps from ClusterProfile %s", cp.Name))
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("Collect referenced ConfigMaps from ClusterProfile %s", cp.Name))
 		getConfigMaps(passedNamespace, passedName, cp, result, logger)
 	}
 
@@ -148,7 +148,7 @@ func showUsageForSecrets(ctx context.Context, passedNamespace, passedName string
 
 	for i := range cps.Items {
 		cp := &cps.Items[i]
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("Collect referenced Secret from ClusterProfile %s", cp.Name))
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("Collect referenced Secret from ClusterProfile %s", cp.Name))
 		getSecrets(passedNamespace, passedName, cp, result, logger)
 	}
 
@@ -168,7 +168,7 @@ func getConfigMaps(passedNamespace, passedName string, clusterProfile *configv1a
 		pr := &clusterProfile.Spec.PolicyRefs[i]
 		if pr.Kind == string(configv1alpha1.ConfigMapReferencedResourceKind) {
 			if shouldAddPolicyRef(passedNamespace, passedName, pr) {
-				logger.V(logs.LogVerbose).Info(fmt.Sprintf("considering reference configMap %s/%s",
+				logger.V(logs.LogDebug).Info(fmt.Sprintf("considering reference configMap %s/%s",
 					pr.Namespace, pr.Name))
 				configMaps = append(configMaps, *pr)
 			}
@@ -194,7 +194,7 @@ func getSecrets(passedNamespace, passedName string, clusterProfile *configv1alph
 		pr := &clusterProfile.Spec.PolicyRefs[i]
 		if pr.Kind == string(configv1alpha1.SecretReferencedResourceKind) {
 			if shouldAddPolicyRef(passedNamespace, passedName, pr) {
-				logger.V(logs.LogVerbose).Info(fmt.Sprintf("considering reference secret %s/%s",
+				logger.V(logs.LogDebug).Info(fmt.Sprintf("considering reference secret %s/%s",
 					pr.Namespace, pr.Name))
 				secrets = append(secrets, *pr)
 			}
@@ -251,7 +251,7 @@ Description:
 `
 	parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
 	if err != nil {
-		logger.V(logs.LogVerbose).Error(err, "failed to parse args")
+		logger.V(logs.LogDebug).Error(err, "failed to parse args")
 		return fmt.Errorf(
 			"invalid option: 'sveltosctl %s'. Use flag '--help' to read about a specific subcommand. Error: %w",
 			strings.Join(args, " "),
@@ -265,7 +265,7 @@ Description:
 	_ = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogInfo))
 	verbose := parsedArgs["--verbose"].(bool)
 	if verbose {
-		err = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogVerbose))
+		err = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogDebug))
 		if err != nil {
 			return err
 		}

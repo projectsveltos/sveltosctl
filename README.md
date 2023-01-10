@@ -2,18 +2,19 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/projectsveltos/sveltosctl)](https://goreportcard.com/report/github.com/projectsveltos/sveltosctl)
 [![Slack](https://img.shields.io/badge/join%20slack-%23projectsveltos-brighteen)](https://join.slack.com/t/projectsveltos/shared_invite/zt-1hraownbr-W8NTs6LTimxLPB8Erj8Q6Q)
 [![License](https://img.shields.io/badge/license-Apache-blue.svg)](LICENSE)
-
+[![Twitter Follow](https://img.shields.io/twitter/follow/projectsveltos?style=social)](https://twitter.com/projectsveltos)
 
 # sveltosctl
 
-<img src="https://raw.githubusercontent.com/projectsveltos/sveltos-manager/main/logos/logo.png" width="200">
+<img src="https://raw.githubusercontent.com/projectsveltos/sveltos/main/docs/assets/logo.png" width="200">
 
-**sveltosctl** is the command line client for Sveltos. **sveltosctl** nicely displays resources and helm charts info in CAPI Kubernetes Cluster deployed using [ClusterProfile](https://github.com/projectsveltos/sveltos-manager). It also provides the ability to generate configuration snapshots and rollback system to a previously taken configuration snapshot.
+Please refere to sveltos [documentation](https://projectsveltos.github.io/sveltos/).
+
+**sveltosctl** is the command line client for Sveltos. **sveltosctl** nicely displays resources and helm charts info in custer deployed using [ClusterProfile](https://github.com/projectsveltos/sveltos-manager). It also provides the ability to generate configuration snapshots and rollback system to a previously taken configuration snapshot.
 
 It assumes:
-1. there is a management cluster with [ClusterAPI](https://github.com/kubernetes-sigs/cluster-api);
-2. [ClusterProfile](https://github.com/projectsveltos/sveltos-manager) is used to programmatically define which resources/helm charts need to be deployed in which CAPI Clusters;
-3. management cluster can be accessed 
+1. [ClusterProfile](https://github.com/projectsveltos/sveltos-manager) is used to programmatically define which resources/helm charts need to be deployed in which CAPI Clusters;
+2. management cluster can be accessed 
  
 > Note: sveltosctl can run as binary though it is advised to run it as pod in a management cluster to get access to all of its features.
 
@@ -29,9 +30,9 @@ If you decide to run it as a binary:
 If you decide to run it as a pod in the management cluster, YAML is in manifest subdirectory.
 
 ```
-kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/v0.2.1/manifest/utils.projectsveltos.io_snapshots.yaml
+kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/main/manifest/utils.projectsveltos.io_snapshots.yaml
 
-kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/v0.2.1/manifest/sveltosctl.yaml
+kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/main/manifest/sveltosctl.yaml
 ```
 
 Please keep in mind it requires a PersistentVolume. So modify this section accordingly before posting the YAML.
@@ -63,13 +64,20 @@ You might also want to change the timezone of sveltosctl pod by using specific t
     name: tz-config
 ```
 
-## Features List
-- Display all resources and helm releases deployed in each CAPI Cluster by ClusterProfile;
-- Display the effect of a ClusterProfile in DryRun mode;
-- List all snapshots taken;
-- Display diff between two taken snapshots;
-- Rollback system to a previously taken snapshot configuration;
-- Change Sveltos PODs log level without restarting PODs.
+- [sveltosctl](#sveltosctl)
+  - [Quick start](#quick-start)
+    - [Run sveltosctl as a binary](#run-sveltosctl-as-a-binary)
+    - [Run sveltosctl as a pod](#run-sveltosctl-as-a-pod)
+  - [Display deployed resources and helm releases](#display-deployed-resources-and-helm-releases)
+  - [Display usage](#display-usage)
+  - [Log severity settings](#log-severity-settings)
+  - [Display outcome of ClusterProfile in DryRun mode](#display-outcome-of-clusterprofile-in-dryrun-mode)
+  - [Snapshot](#snapshot)
+    - [list](#list)
+    - [diff](#diff)
+    - [rollback](#rollback)
+  - [Contributing ](#contributing-)
+  - [License](#license)
 
 ## Display deployed resources and helm releases
 
@@ -141,8 +149,9 @@ Show can be used to display current log severity settings
 | Classifier | LogLevelDebug |
 ```
 
-## Display outcome of ClusterProfile's in DryRun mode
+## Display outcome of ClusterProfile in DryRun mode
 
+See [video](https://youtu.be/gfWN_QJAL6k).
 A ClusterProfile can be set in DryRun mode. While in DryRun mode, nothing gets deployed/withdrawn to/from matching CAPI clusters. A report is instead generated listing what would happen if ClusterProfile sync mode would be changed from DryRun to Continuous.
 
 Here is an example of outcome
@@ -266,10 +275,12 @@ kubectl exec -it -n projectsveltos sveltosctl-0 -- ./sveltosctl snapshot rollbac
 
 To see Sveltos CLI for snapshot in action, have a look at this [video](https://youtu.be/sTo6RcWP1BQ)
   
-## Contributing
+## Contributing [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/projectsveltos/sveltos-manager/issues)
+:heart: Your contributions are always welcome!
 If you have questions, noticed any bug or want to get the latest project news, you can connect with us in the following ways:
 1. Open a bug/feature enhancement on github;
 2. Chat with us on the Slack in the [#projectsveltos](https://join.slack.com/t/projectsveltos/shared_invite/zt-1hraownbr-W8NTs6LTimxLPB8Erj8Q6Q) channel;
+3. Submit a pull request.
 
 ## License
 
