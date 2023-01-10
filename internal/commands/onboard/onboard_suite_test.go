@@ -14,23 +14,22 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package onboard_test
 
 import (
-	"context"
+	"testing"
 
-	"github.com/go-logr/logr"
-
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
-	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+	"sigs.k8s.io/cluster-api/util"
 )
 
-// ListClassifiers returns all current Classifiers
-func (a *k8sAccess) ListClassifiers(ctx context.Context,
-	logger logr.Logger) (*libsveltosv1alpha1.ClassifierList, error) {
+func TestShow(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Show Suite")
+}
 
-	logger.V(logs.LogDebug).Info("Get all Classifiers")
-	classifiers := &libsveltosv1alpha1.ClassifierList{}
-	err := a.client.List(ctx, classifiers)
-	return classifiers, err
+func randomString() string {
+	const length = 10
+	return util.RandomString(length)
 }

@@ -36,6 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
@@ -103,7 +104,7 @@ func processRequests(ctx context.Context, d *deployer, i int, logger logr.Logger
 	id := i
 	var params *requestParams
 
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("started worker %d", id))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("started worker %d", id))
 
 	for {
 		if params != nil {
@@ -122,14 +123,14 @@ func processRequests(ctx context.Context, d *deployer, i int, logger logr.Logger
 				params = &requestParams{key: d.jobQueue[0].key}
 				d.jobQueue = d.jobQueue[1:]
 				l := logger.WithValues("key", params.key)
-				l.V(logs.LogVerbose).Info("take from jobQueue")
+				l.V(logs.LogDebug).Info("take from jobQueue")
 				// Add to inProgress
-				l.V(logs.LogVerbose).Info("add to inProgress")
+				l.V(logs.LogDebug).Info("add to inProgress")
 				d.inProgress = append(d.inProgress, params.key)
 				// If present remove from dirty
 				for i := range d.dirty {
 					if d.dirty[i] == params.key {
-						l.V(logs.LogVerbose).Info("remove from dirty")
+						l.V(logs.LogDebug).Info("remove from dirty")
 						d.dirty = removeFromSlice(d.dirty, i)
 						break
 					}
@@ -137,7 +138,7 @@ func processRequests(ctx context.Context, d *deployer, i int, logger logr.Logger
 			}
 			d.mu.Unlock()
 		case <-ctx.Done():
-			logger.V(logs.LogVerbose).Info("context canceled")
+			logger.V(logs.LogDebug).Info("context canceled")
 			return
 		}
 	}
@@ -155,7 +156,7 @@ func storeResult(d *deployer, key string, err error, logger logr.Logger) {
 		if d.inProgress[i] != key {
 			continue
 		}
-		logger.V(logs.LogVerbose).Info("remove from inProgress")
+		logger.V(logs.LogDebug).Info("remove from inProgress")
 		d.inProgress = removeFromSlice(d.inProgress, i)
 		break
 	}
@@ -174,11 +175,11 @@ func storeResult(d *deployer, key string, err error, logger logr.Logger) {
 		if d.dirty[i] != key {
 			continue
 		}
-		l.V(logs.LogVerbose).Info("add to jobQueue")
+		l.V(logs.LogDebug).Info("add to jobQueue")
 		d.jobQueue = append(d.jobQueue, requestParams{key: d.dirty[i]})
-		l.V(logs.LogVerbose).Info("remove from dirty")
+		l.V(logs.LogDebug).Info("remove from dirty")
 		d.dirty = removeFromSlice(d.dirty, i)
-		l.V(logs.LogVerbose).Info("remove result")
+		l.V(logs.LogDebug).Info("remove result")
 		delete(d.results, key)
 		break
 	}
@@ -244,7 +245,7 @@ func collectSnapshot(ctx context.Context, c client.Client, snapshotName string, 
 	err := c.Get(ctx, types.NamespacedName{Name: snapshotName}, snapshotInstance)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.V(logs.LogVerbose).Info(fmt.Sprintf("Snapshot %s does not exist anymore. Nothing to do.", snapshotName))
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("Snapshot %s does not exist anymore. Nothing to do.", snapshotName))
 		}
 	}
 
@@ -258,7 +259,7 @@ func collectSnapshot(ctx context.Context, c client.Client, snapshotName string, 
 	artifactFolder := getArtifactFolderName(snapshotInstance)
 	folder := filepath.Join(artifactFolder, currentTime.Format(timeFormat))
 	// Collect all ClusterProfiles
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("snapshot will stored in path is %s", artifactFolder))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("snapshot will stored in path is %s", artifactFolder))
 	err = dumpClusterProfiles(ctx, folder, logger)
 	if err != nil {
 		return err
@@ -279,12 +280,12 @@ func collectSnapshot(ctx context.Context, c client.Client, snapshotName string, 
 }
 
 func dumpClassifiers(ctx context.Context, folder string, logger logr.Logger) error {
-	logger.V(logs.LogVerbose).Info("storing Classifiers")
+	logger.V(logs.LogDebug).Info("storing Classifiers")
 	classifiers, err := utils.GetAccessInstance().ListClassifiers(ctx, logger)
 	if err != nil {
 		return err
 	}
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("found %d Classifiers", len(classifiers.Items)))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d Classifiers", len(classifiers.Items)))
 	for i := range classifiers.Items {
 		cl := &classifiers.Items[i]
 		err = DumpObject(cl, folder, logger)
@@ -297,12 +298,12 @@ func dumpClassifiers(ctx context.Context, folder string, logger logr.Logger) err
 }
 
 func dumpClusterProfiles(ctx context.Context, folder string, logger logr.Logger) error {
-	logger.V(logs.LogVerbose).Info("storing ClusterProfiles")
+	logger.V(logs.LogDebug).Info("storing ClusterProfiles")
 	clusterProfiles, err := utils.GetAccessInstance().ListClusterProfiles(ctx, logger)
 	if err != nil {
 		return err
 	}
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("found %d ClusterProfiles", len(clusterProfiles.Items)))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d ClusterProfiles", len(clusterProfiles.Items)))
 	for i := range clusterProfiles.Items {
 		cc := &clusterProfiles.Items[i]
 		err = DumpObject(cc, folder, logger)
@@ -321,7 +322,7 @@ func dumpClusterProfiles(ctx context.Context, folder string, logger logr.Logger)
 func dumpReferencedObjects(ctx context.Context, clusterProfile *configv1alpha1.ClusterProfile,
 	folder string, logger logr.Logger) error {
 
-	logger.V(logs.LogVerbose).Info("storing ClusterProfiles's referenced resources")
+	logger.V(logs.LogDebug).Info("storing ClusterProfiles's referenced resources")
 	var object client.Object
 	for i := range clusterProfile.Spec.PolicyRefs {
 		ref := &clusterProfile.Spec.PolicyRefs[i]
@@ -335,7 +336,7 @@ func dumpReferencedObjects(ctx context.Context, clusterProfile *configv1alpha1.C
 				}
 				return err
 			}
-			logger.V(logs.LogVerbose).Info(fmt.Sprintf("Found referenced ConfigMap %s/%s", configMap.Namespace, configMap.Name))
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("Found referenced ConfigMap %s/%s", configMap.Namespace, configMap.Name))
 			object = configMap
 		} else {
 			// TODO: Allow certain Secret to be skipped
@@ -348,7 +349,7 @@ func dumpReferencedObjects(ctx context.Context, clusterProfile *configv1alpha1.C
 				}
 				return err
 			}
-			logger.V(logs.LogVerbose).Info(fmt.Sprintf("Found referenced Secret %s/%s", secret.Namespace, secret.Name))
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("Found referenced Secret %s/%s", secret.Namespace, secret.Name))
 			object = secret
 		}
 
@@ -361,12 +362,12 @@ func dumpReferencedObjects(ctx context.Context, clusterProfile *configv1alpha1.C
 }
 
 func dumpClusterConfigurations(ctx context.Context, folder string, logger logr.Logger) error {
-	logger.V(logs.LogVerbose).Info("storing ClusterConfigurations")
+	logger.V(logs.LogDebug).Info("storing ClusterConfigurations")
 	clusterConfigurations, err := utils.GetAccessInstance().ListClusterConfigurations(ctx, "", logger)
 	if err != nil {
 		return err
 	}
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("found %d ClusterConfigurations", len(clusterConfigurations.Items)))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d ClusterConfigurations", len(clusterConfigurations.Items)))
 	for i := range clusterConfigurations.Items {
 		cc := &clusterConfigurations.Items[i]
 		err = DumpObject(cc, folder, logger)
@@ -378,14 +379,14 @@ func dumpClusterConfigurations(ctx context.Context, folder string, logger logr.L
 	return nil
 }
 
-func dumpClusters(ctx context.Context, folder string, logger logr.Logger) error {
-	logger.V(logs.LogVerbose).Info("storing Clusters")
+func dumpCAPIClusters(ctx context.Context, folder string, logger logr.Logger) error {
+	logger.V(logs.LogDebug).Info("storing CAPI Clusters")
 	clusterList := &clusterv1.ClusterList{}
 	err := utils.GetAccessInstance().ListResources(ctx, clusterList)
 	if err != nil {
 		return err
 	}
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("found %d Clusters", len(clusterList.Items)))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d Clusters", len(clusterList.Items)))
 	for i := range clusterList.Items {
 		cc := &clusterList.Items[i]
 		err = DumpObject(cc, folder, logger)
@@ -397,9 +398,42 @@ func dumpClusters(ctx context.Context, folder string, logger logr.Logger) error 
 	return nil
 }
 
+func dumpSveltosClusters(ctx context.Context, folder string, logger logr.Logger) error {
+	logger.V(logs.LogDebug).Info("storing Sveltos Clusters")
+	clusterList := &libsveltosv1alpha1.SveltosClusterList{}
+	err := utils.GetAccessInstance().ListResources(ctx, clusterList)
+	if err != nil {
+		return err
+	}
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d Clusters", len(clusterList.Items)))
+	for i := range clusterList.Items {
+		cc := &clusterList.Items[i]
+		err = DumpObject(cc, folder, logger)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func dumpClusters(ctx context.Context, folder string, logger logr.Logger) error {
+	if err := dumpCAPIClusters(ctx, folder, logger); err != nil {
+		return err
+	}
+
+	if err := dumpSveltosClusters(ctx, folder, logger); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // DumpObject is a helper function to generically dump resource definition
 // given the resource reference and file path for dumping location.
 func DumpObject(resource client.Object, logPath string, logger logr.Logger) error {
+	// Do not store resource version
+	resource.SetResourceVersion("")
 	err := addTypeInformationToObject(resource)
 	if err != nil {
 		return err
@@ -431,7 +465,7 @@ func DumpObject(resource client.Object, logPath string, logger logr.Logger) erro
 	}
 	defer f.Close()
 
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("storing %s %s/%s in %s", kind, namespace, name, resourceFilePath))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("storing %s %s/%s in %s", kind, namespace, name, resourceFilePath))
 	return os.WriteFile(f.Name(), resourceYAML, permission0600)
 }
 
@@ -476,7 +510,7 @@ func listCollectionsForSnapshot(snapshotInstance *utilsv1alpha1.Snapshot, logger
 
 	artifactFolder := getArtifactFolderName(snapshotInstance)
 
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("getting content for directory: %s", artifactFolder))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("getting content for directory: %s", artifactFolder))
 
 	files, err := os.ReadDir(artifactFolder)
 	if err != nil {

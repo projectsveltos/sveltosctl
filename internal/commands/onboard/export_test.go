@@ -14,23 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package onboard
 
-import (
-	"context"
-
-	"github.com/go-logr/logr"
-
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
-	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
+var (
+	OnboardSveltosCluster = onboardSveltosCluster
 )
 
-// ListClassifiers returns all current Classifiers
-func (a *k8sAccess) ListClassifiers(ctx context.Context,
-	logger logr.Logger) (*libsveltosv1alpha1.ClassifierList, error) {
-
-	logger.V(logs.LogDebug).Info("Get all Classifiers")
-	classifiers := &libsveltosv1alpha1.ClassifierList{}
-	err := a.client.List(ctx, classifiers)
-	return classifiers, err
-}
+const (
+	SveltosKubeconfigSecretNamePostfix = sveltosKubeconfigSecretNamePostfix
+)

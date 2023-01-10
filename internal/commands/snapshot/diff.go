@@ -96,7 +96,7 @@ func listSnapshotDiffs(ctx context.Context, snapshotName, fromSample, toSample,
 	passedNamespace, passedCluster string, rawDiff bool,
 	logger logr.Logger) error {
 
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("finding diff between %s and %s", fromSample, toSample))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("finding diff between %s and %s", fromSample, toSample))
 
 	// Get the directory containing the collected snapshots for Snapshot instance snapshotName
 	instance := utils.GetAccessInstance()
@@ -116,7 +116,7 @@ func listSnapshotDiffs(ctx context.Context, snapshotName, fromSample, toSample,
 	// Get the two directories containing the collected snaphosts
 	_, err = os.Stat(fromFolder)
 	if os.IsNotExist(err) {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("Folder %s does not exist for snapshot instance: %s",
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("Folder %s does not exist for snapshot instance: %s",
 			fromSample, snapshotName))
 		return err
 	}
@@ -125,7 +125,7 @@ func listSnapshotDiffs(ctx context.Context, snapshotName, fromSample, toSample,
 	// Get the two directories containing the collected snaphosts
 	_, err = os.Stat(toFolder)
 	if os.IsNotExist(err) {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("Folder %s does not exist for snapshot instance: %s",
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("Folder %s does not exist for snapshot instance: %s",
 			toSample, snapshotName))
 		return err
 	}
@@ -147,17 +147,17 @@ func listClassifiersDiff(fromFolder, toFolder string, rawDiff bool, logger logr.
 	snapshotClient := snapshotter.GetClient()
 	fromClassifiers, err := snapshotClient.GetClusterResources(fromFolder, libsveltosv1alpha1.ClassifierKind, logger)
 	if err != nil {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to collect Classifiers from folder %s", fromFolder))
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect Classifiers from folder %s", fromFolder))
 		return err
 	}
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("found %d Classifiers in folder %s", len(fromClassifiers), fromFolder))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d Classifiers in folder %s", len(fromClassifiers), fromFolder))
 
 	toClassifiers, err := snapshotClient.GetClusterResources(toFolder, libsveltosv1alpha1.ClassifierKind, logger)
 	if err != nil {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to collect Classifiers from folder %s", toFolder))
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect Classifiers from folder %s", toFolder))
 		return err
 	}
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("found %d Classifiers in folder %s", len(toClassifiers), toFolder))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d Classifiers in folder %s", len(toClassifiers), toFolder))
 
 	fromClassifierMap := make(map[string]*unstructured.Unstructured, len(fromClassifiers))
 	for i := range fromClassifiers {
@@ -249,19 +249,19 @@ func listSnapshotDiffsBewteenSamples(fromFolder, toFolder, passedNamespace, pass
 	fromClusterConfigurationMap, err := snapshotClient.GetNamespacedResources(fromFolder,
 		configv1alpha1.ClusterConfigurationKind, logger)
 	if err != nil {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to collect ClusterConfigurations from folder %s", fromFolder))
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect ClusterConfigurations from folder %s", fromFolder))
 		return err
 	}
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("found %d namespaces with at least one ClusterConfiguration in folder %s",
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d namespaces with at least one ClusterConfiguration in folder %s",
 		len(fromClusterConfigurationMap), fromFolder))
 
 	toClusterConfigurationMap, err := snapshotClient.GetNamespacedResources(toFolder,
 		configv1alpha1.ClusterConfigurationKind, logger)
 	if err != nil {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to collect ClusterConfigurations from folder %s", toFolder))
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect ClusterConfigurations from folder %s", toFolder))
 		return err
 	}
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("found %d namespaces with at least one ClusterConfiguration in folder %s",
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d namespaces with at least one ClusterConfiguration in folder %s",
 		len(toClusterConfigurationMap), fromFolder))
 
 	err = listFeatureDiff(fromFolder, toFolder, fromClusterConfigurationMap, toClusterConfigurationMap,
@@ -279,7 +279,7 @@ func listFeatureDiff(fromFolder, toFolder string,
 
 	for k := range toClusterConfigurationMap {
 		if doConsiderNamespace(k, passedNamespace) {
-			logger.V(logs.LogVerbose).Info(fmt.Sprintf("finding feature diff for clusters in namespace %s", k))
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("finding feature diff for clusters in namespace %s", k))
 			err := listFeatureDiffInNamespace(fromFolder, toFolder, k, fromClusterConfigurationMap, toClusterConfigurationMap,
 				passedCluster, rawDiff, table, logger)
 			if err != nil {
@@ -309,21 +309,21 @@ func listFeatureDiffInNamespace(fromFolder, toFolder, namespace string,
 	fromClusterConfigurationMap, toClusterConfigurationMap map[string][]*unstructured.Unstructured,
 	passedCluster string, rawDiff bool, table *tablewriter.Table, logger logr.Logger) error {
 
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("get ClusterConfigurations in namespace %s in to folder", namespace))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("get ClusterConfigurations in namespace %s in to folder", namespace))
 	toClusterConfigurations, err := getClusterConfigurationsInNamespace(namespace, passedCluster, toClusterConfigurationMap, logger)
 	if err != nil {
 		return err
 	}
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("got %d ClusterConfigurations in namespace %s in to folder", len(toClusterConfigurations), namespace))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("got %d ClusterConfigurations in namespace %s in to folder", len(toClusterConfigurations), namespace))
 
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("get ClusterConfigurations in namespace %s in from folder", namespace))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("get ClusterConfigurations in namespace %s in from folder", namespace))
 	fromClusterConfigurations, err := getClusterConfigurationsInNamespace(namespace, passedCluster, fromClusterConfigurationMap, logger)
 	if err != nil {
 		return err
 	}
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("got %d ClusterConfigurations in namespace %s in from folder", len(fromClusterConfigurations), namespace))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("got %d ClusterConfigurations in namespace %s in from folder", len(fromClusterConfigurations), namespace))
 
-	logger.V(logs.LogVerbose).Info(fmt.Sprintf("finding diff for ClusterConfigurations in namespace %s", namespace))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("finding diff for ClusterConfigurations in namespace %s", namespace))
 	err = listDiffInClusterConfigurations(fromFolder, toFolder, fromClusterConfigurations, toClusterConfigurations, rawDiff, table, logger)
 	if err != nil {
 		return err
@@ -346,7 +346,7 @@ func getClusterConfigurationsInNamespace(namespace, passedCluster string, cluste
 		err := runtime.DefaultUnstructuredConverter.
 			FromUnstructured(resource.UnstructuredContent(), &clusterConfiguration)
 		if err != nil {
-			logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to convert unstructured to ClusterConfiguration. Err: %v", err))
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to convert unstructured to ClusterConfiguration. Err: %v", err))
 			return nil, err
 		}
 		if doConsiderCluster(clusterConfiguration.Name, passedCluster) {
@@ -436,11 +436,14 @@ func listClusterConfigurationDiff(fromFolder, toFolder string, fromClusterConfig
 func addChartEntry(fromClusterConfiguration, toClusterConfiguration *configv1alpha1.ClusterConfiguration,
 	charts []*configv1alpha1.Chart, action string, message map[configv1alpha1.Chart]string, table *tablewriter.Table) {
 
+	instance := utils.GetAccessInstance()
 	clusterInfo := func(fromClusterConfiguration, toClusterConfiguration *configv1alpha1.ClusterConfiguration) string {
 		if toClusterConfiguration != nil {
-			return fmt.Sprintf("%s/%s", toClusterConfiguration.Namespace, toClusterConfiguration.Name)
+			clusterName := instance.GetClusterNameFromClusterConfiguration(toClusterConfiguration)
+			return fmt.Sprintf("%s/%s", toClusterConfiguration.Namespace, clusterName)
 		}
-		return fmt.Sprintf("%s/%s", fromClusterConfiguration.Namespace, fromClusterConfiguration.Name)
+		clusterName := instance.GetClusterNameFromClusterConfiguration(fromClusterConfiguration)
+		return fmt.Sprintf("%s/%s", fromClusterConfiguration.Namespace, clusterName)
 	}
 
 	for i := range charts {
@@ -546,7 +549,7 @@ func resourceDifference(fromFolder, toFolder string, from, to []configv1alpha1.R
 	var modifiedResources []*configv1alpha1.Resource
 
 	for k := range toResourceMap {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("analyzing resource %s/%s %s/%s",
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("analyzing resource %s/%s %s/%s",
 			toResourceMap[k].Group, toResourceMap[k].Kind, toResourceMap[k].Namespace, toResourceMap[k].Name))
 		v, ok := fromResourceMap[k]
 		if !ok {
@@ -564,7 +567,7 @@ func resourceDifference(fromFolder, toFolder string, from, to []configv1alpha1.R
 	}
 
 	for k := range fromResourceMap {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("analyzing resource %s/%s %s/%s",
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("analyzing resource %s/%s %s/%s",
 			fromResourceMap[k].Group, fromResourceMap[k].Kind, fromResourceMap[k].Namespace, fromResourceMap[k].Name))
 		_, ok := toResourceMap[k]
 		if !ok {
@@ -631,7 +634,7 @@ func hasClassifierDiff(from, to *unstructured.Unstructured, rawDiff bool, logger
 	err := runtime.DefaultUnstructuredConverter.
 		FromUnstructured(from.UnstructuredContent(), &fromClassifier)
 	if err != nil {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to convert unstructured to Classifier. Err: %v", err))
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to convert unstructured to Classifier. Err: %v", err))
 		return false, err
 	}
 
@@ -639,7 +642,7 @@ func hasClassifierDiff(from, to *unstructured.Unstructured, rawDiff bool, logger
 	err = runtime.DefaultUnstructuredConverter.
 		FromUnstructured(to.UnstructuredContent(), &toClassifier)
 	if err != nil {
-		logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to convert unstructured to Classifier. Err: %v", err))
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to convert unstructured to Classifier. Err: %v", err))
 		return false, err
 	}
 	if !reflect.DeepEqual(fromClassifier.Spec, toClassifier.Spec) {
@@ -647,13 +650,13 @@ func hasClassifierDiff(from, to *unstructured.Unstructured, rawDiff bool, logger
 
 		fromJSON, err := json.MarshalIndent(fromClassifier.Spec, "", "  ")
 		if err != nil {
-			logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to convert Classifier to JSON. Err: %v", err))
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to convert Classifier to JSON. Err: %v", err))
 			return false, err
 		}
 
 		toJSON, err := json.MarshalIndent(toClassifier.Spec, "", "  ")
 		if err != nil {
-			logger.V(logs.LogVerbose).Info(fmt.Sprintf("failed to convert Classifier to JSON. Err: %v", err))
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to convert Classifier to JSON. Err: %v", err))
 			return false, err
 		}
 
@@ -785,7 +788,7 @@ Description:
 
 	parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
 	if err != nil {
-		logger.V(logs.LogVerbose).Error(err, "failed to parse args")
+		logger.V(logs.LogDebug).Error(err, "failed to parse args")
 		return fmt.Errorf(
 			"invalid option: 'sveltosctl %s'. Use flag '--help' to read about a specific subcommand. Error: %w",
 			strings.Join(args, " "),
@@ -796,7 +799,7 @@ Description:
 	_ = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogInfo))
 	verbose := parsedArgs["--verbose"].(bool)
 	if verbose {
-		err = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogVerbose))
+		err = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogDebug))
 		if err != nil {
 			return err
 		}

@@ -82,7 +82,7 @@ func displayDryRunInNamespaces(ctx context.Context, passedNamespace, passedClust
 	for i := range namespaces.Items {
 		ns := &namespaces.Items[i]
 		if doConsiderNamespace(ns, passedNamespace) {
-			logger.V(logs.LogVerbose).Info(fmt.Sprintf("Considering namespace: %s", ns.Name))
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering namespace: %s", ns.Name))
 			err = displayDryRunInNamespace(ctx, ns.Name, passedCluster, passedClusterProfile,
 				table, logger)
 			if err != nil {
@@ -100,7 +100,7 @@ func displayDryRunInNamespace(ctx context.Context, namespace, passedCluster, pas
 	instance := utils.GetAccessInstance()
 
 	logger = logger.WithValues("namespace", namespace)
-	logger.V(logs.LogVerbose).Info("Get all ClusterReports")
+	logger.V(logs.LogDebug).Info("Get all ClusterReports")
 	clusterReports, err := instance.ListClusterReports(ctx, namespace, logger)
 	if err != nil {
 		return err
@@ -114,7 +114,7 @@ func displayDryRunInNamespace(ctx context.Context, namespace, passedCluster, pas
 		if doConsiderClusterReport(cc, passedCluster) &&
 			doConsiderClusterProfile([]string{clusterProfileLabel}, passedClusterProfile) {
 
-			logger.V(logs.LogVerbose).Info(fmt.Sprintf("Considering ClusterReport: %s", cc.Name))
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering ClusterReport: %s", cc.Name))
 			displayDryRunForCluster(cc, table)
 		}
 	}
@@ -174,7 +174,7 @@ Description:
 	_ = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogInfo))
 	verbose := parsedArgs["--verbose"].(bool)
 	if verbose {
-		err = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogVerbose))
+		err = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogDebug))
 		if err != nil {
 			return err
 		}

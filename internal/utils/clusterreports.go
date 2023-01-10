@@ -35,7 +35,7 @@ func (a *k8sAccess) ListClusterReports(ctx context.Context, namespace string,
 		client.InNamespace(namespace),
 	}
 
-	logger.V(logs.LogVerbose).Info("Get all ClusterReports")
+	logger.V(logs.LogDebug).Info("Get all ClusterReports")
 	clusterReports := &configv1alpha1.ClusterReportList{}
 	err := a.client.List(ctx, clusterReports, listOptions...)
 	return clusterReports, err
