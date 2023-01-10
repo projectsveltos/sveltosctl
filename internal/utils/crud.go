@@ -35,17 +35,19 @@ import (
 
 const (
 	// retryableErrorTimeout is the time process sleep before a retryble error is hit
-	retryableErrorTimeout = 2 * time.Second
+	retryableErrorTimeout = time.Second
 )
 
 // ListResources retrieves list of objects for a given namespace and list options.
 // It is a simple wrapper around List, retrying in case of retryable error.
 func (a *k8sAccess) ListResources(ctx context.Context, list client.ObjectList, opts ...client.ListOption) error {
+	i := 0
 	for {
 		err := a.client.List(ctx, list, opts...)
 		if err != nil {
-			if shouldRetry(err) {
+			if shouldRetry(err, i) {
 				time.Sleep(retryableErrorTimeout)
+				i++
 			} else {
 				return err
 			}
@@ -82,11 +84,13 @@ func (a *k8sAccess) UpdateResourceWithDynamicResourceInterface(ctx context.Conte
 // CreateResource saves the object obj in the Kubernetes cluster.
 // It is a simple wrapper around Create, retrying in case of retryable error.
 func (a *k8sAccess) CreateResource(ctx context.Context, obj client.Object, opts ...client.CreateOption) error {
+	i := 0
 	for {
 		err := a.client.Create(ctx, obj, opts...)
 		if err != nil {
-			if shouldRetry(err) {
+			if shouldRetry(err, i) {
 				time.Sleep(retryableErrorTimeout)
+				i++
 			} else {
 				return err
 			}
@@ -102,11 +106,13 @@ func (a *k8sAccess) CreateResource(ctx context.Context, obj client.Object, opts 
 // obj must be a struct pointer so that obj can be updated with the response returned by the Server.
 // It is a simple wrapper around Get, retrying in case of retryable error.
 func (a *k8sAccess) GetResource(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+	i := 0
 	for {
 		err := a.client.Get(ctx, key, obj)
 		if err != nil {
-			if shouldRetry(err) {
+			if shouldRetry(err, i) {
 				time.Sleep(retryableErrorTimeout)
+				i++
 			} else {
 				return err
 			}
@@ -121,11 +127,13 @@ func (a *k8sAccess) GetResource(ctx context.Context, key client.ObjectKey, obj c
 // UpdateResource updates an obj.
 // It is a simple wrapper around Update, retrying in case of retryable error.
 func (a *k8sAccess) UpdateResource(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+	i := 0
 	for {
 		err := a.client.Update(ctx, obj, opts...)
 		if err != nil {
-			if shouldRetry(err) {
+			if shouldRetry(err, i) {
 				time.Sleep(retryableErrorTimeout)
+				i++
 			} else {
 				return err
 			}
@@ -140,11 +148,13 @@ func (a *k8sAccess) UpdateResource(ctx context.Context, obj client.Object, opts 
 // UpdateResourceStatus updates an obj Status
 // It is a simple wrapper around Status().Update, retrying in case of retryable error.
 func (a *k8sAccess) UpdateResourceStatus(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+	i := 0
 	for {
 		err := a.client.Status().Update(ctx, obj, opts...)
 		if err != nil {
-			if shouldRetry(err) {
+			if shouldRetry(err, i) {
 				time.Sleep(retryableErrorTimeout)
+				i++
 			} else {
 				return err
 			}
@@ -159,11 +169,13 @@ func (a *k8sAccess) UpdateResourceStatus(ctx context.Context, obj client.Object,
 // DeleteResource deletes deletes the given obj from Kubernetes cluster.
 // It is a simple wrapper around Delete, retrying in case of retryable error.
 func (a *k8sAccess) DeleteResource(ctx context.Context, obj client.Object, opts ...client.DeleteOption) error {
+	i := 0
 	for {
 		err := a.client.Delete(ctx, obj, opts...)
 		if err != nil {
-			if shouldRetry(err) {
+			if shouldRetry(err, i) {
 				time.Sleep(retryableErrorTimeout)
+				i++
 			} else {
 				return err
 			}
@@ -176,7 +188,11 @@ func (a *k8sAccess) DeleteResource(ctx context.Context, obj client.Object, opts 
 }
 
 // shouldRetry returns true when error is a retriable one
-func shouldRetry(err error) bool {
+func shouldRetry(err error, i int) bool {
+	const maxRetry = 10
+	if i >= maxRetry {
+		return false
+	}
 	if apierrors.IsInternalError(err) || apierrors.IsTimeout(err) || apierrors.IsTooManyRequests(err) {
 		return true
 	}
