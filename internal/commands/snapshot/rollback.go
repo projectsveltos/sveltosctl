@@ -78,30 +78,37 @@ func rollbackConfiguration(ctx context.Context,
 func rollbackConfigurationToSnapshot(ctx context.Context, folder, passedNamespace, passedCluster, passedClusterProfile, passedClassifier string,
 	logger logr.Logger) error {
 
+	logger.V(logs.LogDebug).Info("roll back configuration: configmaps")
 	err := getAndRollbackConfigMaps(ctx, folder, passedNamespace, logger)
 	if err != nil {
 		return err
 	}
 
+	logger.V(logs.LogDebug).Info("roll back configuration: secrets")
 	err = getAndRollbackSecrets(ctx, folder, passedNamespace, logger)
 	if err != nil {
 		return err
 	}
 
+	logger.V(logs.LogDebug).Info("roll back configuration: clusters")
 	err = getAndRollbackClusters(ctx, folder, passedNamespace, passedCluster, logger)
 	if err != nil {
 		return err
 	}
 
+	logger.V(logs.LogDebug).Info("roll back configuration: clusterprofiles")
 	err = getAndRollbackClusterProfiles(ctx, folder, passedClusterProfile, logger)
 	if err != nil {
 		return err
 	}
 
+	logger.V(logs.LogDebug).Info("roll back configuration: classifiers")
 	err = getAndRollbackClassifiers(ctx, folder, passedClusterProfile, logger)
 	if err != nil {
 		return err
 	}
+
+	logger.V(logs.LogDebug).Info("rolled back configuration")
 
 	return nil
 }
@@ -149,6 +156,18 @@ func getAndRollbackSecrets(ctx context.Context, folder, passedNamespace string, 
 }
 
 func getAndRollbackClusters(ctx context.Context, folder, passedNamespace, passedCluster string, logger logr.Logger) error {
+	if err := getAndRollbackCAPIClusters(ctx, folder, passedNamespace, passedCluster, logger); err != nil {
+		return err
+	}
+
+	if err := getAndRollbackSveltosClusters(ctx, folder, passedNamespace, passedCluster, logger); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func getAndRollbackCAPIClusters(ctx context.Context, folder, passedNamespace, passedCluster string, logger logr.Logger) error {
 	snapshotClient := snapshotter.GetClient()
 	clusterMap, err := snapshotClient.GetNamespacedResources(folder, "Cluster", logger)
 	if err != nil {
@@ -159,7 +178,28 @@ func getAndRollbackClusters(ctx context.Context, folder, passedNamespace, passed
 	for ns := range clusterMap {
 		if passedNamespace == "" || ns == passedNamespace {
 			logger.V(logs.LogDebug).Info(fmt.Sprintf("rollback Clusters in namespace %s", ns))
-			err = rollbackClusters(ctx, clusterMap[ns], passedCluster, logger)
+			err = rollbackClusters(ctx, clusterMap[ns], passedCluster, libsveltosv1alpha1.ClusterTypeCapi, logger)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func getAndRollbackSveltosClusters(ctx context.Context, folder, passedNamespace, passedCluster string, logger logr.Logger) error {
+	snapshotClient := snapshotter.GetClient()
+	clusterMap, err := snapshotClient.GetNamespacedResources(folder, libsveltosv1alpha1.SveltosClusterKind, logger)
+	if err != nil {
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect SveltosCluster from folder %s", folder))
+		return err
+	}
+
+	for ns := range clusterMap {
+		if passedNamespace == "" || ns == passedNamespace {
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("rollback Clusters in namespace %s", ns))
+			err = rollbackClusters(ctx, clusterMap[ns], passedCluster, libsveltosv1alpha1.ClusterTypeSveltos, logger)
 			if err != nil {
 				return err
 			}
@@ -304,12 +344,12 @@ func rollbackSecret(ctx context.Context, resource *unstructured.Unstructured, lo
 }
 
 func rollbackClusters(ctx context.Context, resources []*unstructured.Unstructured, passedCluster string,
-	logger logr.Logger) error {
+	clusterType libsveltosv1alpha1.ClusterType, logger logr.Logger) error {
 
 	for i := range resources {
 		if passedCluster == "" || resources[i].GetName() == passedCluster {
 			logger.V(logs.LogDebug).Info(fmt.Sprintf("rollback Cluster %s", resources[i].GetName()))
-			err := rollbackCluster(ctx, resources[i], logger)
+			err := rollbackCluster(ctx, resources[i], clusterType, logger)
 			if err != nil {
 				return err
 			}
@@ -321,7 +361,17 @@ func rollbackClusters(ctx context.Context, resources []*unstructured.Unstructure
 
 // rollbackCluster does not nothing if Cluster currently does not exist.
 // If Cluster currently exists, then it updates Cluster.Labels
-func rollbackCluster(ctx context.Context, resource *unstructured.Unstructured, logger logr.Logger) error {
+func rollbackCluster(ctx context.Context, resource *unstructured.Unstructured,
+	clusterType libsveltosv1alpha1.ClusterType, logger logr.Logger) error {
+
+	if clusterType == libsveltosv1alpha1.ClusterTypeCapi {
+		return rollbackCAPICluster(ctx, resource, logger)
+	}
+
+	return rollbackSveltosCluster(ctx, resource, logger)
+}
+
+func rollbackCAPICluster(ctx context.Context, resource *unstructured.Unstructured, logger logr.Logger) error {
 	instance := utils.GetAccessInstance()
 
 	currentCluster := &clusterv1.Cluster{}
@@ -338,6 +388,36 @@ func rollbackCluster(ctx context.Context, resource *unstructured.Unstructured, l
 	}
 
 	passedCluster := &clusterv1.Cluster{}
+	err = runtime.DefaultUnstructuredConverter.
+		FromUnstructured(resource.UnstructuredContent(), passedCluster)
+	if err != nil {
+		return err
+	}
+
+	currentCluster.Labels = passedCluster.Labels
+
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("Updating Cluster %s",
+		resource.GetName()))
+	return instance.UpdateResource(ctx, currentCluster)
+}
+
+func rollbackSveltosCluster(ctx context.Context, resource *unstructured.Unstructured, logger logr.Logger) error {
+	instance := utils.GetAccessInstance()
+
+	currentCluster := &libsveltosv1alpha1.SveltosCluster{}
+	err := instance.GetResource(ctx,
+		types.NamespacedName{Namespace: resource.GetNamespace(), Name: resource.GetName()},
+		currentCluster)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("Cluster %s does not exist anymore.",
+				resource.GetName()))
+			return nil
+		}
+		return err
+	}
+
+	passedCluster := &libsveltosv1alpha1.SveltosCluster{}
 	err = runtime.DefaultUnstructuredConverter.
 		FromUnstructured(resource.UnstructuredContent(), passedCluster)
 	if err != nil {

@@ -36,6 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
@@ -378,8 +379,8 @@ func dumpClusterConfigurations(ctx context.Context, folder string, logger logr.L
 	return nil
 }
 
-func dumpClusters(ctx context.Context, folder string, logger logr.Logger) error {
-	logger.V(logs.LogDebug).Info("storing Clusters")
+func dumpCAPIClusters(ctx context.Context, folder string, logger logr.Logger) error {
+	logger.V(logs.LogDebug).Info("storing CAPI Clusters")
 	clusterList := &clusterv1.ClusterList{}
 	err := utils.GetAccessInstance().ListResources(ctx, clusterList)
 	if err != nil {
@@ -397,9 +398,42 @@ func dumpClusters(ctx context.Context, folder string, logger logr.Logger) error 
 	return nil
 }
 
+func dumpSveltosClusters(ctx context.Context, folder string, logger logr.Logger) error {
+	logger.V(logs.LogDebug).Info("storing Sveltos Clusters")
+	clusterList := &libsveltosv1alpha1.SveltosClusterList{}
+	err := utils.GetAccessInstance().ListResources(ctx, clusterList)
+	if err != nil {
+		return err
+	}
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d Clusters", len(clusterList.Items)))
+	for i := range clusterList.Items {
+		cc := &clusterList.Items[i]
+		err = DumpObject(cc, folder, logger)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func dumpClusters(ctx context.Context, folder string, logger logr.Logger) error {
+	if err := dumpCAPIClusters(ctx, folder, logger); err != nil {
+		return err
+	}
+
+	if err := dumpSveltosClusters(ctx, folder, logger); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // DumpObject is a helper function to generically dump resource definition
 // given the resource reference and file path for dumping location.
 func DumpObject(resource client.Object, logPath string, logger logr.Logger) error {
+	// Do not store resource version
+	resource.SetResourceVersion("")
 	err := addTypeInformationToObject(resource)
 	if err != nil {
 		return err

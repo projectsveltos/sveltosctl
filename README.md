@@ -6,14 +6,15 @@
 
 # sveltosctl
 
-<img src="https://raw.githubusercontent.com/projectsveltos/sveltos-manager/main/logos/logo.png" width="200">
+<img src="https://raw.githubusercontent.com/projectsveltos/sveltos/main/docs/assets/logo.png" width="200">
 
-**sveltosctl** is the command line client for Sveltos. **sveltosctl** nicely displays resources and helm charts info in CAPI Kubernetes Cluster deployed using [ClusterProfile](https://github.com/projectsveltos/sveltos-manager). It also provides the ability to generate configuration snapshots and rollback system to a previously taken configuration snapshot.
+Please refere to sveltos [documentation](https://projectsveltos.github.io/sveltos/).
+
+**sveltosctl** is the command line client for Sveltos. **sveltosctl** nicely displays resources and helm charts info in custer deployed using [ClusterProfile](https://github.com/projectsveltos/sveltos-manager). It also provides the ability to generate configuration snapshots and rollback system to a previously taken configuration snapshot.
 
 It assumes:
-1. there is a management cluster with [ClusterAPI](https://github.com/kubernetes-sigs/cluster-api);
-2. [ClusterProfile](https://github.com/projectsveltos/sveltos-manager) is used to programmatically define which resources/helm charts need to be deployed in which CAPI Clusters;
-3. management cluster can be accessed 
+1. [ClusterProfile](https://github.com/projectsveltos/sveltos-manager) is used to programmatically define which resources/helm charts need to be deployed in which CAPI Clusters;
+2. management cluster can be accessed 
  
 > Note: sveltosctl can run as binary though it is advised to run it as pod in a management cluster to get access to all of its features.
 
@@ -29,9 +30,9 @@ If you decide to run it as a binary:
 If you decide to run it as a pod in the management cluster, YAML is in manifest subdirectory.
 
 ```
-kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/dev/manifest/utils.projectsveltos.io_snapshots.yaml
+kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/v0.3.0/manifest/utils.projectsveltos.io_snapshots.yaml
 
-kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/dev/manifest/sveltosctl.yaml
+kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/v0.3.0/manifest/sveltosctl.yaml
 ```
 
 Please keep in mind it requires a PersistentVolume. So modify this section accordingly before posting the YAML.
@@ -75,7 +76,7 @@ You might also want to change the timezone of sveltosctl pod by using specific t
     - [list](#list)
     - [diff](#diff)
     - [rollback](#rollback)
-  - [Contributing](#contributing)
+  - [Contributing ](#contributing-)
   - [License](#license)
 
 ## Display deployed resources and helm releases
@@ -274,10 +275,12 @@ kubectl exec -it -n projectsveltos sveltosctl-0 -- ./sveltosctl snapshot rollbac
 
 To see Sveltos CLI for snapshot in action, have a look at this [video](https://youtu.be/sTo6RcWP1BQ)
   
-## Contributing
+## Contributing [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/projectsveltos/sveltos-manager/issues)
+:heart: Your contributions are always welcome!
 If you have questions, noticed any bug or want to get the latest project news, you can connect with us in the following ways:
 1. Open a bug/feature enhancement on github;
 2. Chat with us on the Slack in the [#projectsveltos](https://join.slack.com/t/projectsveltos/shared_invite/zt-1hraownbr-W8NTs6LTimxLPB8Erj8Q6Q) channel;
+3. Submit a pull request.
 
 ## License
 
