@@ -46,7 +46,7 @@ spec:
       serviceAccountName: sveltosctl
       containers:
       - name: sveltosctl
-        image: gianlucam76/sveltosctl-amd64:main
+        image: gianlucam76/sveltosctl-amd64:dev
         imagePullPolicy: IfNotPresent
         command:
           - /sveltosctl
@@ -146,6 +146,14 @@ rules:
       - list
       - watch
       - update
+  - apiGroups: ["lib.projectsveltos.io"]
+    resources:
+      - rolerequests
+      - rolerequests/status
+    verbs:
+      - get
+      - list
+      - watch      
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

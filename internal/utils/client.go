@@ -22,6 +22,7 @@ import (
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -99,6 +100,9 @@ func addToScheme(scheme *runtime.Scheme) error {
 		return err
 	}
 	if err := libsveltosv1alpha1.AddToScheme(scheme); err != nil {
+		return err
+	}
+	if err := rbacv1.AddToScheme(scheme); err != nil {
 		return err
 	}
 	return nil

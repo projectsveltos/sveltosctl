@@ -1,5 +1,5 @@
 /*
-Copyright 2022. projectsveltos.io. All rights reserved.
+Copyright 2023. projectsveltos.io. All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -29,25 +29,24 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
-	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
-var _ = Describe("ClusterProfile", func() {
-	It("ListClusterProfiles returns list of all clusterProfiles", func() {
+var _ = Describe("RoleRequest", func() {
+	It("ListRoleRequests returns list of all RoleRequests", func() {
 		initObjects := []client.Object{}
 
 		for i := 0; i < 10; i++ {
-			clusterProfile := &configv1alpha1.ClusterProfile{
+			rr := &libsveltosv1alpha1.RoleRequest{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: randomString(),
 				},
-				Spec: configv1alpha1.ClusterProfileSpec{
-					ClusterSelector: libsveltosv1alpha1.Selector("zone:west"),
-					SyncMode:        configv1alpha1.SyncModeContinuous,
+				Spec: libsveltosv1alpha1.RoleRequestSpec{
+					Admin:           randomString(),
+					ClusterSelector: libsveltosv1alpha1.Selector("zone:east"),
 				},
 			}
-			initObjects = append(initObjects, clusterProfile)
+			initObjects = append(initObjects, rr)
 		}
 
 		scheme := runtime.NewScheme()
@@ -55,8 +54,8 @@ var _ = Describe("ClusterProfile", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		k8sAccess := utils.GetK8sAccess(scheme, c)
-		clusterProfiles, err := k8sAccess.ListClusterProfiles(context.TODO(), klogr.New())
+		roleRequests, err := k8sAccess.ListRoleRequests(context.TODO(), klogr.New())
 		Expect(err).To(BeNil())
-		Expect(len(clusterProfiles.Items)).To(Equal(len(initObjects)))
+		Expect(len(roleRequests.Items)).To(Equal(len(initObjects)))
 	})
 })
