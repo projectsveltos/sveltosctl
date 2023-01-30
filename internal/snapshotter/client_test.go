@@ -362,12 +362,9 @@ var _ = Describe("Client", func() {
 })
 
 func createDirectoryWithClusterConfigurations(snapshotName, snapshotStorage string) string {
-	snapshotDir, err := os.MkdirTemp("", randomString())
-	timeFolder := time.Now().Format(snapshotter.TimeFormat)
-	snapshotDir = filepath.Join(snapshotDir, snapshotStorage, snapshotName, timeFolder)
+	snapshotDir := createDirectory(snapshotName, snapshotStorage)
 
 	By(fmt.Sprintf("Created temporary directory %s", snapshotDir))
-	Expect(err).To(BeNil())
 
 	for i := 0; i < 10; i++ {
 		cc := generateClusterConfiguration()
@@ -381,12 +378,9 @@ func createDirectoryWithClusterConfigurations(snapshotName, snapshotStorage stri
 }
 
 func createDirectoryWithClusterProfiles(snapshotName, snapshotStorage string) string {
-	snapshotDir, err := os.MkdirTemp("", randomString())
-	timeFolder := time.Now().Format(snapshotter.TimeFormat)
-	snapshotDir = filepath.Join(snapshotDir, snapshotStorage, snapshotName, timeFolder)
+	snapshotDir := createDirectory(snapshotName, snapshotStorage)
 
 	By(fmt.Sprintf("Created temporary directory %s", snapshotDir))
-	Expect(err).To(BeNil())
 
 	for i := 0; i < 10; i++ {
 		cp := generateClusterProfile()
@@ -396,5 +390,13 @@ func createDirectoryWithClusterProfiles(snapshotName, snapshotStorage string) st
 		Expect(snapshotter.DumpObject(cp, snapshotDir, klogr.New())).To(Succeed())
 	}
 
+	return snapshotDir
+}
+
+func createDirectory(snapshotName, snapshotStorage string) string {
+	snapshotDir, err := os.MkdirTemp("", randomString())
+	Expect(err).To(BeNil())
+	timeFolder := time.Now().Format(snapshotter.TimeFormat)
+	snapshotDir = filepath.Join(snapshotDir, snapshotStorage, snapshotName, timeFolder)
 	return snapshotDir
 }

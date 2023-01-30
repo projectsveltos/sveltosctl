@@ -26,6 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/cluster-api/util"
 
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
 )
@@ -109,7 +110,7 @@ func generateClusterProfile() *configv1alpha1.ClusterProfile {
 			Name: randomString(),
 		},
 		Spec: configv1alpha1.ClusterProfileSpec{
-			ClusterSelector: configv1alpha1.Selector("zone:west"),
+			ClusterSelector: libsveltosv1alpha1.Selector("zone:west"),
 			SyncMode:        configv1alpha1.SyncModeContinuous,
 		},
 	}

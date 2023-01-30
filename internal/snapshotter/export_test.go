@@ -17,11 +17,14 @@ limitations under the License.
 package snapshotter
 
 var (
-	RemoveFromSlice  = removeFromSlice
-	StoreResult      = storeResult
-	GetRequestStatus = getRequestStatus
-	ProcessRequests  = processRequests
-	CollectSnapshot  = collectSnapshot
+	RemoveFromSlice       = removeFromSlice
+	StoreResult           = storeResult
+	GetRequestStatus      = getRequestStatus
+	ProcessRequests       = processRequests
+	CollectSnapshot       = collectSnapshot
+	DumpClassifiers       = dumpClassifiers
+	DumpRoleRequests      = dumpRoleRequests
+	GetArtifactFolderName = getArtifactFolderName
 
 	GetResourcesForKind        = (*deployer).getResourcesForKind
 	AddTypeInformationToObject = addTypeInformationToObject

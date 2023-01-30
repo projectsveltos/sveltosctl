@@ -39,6 +39,7 @@ func Show(ctx context.Context, args []string, logger logr.Logger) error {
     usage         Displays information on which CAPI clusters will be affected by a policy (ClusterProfile or referenced ConfigMaps/Secrets) change.
     dryrun        Displays information on ClusterProfiles in DryRun mode. It displays what changes would
                   take effect if a ClusterProfile were to be moved out of DryRun mode.
+    admin-rbac    Displays information about RBACs assigned to admins in each managed cluster.
 
 Options:
   -h --help       Show this screen.
@@ -76,6 +77,8 @@ See 'sveltosctl show <subcommand> --help' to read about a specific subcommand.
 			err = show.DryRun(ctx, arguments, logger)
 		case "usage":
 			err = show.Usage(ctx, arguments, logger)
+		case "admin-rbac":
+			err = show.AdminPermissions(ctx, arguments, logger)
 		default:
 			//nolint: forbidigo // print doc
 			fmt.Println(doc)

@@ -38,7 +38,6 @@ import (
 
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -164,9 +163,9 @@ func storeResult(d *deployer, key string, err error, logger logr.Logger) {
 	l := logger.WithValues("key", key)
 
 	if err != nil {
-		l.V(logs.LogInfo).Info(fmt.Sprintf("added to result with err %s", err.Error()))
+		l.V(logs.LogDebug).Info(fmt.Sprintf("added to result with err %s", err.Error()))
 	} else {
-		l.V(logs.LogInfo).Info("added to result")
+		l.V(logs.LogDebug).Info("added to result")
 	}
 	d.results[key] = err
 
@@ -276,6 +275,32 @@ func collectSnapshot(ctx context.Context, c client.Client, snapshotName string, 
 	if err != nil {
 		return err
 	}
+	err = dumpRoleRequests(ctx, folder, logger)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func dumpRoleRequests(ctx context.Context, folder string, logger logr.Logger) error {
+	logger.V(logs.LogDebug).Info("storing RoleRequests")
+	roleRequests, err := utils.GetAccessInstance().ListRoleRequests(ctx, logger)
+	if err != nil {
+		return err
+	}
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d RoleRequests", len(roleRequests.Items)))
+	for i := range roleRequests.Items {
+		rr := &roleRequests.Items[i]
+		err = DumpObject(rr, folder, logger)
+		if err != nil {
+			return err
+		}
+		err = dumpReferencedObjects(ctx, rr.Spec.RoleRefs, folder, logger)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -310,7 +335,7 @@ func dumpClusterProfiles(ctx context.Context, folder string, logger logr.Logger)
 		if err != nil {
 			return err
 		}
-		err = dumpReferencedObjects(ctx, cc, folder, logger)
+		err = dumpReferencedObjects(ctx, cc.Spec.PolicyRefs, folder, logger)
 		if err != nil {
 			return err
 		}
@@ -319,14 +344,14 @@ func dumpClusterProfiles(ctx context.Context, folder string, logger logr.Logger)
 	return nil
 }
 
-func dumpReferencedObjects(ctx context.Context, clusterProfile *configv1alpha1.ClusterProfile,
+func dumpReferencedObjects(ctx context.Context, referencedObjects []libsveltosv1alpha1.PolicyRef,
 	folder string, logger logr.Logger) error {
 
 	logger.V(logs.LogDebug).Info("storing ClusterProfiles's referenced resources")
 	var object client.Object
-	for i := range clusterProfile.Spec.PolicyRefs {
-		ref := &clusterProfile.Spec.PolicyRefs[i]
-		if ref.Kind == string(configv1alpha1.ConfigMapReferencedResourceKind) {
+	for i := range referencedObjects {
+		ref := &referencedObjects[i]
+		if ref.Kind == string(libsveltosv1alpha1.ConfigMapReferencedResourceKind) {
 			configMap := &corev1.ConfigMap{}
 			err := utils.GetAccessInstance().GetResource(ctx,
 				types.NamespacedName{Namespace: ref.Namespace, Name: ref.Name}, configMap)
@@ -439,6 +464,14 @@ func DumpObject(resource client.Object, logPath string, logger logr.Logger) erro
 		return err
 	}
 
+	logger = logger.WithValues("kind", resource.GetObjectKind())
+	logger = logger.WithValues("resource", fmt.Sprintf("%s %s",
+		resource.GetNamespace(), resource.GetName()))
+
+	if !resource.GetDeletionTimestamp().IsZero() {
+		logger.V(logs.LogDebug).Info("resource is marked for deletion. Do not collect it.")
+	}
+
 	resourceYAML, err := yaml.Marshal(resource)
 	if err != nil {
 		return err
@@ -465,7 +498,7 @@ func DumpObject(resource client.Object, logPath string, logger logr.Logger) erro
 	}
 	defer f.Close()
 
-	logger.V(logs.LogDebug).Info(fmt.Sprintf("storing %s %s/%s in %s", kind, namespace, name, resourceFilePath))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("storing resource in %s", resourceFilePath))
 	return os.WriteFile(f.Name(), resourceYAML, permission0600)
 }
 

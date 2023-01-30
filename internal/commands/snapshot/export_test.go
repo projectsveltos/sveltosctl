@@ -27,6 +27,7 @@ var (
 	AddChartEntry                   = addChartEntry
 	AddResourceEntry                = addResourceEntry
 	AppendChartsAndResources        = appendChartsAndResources
+	ListDiff                        = listDiff
 
 	GetAndRollbackConfigMaps        = getAndRollbackConfigMaps
 	GetAndRollbackClusterProfiles   = getAndRollbackClusterProfiles
