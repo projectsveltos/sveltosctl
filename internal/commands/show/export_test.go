@@ -17,7 +17,8 @@ limitations under the License.
 package show
 
 var (
-	DisplayFeatures = displayFeatures
-	DisplayDryRun   = displayDryRun
-	ShowUsage       = showUsage
+	DisplayFeatures   = displayFeatures
+	DisplayDryRun     = displayDryRun
+	ShowUsage         = showUsage
+	DisplayAdminRbacs = displayAdminRbacs
 )

@@ -17,13 +17,22 @@ limitations under the License.
 package show_test
 
 import (
+	"encoding/base64"
+	"fmt"
 	"time"
+	"unicode/utf8"
 
+	. "github.com/onsi/gomega"
+
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"sigs.k8s.io/cluster-api/util"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
+	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
 // addDeployedHelmCharts adds provided charts as deployed in clusterConfiguration status
@@ -142,4 +151,71 @@ func generateResourceReport(action string) *configv1alpha1.ResourceReport {
 func randomString() string {
 	const length = 10
 	return util.RandomString(length)
+}
+
+// createConfigMapWithPolicy creates a configMap with Data policies
+func createConfigMapWithPolicy(namespace, configMapName string, policyStrs ...string) *corev1.ConfigMap {
+	cm := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      configMapName,
+		},
+		Data: map[string]string{},
+	}
+	for i := range policyStrs {
+		key := fmt.Sprintf("policy%d.yaml", i)
+		if utf8.Valid([]byte(policyStrs[i])) {
+			cm.Data[key] = policyStrs[i]
+		} else {
+			cm.BinaryData[key] = []byte(policyStrs[i])
+		}
+	}
+
+	Expect(addTypeInformationToObject(cm)).To(Succeed())
+
+	return cm
+}
+
+// createSecretWithPolicy creates a Secret with Data containing base64 encoded policies
+func createSecretWithPolicy(namespace, configMapName string, policyStrs ...string) *corev1.Secret {
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      configMapName,
+		},
+		Data: map[string][]byte{},
+	}
+	for i := range policyStrs {
+		key := fmt.Sprintf("policy%d.yaml", i)
+		secret.Data[key] = []byte(base64.StdEncoding.EncodeToString([]byte(policyStrs[i])))
+	}
+
+	Expect(addTypeInformationToObject(secret)).To(Succeed())
+
+	return secret
+}
+
+func addTypeInformationToObject(obj client.Object) error {
+	scheme, err := utils.GetScheme()
+	if err != nil {
+		return err
+	}
+
+	gvks, _, err := scheme.ObjectKinds(obj)
+	if err != nil {
+		return err
+	}
+
+	for _, gvk := range gvks {
+		if gvk.Kind == "" {
+			continue
+		}
+		if gvk.Version == "" || gvk.Version == runtime.APIVersionInternal {
+			continue
+		}
+		obj.GetObjectKind().SetGroupVersionKind(gvk)
+		break
+	}
+
+	return nil
 }
