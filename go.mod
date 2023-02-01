@@ -10,15 +10,15 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo/v2 v2.6.0
 	github.com/onsi/gomega v1.24.1
-	github.com/projectsveltos/libsveltos v0.3.1-0.20230129021247-6caa90913d47
-	github.com/projectsveltos/sveltos-manager v0.3.1-0.20230129222229-06e504a136d5
+	github.com/projectsveltos/libsveltos v0.4.0
+	github.com/projectsveltos/sveltos-manager v0.4.0
 	github.com/robfig/cron v1.2.0
 	k8s.io/api v0.25.3
 	k8s.io/apimachinery v0.25.3
 	k8s.io/client-go v0.25.3
 	k8s.io/klog/v2 v2.80.1
 	k8s.io/kubectl v0.25.3
-	sigs.k8s.io/cluster-api v1.3.2
+	sigs.k8s.io/cluster-api v1.3.3
 	sigs.k8s.io/controller-runtime v0.13.1
 	sigs.k8s.io/yaml v1.3.0
 )

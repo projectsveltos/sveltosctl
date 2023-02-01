@@ -30,9 +30,9 @@ If you decide to run it as a binary:
 If you decide to run it as a pod in the management cluster, YAML is in manifest subdirectory.
 
 ```
-kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/dev/manifest/utils.projectsveltos.io_snapshots.yaml
+kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/v0.4.0/manifest/utils.projectsveltos.io_snapshots.yaml
 
-kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/dev/manifest/sveltosctl.yaml
+kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/v0.4.0/manifest/sveltosctl.yaml
 ```
 
 Please keep in mind it requires a PersistentVolume. So modify this section accordingly before posting the YAML.
@@ -70,6 +70,7 @@ You might also want to change the timezone of sveltosctl pod by using specific t
     - [Run sveltosctl as a pod](#run-sveltosctl-as-a-pod)
   - [Display deployed resources and helm releases](#display-deployed-resources-and-helm-releases)
   - [Display usage](#display-usage)
+  - [Multi-tenancy: display admin permissions](#multi-tenancy-display-admin-permissions)
   - [Log severity settings](#log-severity-settings)
   - [Display outcome of ClusterProfile in DryRun mode](#display-outcome-of-clusterprofile-in-dryrun-mode)
   - [Snapshot](#snapshot)
@@ -122,13 +123,33 @@ Usage:
 Such information is useful to see what CAPI clusters would be affected by a change before making such a change.
 
 ```
-./bin/sveltosctl show usage 
-+----------------+--------------------+----------------------------+-------------------------------------+
+./bin/sveltosctl show usage
+----------------+--------------------+----------------------------+-------------------------------------+
 | RESOURCE KIND  | RESOURCE NAMESPACE |       RESOURCE NAME        |              CLUSTERS               |
 +----------------+--------------------+----------------------------+-------------------------------------+
 | ClusterProfile |                    | mgianluc                   | default/sveltos-management-workload |
 | ConfigMap      | default            | kyverno-disallow-gateway-2 | default/sveltos-management-workload |
 +----------------+--------------------+----------------------------+-------------------------------------+
+```
+
+## Multi-tenancy: display admin permissions
+
+**show admin-rbac** can be used to display permissions granted to tenant admins in each managed clusters.
+If we have two clusters, a ClusterAPI powered one and a SveltosCluster, both matching label selector
+```env=internal``` and we post [RoleRequests](https://raw.githubusercontent.com/projectsveltos/access-manager/v0.4.0/examples/shared_access.yaml), we get:
+
+```
+./bin/sveltosctl show admin-rbac       
++---------------------------------------------+-------+----------------+------------+-----------+----------------+-------+
+|                   CLUSTER                   | ADMIN |   NAMESPACE    | API GROUPS | RESOURCES | RESOURCE NAMES | VERBS |
++---------------------------------------------+-------+----------------+------------+-----------+----------------+-------+
+| Cluster:default/sveltos-management-workload | eng   | build          | *          | *         | *              | *     |
+| Cluster:default/sveltos-management-workload | eng   | ci-cd          | *          | *         | *              | *     |
+| Cluster:default/sveltos-management-workload | hr    | human-resource | *          | *         | *              | *     |
+| SveltosCluster:gke/prod-cluster             | eng   | build          | *          | *         | *              | *     |
+| SveltosCluster:gke/prod-cluster             | eng   | ci-cd          | *          | *         | *              | *     |
+| SveltosCluster:gke/prod-cluster             | hr    | human-resource | *          | *         | *              | *     |
++---------------------------------------------+-------+----------------+------------+-----------+----------------+-------+
 ```
 
 ## Log severity settings
