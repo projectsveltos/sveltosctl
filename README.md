@@ -76,6 +76,7 @@ You might also want to change the timezone of sveltosctl pod by using specific t
     - [list](#list)
     - [diff](#diff)
     - [rollback](#rollback)
+  - [Admin RBACs](#admin-rbacs)
   - [Contributing ](#contributing-)
   - [License](#license)
 
@@ -274,7 +275,18 @@ kubectl exec -it -n projectsveltos sveltosctl-0 -- ./sveltosctl snapshot rollbac
 ```
 
 To see Sveltos CLI for snapshot in action, have a look at this [video](https://youtu.be/sTo6RcWP1BQ)
-  
+
+## Admin RBACs
+
+**snapshot show admin-rbac** can be used to display admin's RBACs per cluster:
+
+./bin/sveltosctl show admin-rbac                                                                           
++---------------------------------------------+----------+-----------+------------+-----------+----------------+----------------+
+|                   CLUSTER                   |  ADMIN   | NAMESPACE | API GROUPS | RESOURCES | RESOURCE NAMES |     VERBS      |
++---------------------------------------------+----------+-----------+------------+-----------+----------------+----------------+
+| Cluster:default/sveltos-management-workload | eng      | default   |            | pods      | pods           | get,watch,list |
++---------------------------------------------+----------+-----------+------------+-----------+----------------+----------------+
+
 ## Contributing [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/projectsveltos/sveltos-manager/issues)
 :heart: Your contributions are always welcome!
 If you have questions, noticed any bug or want to get the latest project news, you can connect with us in the following ways:
