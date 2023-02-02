@@ -33,7 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
-	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/snapshotter"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -161,7 +160,7 @@ var _ = Describe("Worker", func() {
 			{
 				Namespace: cm.Namespace,
 				Name:      cm.Name,
-				Kind:      string(configv1alpha1.ConfigMapReferencedResourceKind),
+				Kind:      string(libsveltosv1alpha1.ConfigMapReferencedResourceKind),
 			},
 		}
 
@@ -210,6 +209,118 @@ var _ = Describe("Worker", func() {
 
 		for i := range snapshots {
 			recursiveSearchDir(filepath.Join(baseSnaphostInstanceDir, snapshots[i].Name()), objects)
+		}
+
+		for o := range objects {
+			Expect(objects[o]).To(BeTrue())
+		}
+	})
+
+	It("dumpClassifiers collects existing classifiers", func() {
+		classifier1 := libsveltosv1alpha1.Classifier{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: randomString(),
+			},
+			Spec: libsveltosv1alpha1.ClassifierSpec{
+				ClassifierLabels: []libsveltosv1alpha1.ClassifierLabel{
+					{Key: randomString(), Value: randomString()},
+				},
+			},
+		}
+		Expect(snapshotter.AddTypeInformationToObject(&classifier1)).To(Succeed())
+
+		classifier2 := libsveltosv1alpha1.Classifier{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: randomString(),
+			},
+			Spec: libsveltosv1alpha1.ClassifierSpec{
+				ClassifierLabels: []libsveltosv1alpha1.ClassifierLabel{
+					{Key: randomString(), Value: randomString()},
+				},
+			},
+		}
+		Expect(snapshotter.AddTypeInformationToObject(&classifier2)).To(Succeed())
+
+		snapshotInstance := generateSnapshot()
+
+		initObjects := []client.Object{&classifier1, &classifier2, snapshotInstance}
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
+
+		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
+
+		snapshotFolder := createDirectory(snapshotInstance.Name, snapshotInstance.Spec.Storage)
+
+		Expect(snapshotter.DumpClassifiers(context.TODO(), snapshotFolder, klogr.New())).To(Succeed())
+
+		snapshots, err := os.ReadDir(snapshotFolder)
+		Expect(err).To(BeNil())
+
+		Expect(len(snapshots)).To(Equal(1))
+
+		objects := make(map[string]bool)
+		objects[objectToString(&classifier1)] = false
+		objects[objectToString(&classifier2)] = false
+
+		for i := range snapshots {
+			recursiveSearchDir(filepath.Join(snapshotFolder, snapshots[i].Name()), objects)
+		}
+
+		for o := range objects {
+			Expect(objects[o]).To(BeTrue())
+		}
+	})
+
+	It("dumpRoleRequests collects existing roleRequests and referenced resources", func() {
+		cm := &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: randomString(),
+				Name:      randomString(),
+			},
+		}
+		Expect(snapshotter.AddTypeInformationToObject(cm)).To(Succeed())
+
+		roleRequest := &libsveltosv1alpha1.RoleRequest{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: randomString(),
+			},
+			Spec: libsveltosv1alpha1.RoleRequestSpec{
+				RoleRefs: []libsveltosv1alpha1.PolicyRef{
+					{
+						Kind:      string(libsveltosv1alpha1.ConfigMapReferencedResourceKind),
+						Namespace: cm.GetNamespace(),
+						Name:      cm.GetName(),
+					},
+				},
+			},
+		}
+		Expect(snapshotter.AddTypeInformationToObject(roleRequest)).To(Succeed())
+
+		snapshotInstance := generateSnapshot()
+
+		initObjects := []client.Object{cm, roleRequest, snapshotInstance}
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
+
+		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
+
+		snapshotFolder := createDirectory(snapshotInstance.Name, snapshotInstance.Spec.Storage)
+
+		Expect(snapshotter.DumpRoleRequests(context.TODO(), snapshotFolder, klogr.New())).To(Succeed())
+
+		snapshots, err := os.ReadDir(snapshotFolder)
+		Expect(err).To(BeNil())
+
+		Expect(len(snapshots)).To(Equal(2)) // directory  for RoleRequest plus directory for namespace with ConfigMap
+
+		objects := make(map[string]bool)
+		objects[objectToString(cm)] = false
+		objects[objectToString(roleRequest)] = false
+
+		for i := range snapshots {
+			recursiveSearchDir(filepath.Join(snapshotFolder, snapshots[i].Name()), objects)
 		}
 
 		for o := range objects {

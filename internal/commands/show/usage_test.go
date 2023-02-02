@@ -44,13 +44,13 @@ var _ = Describe("Usage", func() {
 		configMap := libsveltosv1alpha1.PolicyRef{
 			Namespace: randomString(),
 			Name:      randomString(),
-			Kind:      string(configv1alpha1.ConfigMapReferencedResourceKind),
+			Kind:      string(libsveltosv1alpha1.ConfigMapReferencedResourceKind),
 		}
 
 		secret := libsveltosv1alpha1.PolicyRef{
 			Namespace: randomString(),
 			Name:      randomString(),
-			Kind:      string(configv1alpha1.SecretReferencedResourceKind),
+			Kind:      string(libsveltosv1alpha1.SecretReferencedResourceKind),
 		}
 
 		clusterProfile1 := generateClusterProfile()
@@ -102,9 +102,9 @@ var _ = Describe("Usage", func() {
 		lines := strings.Split(buf.String(), "\n")
 		verifyClusterProfileUsage(lines, clusterProfile1)
 		verifyClusterProfileUsage(lines, clusterProfile2)
-		verifyUsage(lines, string(configv1alpha1.ConfigMapReferencedResourceKind),
+		verifyUsage(lines, string(libsveltosv1alpha1.ConfigMapReferencedResourceKind),
 			configMap.Namespace, configMap.Name, &clusterProfile1.Status.MatchingClusterRefs[0])
-		verifyUsage(lines, string(configv1alpha1.SecretReferencedResourceKind),
+		verifyUsage(lines, string(libsveltosv1alpha1.SecretReferencedResourceKind),
 			secret.Namespace, secret.Name, &clusterProfile2.Status.MatchingClusterRefs[0])
 		os.Stdout = old
 	})
@@ -138,7 +138,7 @@ func generateClusterProfile() *configv1alpha1.ClusterProfile {
 			Name: randomString(),
 		},
 		Spec: configv1alpha1.ClusterProfileSpec{
-			ClusterSelector: configv1alpha1.Selector("zone:west"),
+			ClusterSelector: libsveltosv1alpha1.Selector("zone:west"),
 			SyncMode:        configv1alpha1.SyncModeContinuous,
 		},
 	}

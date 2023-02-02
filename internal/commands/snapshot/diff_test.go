@@ -39,6 +39,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/commands/snapshot"
@@ -128,6 +129,174 @@ var _ = Describe("Snapshot Diff", func() {
 
 		Expect(resourceAdded).To(Equal(2))
 		Expect(helmReleaseAdded).To(Equal(2))
+
+		os.Stdout = old
+	})
+
+	It("listdiff displays all diff between Classifiers/RoleRequests", func() {
+		snapshotInstance := &utilsv1alpha1.Snapshot{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: randomString(),
+			},
+			Spec: utilsv1alpha1.SnapshotSpec{
+				Storage: randomString(),
+			},
+		}
+
+		snapshotDir, err := os.MkdirTemp("", randomString())
+		Expect(err).To(BeNil())
+		snapshotDir = filepath.Join(snapshotDir, snapshotInstance.Spec.Storage)
+		Expect(os.Mkdir(snapshotDir, os.ModePerm)).To(Succeed())
+		snapshotInstance.Spec.Storage = snapshotDir
+		tmpDir := filepath.Join(snapshotDir, snapshotInstance.Name)
+		Expect(os.Mkdir(tmpDir, os.ModePerm)).To(Succeed())
+
+		classifierName := randomString()
+		classifier := &libsveltosv1alpha1.Classifier{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: classifierName,
+			},
+			Spec: libsveltosv1alpha1.ClassifierSpec{
+				ClassifierLabels: []libsveltosv1alpha1.ClassifierLabel{
+					{Key: randomString(), Value: randomString()},
+				},
+			},
+		}
+		Expect(addTypeInformationToObject(classifier)).To(Succeed())
+
+		roleRequest := &libsveltosv1alpha1.RoleRequest{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: classifierName,
+			},
+			Spec: libsveltosv1alpha1.RoleRequestSpec{
+				Admin:           randomString(),
+				ClusterSelector: libsveltosv1alpha1.Selector("zone:west"),
+			},
+		}
+		Expect(addTypeInformationToObject(roleRequest)).To(Succeed())
+
+		classifierDeleted := &libsveltosv1alpha1.Classifier{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: randomString(),
+			},
+			Spec: libsveltosv1alpha1.ClassifierSpec{
+				ClassifierLabels: []libsveltosv1alpha1.ClassifierLabel{
+					{Key: randomString(), Value: randomString()},
+				},
+			},
+		}
+		Expect(addTypeInformationToObject(classifierDeleted)).To(Succeed())
+
+		timeOne := createSnapshotDirectoryWithObjects(snapshotInstance.Name, snapshotInstance.Spec.Storage,
+			[]client.Object{classifier, classifierDeleted, roleRequest})
+
+		time.Sleep(2 * time.Second) // wait so to simulate a snapshot at a different time
+
+		classifier.Spec.ClassifierLabels =
+			append(classifier.Spec.ClassifierLabels, libsveltosv1alpha1.ClassifierLabel{Key: randomString(), Value: randomString()})
+		classifierAdded := &libsveltosv1alpha1.Classifier{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: randomString(),
+			},
+			Spec: libsveltosv1alpha1.ClassifierSpec{
+				ClassifierLabels: []libsveltosv1alpha1.ClassifierLabel{
+					{Key: randomString(), Value: randomString()},
+				},
+			},
+		}
+		Expect(addTypeInformationToObject(classifierAdded)).To(Succeed())
+
+		timeTwo := createSnapshotDirectoryWithObjects(snapshotInstance.Name, snapshotInstance.Spec.Storage,
+			[]client.Object{classifier, classifierAdded})
+
+		initObjects := []client.Object{snapshotInstance}
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
+
+		old := os.Stdout // keep backup of the real stdout
+		r, w, _ := os.Pipe()
+		os.Stdout = w
+
+		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
+
+		snapshotClient := snapshotter.GetClient()
+		artifactFolder, err := snapshotClient.GetCollectedSnapshotFolder(snapshotInstance, klogr.New())
+		Expect(err).To(BeNil())
+		fromFolder := filepath.Join(*artifactFolder, timeOne)
+		toFolder := filepath.Join(*artifactFolder, timeTwo)
+
+		err = snapshot.ListDiff(fromFolder, toFolder, libsveltosv1alpha1.ClassifierKind, false, klogr.New())
+		Expect(err).To(BeNil())
+
+		w.Close()
+		var buf bytes.Buffer
+		_, err = io.Copy(&buf, r)
+		Expect(err).To(BeNil())
+
+		/*
+				  // Example of expected result
+				  +------------+----------+
+			      | CLASSIFIER |  ACTION  |
+			      +------------+----------+
+			      | 06fke9vezz | modified |
+			      | i2ngq0c4wk | added    |
+			      | srtettp0qu | removed  |
+			      +------------+----------+
+		*/
+
+		modified, added, deleted := false, false, false
+
+		lines := strings.Split(buf.String(), "\n")
+		for i := range lines {
+			if strings.Contains(lines[i], classifierName) &&
+				strings.Contains(lines[i], "modified") {
+				modified = true
+			} else if strings.Contains(lines[i], classifierDeleted.Name) &&
+				strings.Contains(lines[i], "removed") {
+				deleted = true
+			} else if strings.Contains(lines[i], classifierAdded.Name) &&
+				strings.Contains(lines[i], "added") {
+				added = true
+			}
+		}
+
+		Expect(modified).To(BeTrue())
+		Expect(added).To(BeTrue())
+		Expect(deleted).To(BeTrue())
+		os.Stdout = old
+
+		r, w, _ = os.Pipe()
+		os.Stdout = w
+
+		err = snapshot.ListDiff(fromFolder, toFolder, libsveltosv1alpha1.RoleRequestKind, false, klogr.New())
+		Expect(err).To(BeNil())
+
+		w.Close()
+		var buf1 bytes.Buffer
+		_, err = io.Copy(&buf1, r)
+		Expect(err).To(BeNil())
+
+		/*
+					 	// Example of expected result
+						+-------------+---------+
+			      		| ROLEREQUEST | ACTION  |
+			      		+-------------+---------+
+			      		| qr7okih6s9  | removed |
+			      		+-------------+---------+
+		*/
+
+		deleted = false
+
+		lines = strings.Split(buf1.String(), "\n")
+		for i := range lines {
+			if strings.Contains(lines[i], roleRequest.Name) &&
+				strings.Contains(lines[i], "removed") {
+				deleted = true
+			}
+		}
+
+		Expect(deleted).To(BeTrue())
 
 		os.Stdout = old
 	})
@@ -239,7 +408,7 @@ var _ = Describe("Snapshot Diff", func() {
 			Name:            clusterRole.GetName(),
 			LastAppliedTime: &metav1.Time{Time: time.Now()},
 			Owner: corev1.ObjectReference{
-				Kind:      string(configv1alpha1.ConfigMapReferencedResourceKind),
+				Kind:      string(libsveltosv1alpha1.ConfigMapReferencedResourceKind),
 				Name:      oldConfigMap.Name,
 				Namespace: oldConfigMap.Namespace,
 			},
@@ -350,7 +519,7 @@ var _ = Describe("Snapshot Diff", func() {
 			Group: clusterRoleGroup,
 			Kind:  clusterRoleKind,
 			Owner: corev1.ObjectReference{
-				Kind:      string(configv1alpha1.ConfigMapReferencedResourceKind),
+				Kind:      string(libsveltosv1alpha1.ConfigMapReferencedResourceKind),
 				Name:      configMap.Name,
 				Namespace: configMap.Namespace,
 			},
