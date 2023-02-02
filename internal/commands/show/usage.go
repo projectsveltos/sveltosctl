@@ -57,12 +57,12 @@ func showUsage(ctx context.Context, kind, passedNamespace, passedName string, lo
 			return err
 		}
 	}
-	if kind == "" || kind == string(configv1alpha1.ConfigMapReferencedResourceKind) {
+	if kind == "" || kind == string(libsveltosv1alpha1.ConfigMapReferencedResourceKind) {
 		if err := showUsageForConfigMaps(ctx, passedNamespace, passedName, table, logger); err != nil {
 			return err
 		}
 	}
-	if kind == "" || kind == string(configv1alpha1.SecretReferencedResourceKind) {
+	if kind == "" || kind == string(libsveltosv1alpha1.SecretReferencedResourceKind) {
 		if err := showUsageForSecrets(ctx, passedNamespace, passedName, table, logger); err != nil {
 			return err
 		}
@@ -127,7 +127,7 @@ func showUsageForConfigMaps(ctx context.Context, passedNamespace, passedName str
 	}
 
 	for pr := range result {
-		table.Append(genUsageRow(string(configv1alpha1.ConfigMapReferencedResourceKind),
+		table.Append(genUsageRow(string(libsveltosv1alpha1.ConfigMapReferencedResourceKind),
 			pr.Namespace, pr.Name, result[pr]))
 	}
 
@@ -153,7 +153,7 @@ func showUsageForSecrets(ctx context.Context, passedNamespace, passedName string
 	}
 
 	for pr := range result {
-		table.Append(genUsageRow(string(configv1alpha1.SecretReferencedResourceKind),
+		table.Append(genUsageRow(string(libsveltosv1alpha1.SecretReferencedResourceKind),
 			pr.Namespace, pr.Name, result[pr]))
 	}
 
@@ -166,7 +166,7 @@ func getConfigMaps(passedNamespace, passedName string, clusterProfile *configv1a
 	configMaps := make([]libsveltosv1alpha1.PolicyRef, 0)
 	for i := range clusterProfile.Spec.PolicyRefs {
 		pr := &clusterProfile.Spec.PolicyRefs[i]
-		if pr.Kind == string(configv1alpha1.ConfigMapReferencedResourceKind) {
+		if pr.Kind == string(libsveltosv1alpha1.ConfigMapReferencedResourceKind) {
 			if shouldAddPolicyRef(passedNamespace, passedName, pr) {
 				logger.V(logs.LogDebug).Info(fmt.Sprintf("considering reference configMap %s/%s",
 					pr.Namespace, pr.Name))
@@ -192,7 +192,7 @@ func getSecrets(passedNamespace, passedName string, clusterProfile *configv1alph
 	secrets := make([]libsveltosv1alpha1.PolicyRef, 0)
 	for i := range clusterProfile.Spec.PolicyRefs {
 		pr := &clusterProfile.Spec.PolicyRefs[i]
-		if pr.Kind == string(configv1alpha1.SecretReferencedResourceKind) {
+		if pr.Kind == string(libsveltosv1alpha1.SecretReferencedResourceKind) {
 			if shouldAddPolicyRef(passedNamespace, passedName, pr) {
 				logger.V(logs.LogDebug).Info(fmt.Sprintf("considering reference secret %s/%s",
 					pr.Namespace, pr.Name))
@@ -285,13 +285,13 @@ Description:
 	if passedKind := parsedArgs["--kind"]; passedKind != nil {
 		kind = passedKind.(string)
 		if kind != configv1alpha1.ClusterProfileKind &&
-			kind != string(configv1alpha1.ConfigMapReferencedResourceKind) &&
-			kind != string(configv1alpha1.SecretReferencedResourceKind) {
+			kind != string(libsveltosv1alpha1.ConfigMapReferencedResourceKind) &&
+			kind != string(libsveltosv1alpha1.SecretReferencedResourceKind) {
 
 			return fmt.Errorf("possible values for kind are: %s, %s, %s",
 				configv1alpha1.ClusterProfileKind,
-				string(configv1alpha1.ConfigMapReferencedResourceKind),
-				string(configv1alpha1.SecretReferencedResourceKind),
+				string(libsveltosv1alpha1.ConfigMapReferencedResourceKind),
+				string(libsveltosv1alpha1.SecretReferencedResourceKind),
 			)
 		}
 	}

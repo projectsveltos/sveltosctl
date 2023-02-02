@@ -43,7 +43,8 @@ import (
 )
 
 func rollbackConfiguration(ctx context.Context,
-	snapshotName, sample, passedNamespace, passedCluster, passedClusterProfile, passedClassifier string,
+	snapshotName, sample, passedNamespace, passedCluster, passedClusterProfile,
+	passedClassifier, passedRoleRequest string,
 	logger logr.Logger) error {
 
 	logger.V(logs.LogDebug).Info(fmt.Sprintf("Getting Snapshot %s", snapshotName))
@@ -72,10 +73,12 @@ func rollbackConfiguration(ctx context.Context,
 		return err
 	}
 
-	return rollbackConfigurationToSnapshot(ctx, folder, passedNamespace, passedCluster, passedClusterProfile, passedClassifier, logger)
+	return rollbackConfigurationToSnapshot(ctx, folder, passedNamespace, passedCluster, passedClusterProfile,
+		passedClassifier, passedRoleRequest, logger)
 }
 
-func rollbackConfigurationToSnapshot(ctx context.Context, folder, passedNamespace, passedCluster, passedClusterProfile, passedClassifier string,
+func rollbackConfigurationToSnapshot(ctx context.Context, folder, passedNamespace, passedCluster,
+	passedClusterProfile, passedClassifier, passedRoleRequest string,
 	logger logr.Logger) error {
 
 	logger.V(logs.LogDebug).Info("roll back configuration: configmaps")
@@ -103,7 +106,13 @@ func rollbackConfigurationToSnapshot(ctx context.Context, folder, passedNamespac
 	}
 
 	logger.V(logs.LogDebug).Info("roll back configuration: classifiers")
-	err = getAndRollbackClassifiers(ctx, folder, passedClusterProfile, logger)
+	err = getAndRollbackClassifiers(ctx, folder, passedClassifier, logger)
+	if err != nil {
+		return err
+	}
+
+	logger.V(logs.LogDebug).Info("roll back configuration: rolerequests")
+	err = getAndRollbackRoleRequests(ctx, folder, passedRoleRequest, logger)
 	if err != nil {
 		return err
 	}
@@ -235,7 +244,7 @@ func getAndRollbackClassifiers(ctx context.Context, folder, passedClassifier str
 	snapshotClient := snapshotter.GetClient()
 	classifiers, err := snapshotClient.GetClassifierResources(folder, libsveltosv1alpha1.ClassifierKind, logger)
 	if err != nil {
-		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect ClusterProfile from folder %s", folder))
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect Classifiers from folder %s", folder))
 		return err
 	}
 
@@ -243,6 +252,28 @@ func getAndRollbackClassifiers(ctx context.Context, folder, passedClassifier str
 		cl := classifiers[i]
 		if passedClassifier == "" || cl.GetName() == passedClassifier {
 			logger.V(logs.LogDebug).Info(fmt.Sprintf("rollback Classifier %s", cl.GetName()))
+			err = rollbackClassifier(ctx, cl, logger)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func getAndRollbackRoleRequests(ctx context.Context, folder, passedRoleRequest string, logger logr.Logger) error {
+	snapshotClient := snapshotter.GetClient()
+	roleRequests, err := snapshotClient.GetRoleRequestResources(folder, libsveltosv1alpha1.RoleRequestKind, logger)
+	if err != nil {
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect RoleRequests from folder %s", folder))
+		return err
+	}
+
+	for i := range roleRequests {
+		cl := roleRequests[i]
+		if passedRoleRequest == "" || cl.GetName() == passedRoleRequest {
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("rollback RoleRequest %s", cl.GetName()))
 			err = rollbackClassifier(ctx, cl, logger)
 			if err != nil {
 				return err
@@ -499,7 +530,7 @@ func rollbackClassifier(ctx context.Context, resource *unstructured.Unstructured
 func Rollback(ctx context.Context, args []string, logger logr.Logger) error {
 	//nolint: lll // command syntax
 	doc := `Usage:
-	sveltosctl snapshot rollback [options] --snapshot=<name> --sample=<name> [--namespace=<name>] [--clusterprofile=<name>] [--cluster=<name>] [--classifier=<name>] [--verbose]
+	sveltosctl snapshot rollback [options] --snapshot=<name> --sample=<name> [--namespace=<name>] [--clusterprofile=<name>] [--cluster=<name>] [--classifier=<name>] [--rolerequest=<name>] [--verbose]
 
      --snapshot=<name>       Name of the Snapshot instance
      --sample=<name>         Name of the directory containing this sample.
@@ -511,7 +542,9 @@ func Rollback(ctx context.Context, args []string, logger logr.Logger) error {
      --clusterprofile=<name> Rollback only clusterprofile with this name.
                              If not specified all clusterprofiles are updated.
      --classifier=<name>     Rollback only classifier with this name.
-                             If not specified all classifiers are updated.							 
+                             If not specified all classifiers are updated.
+     --rolerequest=<name>    Rollback only roleRequest with this name.
+                             If not specified all roleRequests are updated.
 
 Options:
   -h --help                  Show this screen.
@@ -520,8 +553,10 @@ Options:
 Description:
   The snapshot rollback allows to rollback system to any previous configuration snapshot.
   Following objects will be rolled back:
-  - ClusterProfiles, Spec sections
-  - ConfigMaps/Secrets referenced by at least one ClusterProfile at the time snapshot was taken. 
+  - ClusterProfiles, Labels and Spec sections
+  - RoleRequest, Spec section
+  - ConfigMaps/Secrets referenced by at least one ClusterProfile/RoleRequest at the time snapshot was taken.
+  - Classifiers
   If, at the time the rollback happens, such resources do not exist, those will be recreated.
   If such resources exist, Data/BinaryData for ConfigMaps and Data/StringData for Secrets will be updated.
   - Clusters, only labels will be updated.
@@ -566,10 +601,16 @@ Description:
 		classifier = passedClassifier.(string)
 	}
 
+	roleRequest := ""
+	if passedRoleRequest := parsedArgs["--rolerequest"]; passedRoleRequest != nil {
+		roleRequest = passedRoleRequest.(string)
+	}
+
 	cluster := ""
 	if passedCluster := parsedArgs["--cluster"]; passedCluster != nil {
 		cluster = passedCluster.(string)
 	}
 
-	return rollbackConfiguration(ctx, snapshostName, sample, namespace, cluster, clusterProfile, classifier, logger)
+	return rollbackConfiguration(ctx, snapshostName, sample, namespace, cluster, clusterProfile,
+		classifier, roleRequest, logger)
 }

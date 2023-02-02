@@ -241,6 +241,23 @@ func (d *deployer) GetClassifierResources(snapshotFolder, kind string, logger lo
 	return d.getResourcesForKind(snapshotFolder, kind, logger)
 }
 
+func (d *deployer) GetRoleRequestResources(snapshotFolder, kind string, logger logr.Logger,
+) ([]*unstructured.Unstructured, error) {
+
+	fileInfo, err := getFileInfo(snapshotFolder, logger)
+	if err != nil {
+		return nil, err
+	}
+
+	if !fileInfo.IsDir() {
+		msg := fmt.Sprintf("file %s is not a snapshot directory", snapshotFolder)
+		logger.V(logs.LogDebug).Info(msg)
+		return nil, fmt.Errorf("%s", msg)
+	}
+
+	return d.getResourcesForKind(snapshotFolder, kind, logger)
+}
+
 func (d *deployer) getResourcesForKind(directory, kind string, logger logr.Logger) ([]*unstructured.Unstructured, error) {
 	// Each directory, contains one subdirectory per Kind
 	// For instance /<whatever>/<snapshotInstanceName>/<dateSnaphostTaken>/<namespaceName>/<kindName>

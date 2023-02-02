@@ -64,9 +64,9 @@ var (
 		}
 	}
 
-	genClassifierDiffRow = func(classifierName, action string) []string {
+	genDiffRow = func(objectName, action string) []string {
 		return []string{
-			classifierName,
+			objectName,
 			action,
 		}
 	}
@@ -135,7 +135,12 @@ func listSnapshotDiffs(ctx context.Context, snapshotName, fromSample, toSample,
 		return err
 	}
 
-	err = listClassifiersDiff(fromFolder, toFolder, rawDiff, logger)
+	err = listDiff(fromFolder, toFolder, libsveltosv1alpha1.ClassifierKind, rawDiff, logger)
+	if err != nil {
+		return err
+	}
+
+	err = listDiff(fromFolder, toFolder, libsveltosv1alpha1.RoleRequestKind, rawDiff, logger)
 	if err != nil {
 		return err
 	}
@@ -143,35 +148,35 @@ func listSnapshotDiffs(ctx context.Context, snapshotName, fromSample, toSample,
 	return nil
 }
 
-func listClassifiersDiff(fromFolder, toFolder string, rawDiff bool, logger logr.Logger) error {
+func listDiff(fromFolder, toFolder, kind string, rawDiff bool, logger logr.Logger) error {
 	snapshotClient := snapshotter.GetClient()
-	fromClassifiers, err := snapshotClient.GetClusterResources(fromFolder, libsveltosv1alpha1.ClassifierKind, logger)
+	froms, err := snapshotClient.GetClusterResources(fromFolder, kind, logger)
 	if err != nil {
-		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect Classifiers from folder %s", fromFolder))
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect %ss from folder %s", kind, fromFolder))
 		return err
 	}
-	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d Classifiers in folder %s", len(fromClassifiers), fromFolder))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d %ss in folder %s", len(froms), kind, fromFolder))
 
-	toClassifiers, err := snapshotClient.GetClusterResources(toFolder, libsveltosv1alpha1.ClassifierKind, logger)
+	tos, err := snapshotClient.GetClusterResources(toFolder, kind, logger)
 	if err != nil {
-		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect Classifiers from folder %s", toFolder))
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect %ss from folder %s", kind, toFolder))
 		return err
 	}
-	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d Classifiers in folder %s", len(toClassifiers), toFolder))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d %s in folder %s", len(tos), kind, toFolder))
 
-	fromClassifierMap := make(map[string]*unstructured.Unstructured, len(fromClassifiers))
-	for i := range fromClassifiers {
-		cl := fromClassifiers[i]
-		fromClassifierMap[cl.GetName()] = cl
+	fromMap := make(map[string]*unstructured.Unstructured, len(froms))
+	for i := range froms {
+		cl := froms[i]
+		fromMap[cl.GetName()] = cl
 	}
 
-	toClassifierMap := make(map[string]*unstructured.Unstructured, len(toClassifiers))
-	for i := range toClassifiers {
-		cl := toClassifiers[i]
-		toClassifierMap[cl.GetName()] = cl
+	toMap := make(map[string]*unstructured.Unstructured, len(tos))
+	for i := range tos {
+		cl := tos[i]
+		toMap[cl.GetName()] = cl
 	}
 
-	err = showClassifiersDiff(fromClassifierMap, toClassifierMap, rawDiff, logger)
+	err = showDiff(fromMap, toMap, kind, rawDiff, logger)
 	if err != nil {
 		return err
 	}
@@ -179,31 +184,31 @@ func listClassifiersDiff(fromFolder, toFolder string, rawDiff bool, logger logr.
 	return nil
 }
 
-func showClassifiersDiff(fromClassifierMap, toClassifierMap map[string]*unstructured.Unstructured, rawDiff bool,
+func showDiff(fromMap, toMap map[string]*unstructured.Unstructured, kind string, rawDiff bool,
 	logger logr.Logger) error {
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"CLASSIFIER", "ACTION"})
+	table.SetHeader([]string{strings.ToUpper(kind), "ACTION"})
 
-	for clName := range toClassifierMap {
-		v, ok := fromClassifierMap[clName]
+	for clName := range toMap {
+		v, ok := fromMap[clName]
 		if !ok {
-			table.Append(genClassifierDiffRow(clName, "added"))
+			table.Append(genDiffRow(clName, "added"))
 			continue
 		}
-		hasDiff, err := hasClassifierDiff(v, toClassifierMap[clName], rawDiff, logger)
+		hasDiff, err := hasResourceDiff(v, toMap[clName], rawDiff, logger)
 		if err != nil {
 			return err
 		}
 		if hasDiff {
-			table.Append(genClassifierDiffRow(clName, "modified"))
+			table.Append(genDiffRow(clName, "modified"))
 		}
 	}
 
-	for clName := range fromClassifierMap {
-		_, ok := toClassifierMap[clName]
+	for clName := range fromMap {
+		_, ok := toMap[clName]
 		if !ok {
-			table.Append(genClassifierDiffRow(clName, "removed"))
+			table.Append(genDiffRow(clName, "removed"))
 		}
 	}
 
@@ -628,41 +633,33 @@ func hasDiff(fromFolder, toFolder string, from, to *configv1alpha1.Resource, raw
 	return diff != "", nil
 }
 
-// hasClassifierDiff returns true if any diff exist between two Classifiers
-func hasClassifierDiff(from, to *unstructured.Unstructured, rawDiff bool, logger logr.Logger) (bool, error) {
-	var fromClassifier libsveltosv1alpha1.Classifier
-	err := runtime.DefaultUnstructuredConverter.
-		FromUnstructured(from.UnstructuredContent(), &fromClassifier)
-	if err != nil {
-		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to convert unstructured to Classifier. Err: %v", err))
-		return false, err
-	}
+// hasResourceDiff returns true if any diff exist between two unstructured spec
+func hasResourceDiff(from, to *unstructured.Unstructured, rawDiff bool, logger logr.Logger) (bool, error) {
+	var fromContent = from.UnstructuredContent()
 
-	var toClassifier libsveltosv1alpha1.Classifier
-	err = runtime.DefaultUnstructuredConverter.
-		FromUnstructured(to.UnstructuredContent(), &toClassifier)
-	if err != nil {
-		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to convert unstructured to Classifier. Err: %v", err))
-		return false, err
-	}
-	if !reflect.DeepEqual(fromClassifier.Spec, toClassifier.Spec) {
-		objectInfo := fmt.Sprintf("%s %s", fromClassifier.Kind, fromClassifier.Name)
+	var toContent = to.UnstructuredContent()
 
-		fromJSON, err := json.MarshalIndent(fromClassifier.Spec, "", "  ")
+	const spec = "spec"
+	if !reflect.DeepEqual(fromContent[spec], toContent[spec]) {
+		objectInfo := fmt.Sprintf("%s %s", from.GroupVersionKind().Kind, from.GetName())
+
+		fromJSON, err := json.MarshalIndent(fromContent[spec], "", "  ")
 		if err != nil {
-			logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to convert Classifier to JSON. Err: %v", err))
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to convert %s to JSON. Err: %v",
+				from.GroupVersionKind().Kind, err))
 			return false, err
 		}
 
-		toJSON, err := json.MarshalIndent(toClassifier.Spec, "", "  ")
+		toJSON, err := json.MarshalIndent(toContent[spec], "", "  ")
 		if err != nil {
-			logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to convert Classifier to JSON. Err: %v", err))
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to convert %s to JSON. Err: %v",
+				from.GroupVersionKind().Kind, err))
 			return false, err
 		}
 
 		edits := myers.ComputeEdits(span.URIFromPath(objectInfo), string(fromJSON), string(toJSON))
-		diff := fmt.Sprint(gotextdiff.ToUnified(fmt.Sprintf("Classifier %s", fromClassifier.Name),
-			fmt.Sprintf("Classifier %s", toClassifier.Name),
+		diff := fmt.Sprint(gotextdiff.ToUnified(fmt.Sprintf("%s %s", from.GroupVersionKind().Kind, from.GetName()),
+			fmt.Sprintf("%s %s", to.GroupVersionKind().Kind, to.GetName()),
 			string(fromJSON), edits))
 
 		if rawDiff {
@@ -684,7 +681,7 @@ func getResourceFromResourceOwner(folder string, resource *configv1alpha1.Resour
 	}
 
 	var data map[string]string
-	if owner.DeepCopy().GroupVersionKind().Kind == string(configv1alpha1.ConfigMapReferencedResourceKind) {
+	if owner.DeepCopy().GroupVersionKind().Kind == string(libsveltosv1alpha1.ConfigMapReferencedResourceKind) {
 		var configMap corev1.ConfigMap
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(owner.UnstructuredContent(), &configMap)
 		if err != nil {
