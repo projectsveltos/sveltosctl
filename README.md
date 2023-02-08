@@ -136,7 +136,7 @@ Such information is useful to see what CAPI clusters would be affected by a chan
 
 **show admin-rbac** can be used to display permissions granted to tenant admins in each managed clusters.
 If we have two clusters, a ClusterAPI powered one and a SveltosCluster, both matching label selector
-```env=internal``` and we post [RoleRequests](https://raw.githubusercontent.com/projectsveltos/access-manager/main/examples/shared_access.yaml), we get:
+```env=internal``` and we post [RoleRequests](https://raw.githubusercontent.com/projectsveltos/access-manager/v0.4.1/examples/shared_access.yaml), we get:
 
 ```
 ./bin/sveltosctl show admin-rbac       
