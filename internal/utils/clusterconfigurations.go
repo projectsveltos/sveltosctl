@@ -25,13 +25,12 @@ import (
 
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
-	"github.com/projectsveltos/sveltos-manager/controllers"
 )
 
 func (a *k8sAccess) GetClusterNameFromClusterConfiguration(clusterConfiguration *configv1alpha1.ClusterConfiguration) string {
 	clusterName := clusterConfiguration.Name
 	if clusterConfiguration.Labels != nil {
-		if v, ok := clusterConfiguration.Labels[controllers.ClusterLabelName]; ok {
+		if v, ok := clusterConfiguration.Labels[configv1alpha1.ClusterNameLabel]; ok {
 			clusterName = v
 		}
 	}
