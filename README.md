@@ -30,9 +30,9 @@ If you decide to run it as a binary:
 If you decide to run it as a pod in the management cluster, YAML is in manifest subdirectory.
 
 ```
-kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/v0.5.0/manifest/utils.projectsveltos.io_snapshots.yaml
+kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/main/manifest/utils.projectsveltos.io_snapshots.yaml
 
-kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/v0.5.0/manifest/sveltosctl.yaml
+kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/main/manifest/sveltosctl.yaml
 ```
 
 Please keep in mind it requires a PersistentVolume. So modify this section accordingly before posting the YAML.
@@ -78,7 +78,7 @@ You might also want to change the timezone of sveltosctl pod by using specific t
     - [diff](#diff)
     - [rollback](#rollback)
   - [Admin RBACs](#admin-rbacs)
-  - [Contributing ](#contributing-)
+  - [Contributing](#contributing)
   - [License](#license)
 
 ## Display deployed resources and helm releases
@@ -136,7 +136,7 @@ Such information is useful to see what CAPI clusters would be affected by a chan
 
 **show admin-rbac** can be used to display permissions granted to tenant admins in each managed clusters.
 If we have two clusters, a ClusterAPI powered one and a SveltosCluster, both matching label selector
-```env=internal``` and we post [RoleRequests](https://raw.githubusercontent.com/projectsveltos/access-manager/v0.5.0/examples/shared_access.yaml), we get:
+```env=internal``` and we post [RoleRequests](https://raw.githubusercontent.com/projectsveltos/access-manager/main/examples/shared_access.yaml), we get:
 
 ```
 ./bin/sveltosctl show admin-rbac       
@@ -308,12 +308,13 @@ To see Sveltos CLI for snapshot in action, have a look at this [video](https://y
 | Cluster:default/sveltos-management-workload | eng      | default   |            | pods      | pods           | get,watch,list |
 +---------------------------------------------+----------+-----------+------------+-----------+----------------+----------------+
 
-## Contributing [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/projectsveltos/sveltos-manager/issues)
-:heart: Your contributions are always welcome!
-If you have questions, noticed any bug or want to get the latest project news, you can connect with us in the following ways:
-1. Open a bug/feature enhancement on github;
-2. Chat with us on the Slack in the [#projectsveltos](https://join.slack.com/t/projectsveltos/shared_invite/zt-1hraownbr-W8NTs6LTimxLPB8Erj8Q6Q) channel;
-3. Submit a pull request.
+## Contributing 
+
+❤️ Your contributions are always welcome! If you want to contribute, have questions, noticed any bug or want to get the latest project news, you can connect with us in the following ways:
+
+1. Open a bug/feature enhancement on github [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/projectsveltos/sveltos-manager/issues)
+2. Chat with us on the Slack in the #projectsveltos channel [![Slack](https://img.shields.io/badge/join%20slack-%23projectsveltos-brighteen)](https://join.slack.com/t/projectsveltos/shared_invite/zt-1hraownbr-W8NTs6LTimxLPB8Erj8Q6Q)
+3. [Contact Us](mailto:support@projectsveltos.io)
 
 ## License
 
