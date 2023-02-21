@@ -43,7 +43,7 @@ import (
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
-	"github.com/projectsveltos/sveltosctl/internal/snapshotter"
+	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -106,8 +106,9 @@ func listSnapshotDiffs(ctx context.Context, snapshotName, fromSample, toSample,
 		return err
 	}
 
-	snapshotClient := snapshotter.GetClient()
-	artifactFolder, err := snapshotClient.GetCollectedSnapshotFolder(snapshotInstance, logger)
+	snapshotClient := collector.GetClient()
+	artifactFolder, err := snapshotClient.GetFolder(snapshotInstance.Spec.Storage, snapshotInstance.Name,
+		collector.Snapshot, logger)
 	if err != nil {
 		return err
 	}
@@ -149,7 +150,7 @@ func listSnapshotDiffs(ctx context.Context, snapshotName, fromSample, toSample,
 }
 
 func listDiff(fromFolder, toFolder, kind string, rawDiff bool, logger logr.Logger) error {
-	snapshotClient := snapshotter.GetClient()
+	snapshotClient := collector.GetClient()
 	froms, err := snapshotClient.GetClusterResources(fromFolder, kind, logger)
 	if err != nil {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect %ss from folder %s", kind, fromFolder))
@@ -250,7 +251,7 @@ func listSnapshotDiffsBewteenSamples(fromFolder, toFolder, passedNamespace, pass
 
 	// Following maps contain per Cluster corresponding ClusterConfiguration at the time snapshot was taken
 	// There is one ClusterConfigurations per Cluster
-	snapshotClient := snapshotter.GetClient()
+	snapshotClient := collector.GetClient()
 	fromClusterConfigurationMap, err := snapshotClient.GetNamespacedResources(fromFolder,
 		configv1alpha1.ClusterConfigurationKind, logger)
 	if err != nil {
@@ -750,7 +751,7 @@ func getResourceOwner(ownerFile string) (*unstructured.Unstructured, error) {
 		return nil, err
 	}
 
-	instance := snapshotter.GetClient()
+	instance := collector.GetClient()
 	u, err := instance.GetUnstructured(content)
 	if err != nil {
 		return nil, err
