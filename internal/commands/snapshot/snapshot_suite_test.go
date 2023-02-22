@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/projectsveltos/sveltosctl/internal/snapshotter"
+	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -50,13 +50,15 @@ func createSnapshotDirectories(snapshotName, snapshotStorage string, numOfDirs i
 	Expect(err).To(BeNil())
 	snapshotDir = filepath.Join(snapshotDir, snapshotStorage)
 	Expect(os.Mkdir(snapshotDir, os.ModePerm)).To(Succeed())
-	tmpDir := filepath.Join(snapshotDir, snapshotName)
+	tmpDir := filepath.Join(snapshotDir, "snapshot")
+	Expect(os.Mkdir(tmpDir, os.ModePerm)).To(Succeed())
+	tmpDir = filepath.Join(tmpDir, snapshotName)
 	Expect(os.Mkdir(tmpDir, os.ModePerm)).To(Succeed())
 
 	now := time.Now()
 	for i := 0; i < numOfDirs; i++ {
 		timeFolder := now.Add(-time.Second * time.Duration(2*i)).Format(timeFormat)
-		tmpDir := filepath.Join(snapshotDir, snapshotName, timeFolder)
+		tmpDir := filepath.Join(snapshotDir, "snapshot", snapshotName, timeFolder)
 		Expect(os.Mkdir(tmpDir, os.ModePerm)).To(Succeed())
 		By(fmt.Sprintf("Created temporary directory %s", tmpDir))
 	}
@@ -65,16 +67,19 @@ func createSnapshotDirectories(snapshotName, snapshotStorage string, numOfDirs i
 	return snapshotDir
 }
 
-// createSnapshotDirectoryWithObjects assumes that snapshotStorage/snapshotName directory exists.
+// createSnapshotDirectoryWithObjects assumes that snapshotStorage/snapshot/snapshotName directory exists.
 // Adds a subdirectory <time format> and dumps content of each objects in the format namespace/kind/name.yaml
 func createSnapshotDirectoryWithObjects(snapshotName, snapshotStorage string, objects []client.Object) string {
 	timeFolder := time.Now().Format(timeFormat)
-	snapshotDir := filepath.Join(snapshotStorage, snapshotName, timeFolder)
+	snapshotDir := filepath.Join(snapshotStorage, "snapshot", snapshotName, timeFolder)
 	Expect(os.Mkdir(snapshotDir, os.ModePerm)).To(Succeed())
+
+	collectorClient := collector.GetClient()
+
 	for i := range objects {
 		By(fmt.Sprintf("Dumping object %s %s/%s in folder %s", objects[i].GetObjectKind().GroupVersionKind().Kind,
 			objects[i].GetNamespace(), objects[i].GetName(), snapshotDir))
-		Expect(snapshotter.DumpObject(objects[i], snapshotDir, klogr.New())).To(Succeed())
+		Expect(collectorClient.DumpObject(objects[i], snapshotDir, klogr.New())).To(Succeed())
 	}
 	return timeFolder
 }

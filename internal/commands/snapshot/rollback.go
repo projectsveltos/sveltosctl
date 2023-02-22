@@ -38,7 +38,7 @@ import (
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
-	"github.com/projectsveltos/sveltosctl/internal/snapshotter"
+	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -58,8 +58,9 @@ func rollbackConfiguration(ctx context.Context,
 	}
 
 	logger.V(logs.LogDebug).Info(fmt.Sprintf("Getting snapshot folder for %s", sample))
-	snapshotClient := snapshotter.GetClient()
-	artifactFolder, err := snapshotClient.GetCollectedSnapshotFolder(snapshotInstance, logger)
+	snapshotClient := collector.GetClient()
+	artifactFolder, err := snapshotClient.GetFolder(snapshotInstance.Spec.Storage, snapshotInstance.Name,
+		collector.Snapshot, logger)
 	if err != nil {
 		return err
 	}
@@ -123,7 +124,7 @@ func rollbackConfigurationToSnapshot(ctx context.Context, folder, passedNamespac
 }
 
 func getAndRollbackConfigMaps(ctx context.Context, folder, passedNamespace string, logger logr.Logger) error {
-	snapshotClient := snapshotter.GetClient()
+	snapshotClient := collector.GetClient()
 	cmMap, err := snapshotClient.GetNamespacedResources(folder, "ConfigMap", logger)
 	if err != nil {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect ConfigMaps from folder %s", folder))
@@ -144,7 +145,7 @@ func getAndRollbackConfigMaps(ctx context.Context, folder, passedNamespace strin
 }
 
 func getAndRollbackSecrets(ctx context.Context, folder, passedNamespace string, logger logr.Logger) error {
-	snapshotClient := snapshotter.GetClient()
+	snapshotClient := collector.GetClient()
 	secretMap, err := snapshotClient.GetNamespacedResources(folder, "Secret", logger)
 	if err != nil {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect Secret from folder %s", folder))
@@ -177,7 +178,7 @@ func getAndRollbackClusters(ctx context.Context, folder, passedNamespace, passed
 }
 
 func getAndRollbackCAPIClusters(ctx context.Context, folder, passedNamespace, passedCluster string, logger logr.Logger) error {
-	snapshotClient := snapshotter.GetClient()
+	snapshotClient := collector.GetClient()
 	clusterMap, err := snapshotClient.GetNamespacedResources(folder, "Cluster", logger)
 	if err != nil {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect Cluster from folder %s", folder))
@@ -198,7 +199,7 @@ func getAndRollbackCAPIClusters(ctx context.Context, folder, passedNamespace, pa
 }
 
 func getAndRollbackSveltosClusters(ctx context.Context, folder, passedNamespace, passedCluster string, logger logr.Logger) error {
-	snapshotClient := snapshotter.GetClient()
+	snapshotClient := collector.GetClient()
 	clusterMap, err := snapshotClient.GetNamespacedResources(folder, libsveltosv1alpha1.SveltosClusterKind, logger)
 	if err != nil {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect SveltosCluster from folder %s", folder))
@@ -219,7 +220,7 @@ func getAndRollbackSveltosClusters(ctx context.Context, folder, passedNamespace,
 }
 
 func getAndRollbackClusterProfiles(ctx context.Context, folder, passedClusterProfile string, logger logr.Logger) error {
-	snapshotClient := snapshotter.GetClient()
+	snapshotClient := collector.GetClient()
 	clusterProfiles, err := snapshotClient.GetClusterResources(folder, configv1alpha1.ClusterProfileKind, logger)
 	if err != nil {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect ClusterProfile from folder %s", folder))
@@ -241,8 +242,8 @@ func getAndRollbackClusterProfiles(ctx context.Context, folder, passedClusterPro
 }
 
 func getAndRollbackClassifiers(ctx context.Context, folder, passedClassifier string, logger logr.Logger) error {
-	snapshotClient := snapshotter.GetClient()
-	classifiers, err := snapshotClient.GetClassifierResources(folder, libsveltosv1alpha1.ClassifierKind, logger)
+	snapshotClient := collector.GetClient()
+	classifiers, err := snapshotClient.GetClusterResources(folder, libsveltosv1alpha1.ClassifierKind, logger)
 	if err != nil {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect Classifiers from folder %s", folder))
 		return err
@@ -263,8 +264,8 @@ func getAndRollbackClassifiers(ctx context.Context, folder, passedClassifier str
 }
 
 func getAndRollbackRoleRequests(ctx context.Context, folder, passedRoleRequest string, logger logr.Logger) error {
-	snapshotClient := snapshotter.GetClient()
-	roleRequests, err := snapshotClient.GetRoleRequestResources(folder, libsveltosv1alpha1.RoleRequestKind, logger)
+	snapshotClient := collector.GetClient()
+	roleRequests, err := snapshotClient.GetClusterResources(folder, libsveltosv1alpha1.RoleRequestKind, logger)
 	if err != nil {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect RoleRequests from folder %s", folder))
 		return err

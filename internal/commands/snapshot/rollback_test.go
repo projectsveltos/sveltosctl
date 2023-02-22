@@ -37,8 +37,8 @@ import (
 
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
+	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/commands/snapshot"
-	"github.com/projectsveltos/sveltosctl/internal/snapshotter"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -369,9 +369,11 @@ var _ = Describe("Snapshot Rollback", func() {
 		name := randomString()
 		namespace := randomString()
 
+		collectorClient := collector.GetClient()
+
 		configMap, err := GetUnstructured([]byte(fmt.Sprintf(configMapWithPolicy, namespace, name)))
 		Expect(err).To(BeNil())
-		Expect(snapshotter.DumpObject(configMap, folder, klogr.New())).To(Succeed())
+		Expect(collectorClient.DumpObject(configMap, folder, klogr.New())).To(Succeed())
 
 		scheme, err := utils.GetScheme()
 		Expect(err).To(BeNil())
@@ -392,9 +394,11 @@ var _ = Describe("Snapshot Rollback", func() {
 
 		name := randomString()
 
+		collectorClient := collector.GetClient()
+
 		clusterProfile, err := GetUnstructured([]byte(fmt.Sprintf(clusterProfileTemplate, name)))
 		Expect(err).To(BeNil())
-		Expect(snapshotter.DumpObject(clusterProfile, folder, klogr.New())).To(Succeed())
+		Expect(collectorClient.DumpObject(clusterProfile, folder, klogr.New())).To(Succeed())
 
 		scheme, err := utils.GetScheme()
 		Expect(err).To(BeNil())
@@ -494,13 +498,15 @@ func createDirectoryWithObjects(snapshotName, snapshotStorage string, objects []
 	By(fmt.Sprintf("Created temporary directory %s", snapshotDir))
 	Expect(err).To(BeNil())
 
+	collectorClient := collector.GetClient()
+
 	for i := range objects {
 		o := objects[i]
 		Expect(addTypeInformationToObject(o)).To(Succeed())
 		By(fmt.Sprintf("Adding %s %s/%s to directory %s",
 			o.GetObjectKind().GroupVersionKind().GroupKind().Kind, o.GetNamespace(), o.GetName(), snapshotDir))
 
-		Expect(snapshotter.DumpObject(o, snapshotDir, klogr.New())).To(Succeed())
+		Expect(collectorClient.DumpObject(o, snapshotDir, klogr.New())).To(Succeed())
 	}
 
 	return snapshotDir

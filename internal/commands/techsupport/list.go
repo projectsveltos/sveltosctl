@@ -1,5 +1,5 @@
 /*
-Copyright 2022. projectsveltos.io. All rights reserved.
+Copyright 2023. projectsveltos.io. All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package snapshot
+package techsupport
 
 import (
 	"context"
@@ -35,30 +35,30 @@ import (
 )
 
 var (
-	// snapshotName is the name of the Snaphost instance which caused a snapshot to be collected
-	// snapshotDate is a string containing the Date a snapshot was taken
-	genListSnapshotRow = func(snaphostName, snapshotDate string,
+	// techsupportName is the name of the techsupport instance which caused a techsupport to be collected
+	// techsupportDate is a string containing the Date a techsupport was taken
+	genListTechsupportRow = func(techsupportName, techsupportDate string,
 	) []string {
 		return []string{
-			snaphostName,
-			snapshotDate,
+			techsupportName,
+			techsupportDate,
 		}
 	}
 )
 
-func doConsiderSnapshot(snaphostInstance *utilsv1alpha1.Snapshot, passedSnapshot string) bool {
-	if passedSnapshot == "" {
+func doConsiderTechsupport(techsupportInstance *utilsv1alpha1.Techsupport, passedTechsupport string) bool {
+	if passedTechsupport == "" {
 		return true
 	}
 
-	return snaphostInstance.Name == passedSnapshot
+	return techsupportInstance.Name == passedTechsupport
 }
 
-func listSnapshots(ctx context.Context, passedSnapshotName string, logger logr.Logger) error {
+func listTechsupports(ctx context.Context, passedTechsupportName string, logger logr.Logger) error {
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"SNAPSHOT POLICY", "DATE"})
+	table.SetHeader([]string{"TECHSUPPORT POLICY", "DATE"})
 
-	if err := displaySnapshots(ctx, passedSnapshotName, table, logger); err != nil {
+	if err := displayTechsupports(ctx, passedTechsupportName, table, logger); err != nil {
 		return err
 	}
 
@@ -67,19 +67,19 @@ func listSnapshots(ctx context.Context, passedSnapshotName string, logger logr.L
 	return nil
 }
 
-func displaySnapshots(ctx context.Context, passedSnapshotName string,
+func displayTechsupports(ctx context.Context, passedTechsupportName string,
 	table *tablewriter.Table, logger logr.Logger) error {
 
-	snapshotList := &utilsv1alpha1.SnapshotList{}
-	logger.V(logs.LogDebug).Info("List all Snapshot instances")
+	techsupportList := &utilsv1alpha1.TechsupportList{}
+	logger.V(logs.LogDebug).Info("List all Techsupport instances")
 	instance := utils.GetAccessInstance()
-	err := instance.ListResources(ctx, snapshotList)
+	err := instance.ListResources(ctx, techsupportList)
 	if err != nil {
 		return err
 	}
-	for i := range snapshotList.Items {
-		if doConsiderSnapshot(&snapshotList.Items[i], passedSnapshotName) {
-			err = displaySnapshot(&snapshotList.Items[i], table, logger)
+	for i := range techsupportList.Items {
+		if doConsiderTechsupport(&techsupportList.Items[i], passedTechsupportName) {
+			err = displayTechsupport(&techsupportList.Items[i], table, logger)
 			if err != nil {
 				return nil
 			}
@@ -89,35 +89,35 @@ func displaySnapshots(ctx context.Context, passedSnapshotName string,
 	return nil
 }
 
-func displaySnapshot(snapshotInstance *utilsv1alpha1.Snapshot,
+func displayTechsupport(techsupportInstance *utilsv1alpha1.Techsupport,
 	table *tablewriter.Table, logger logr.Logger) error {
 
-	logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering Snapshot instance %s", snapshotInstance.Name))
-	snapshotClient := collector.GetClient()
-	results, err := snapshotClient.ListCollections(snapshotInstance.Spec.Storage, snapshotInstance.Name,
-		collector.Snapshot, logger)
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering Techsupport instance %s", techsupportInstance.Name))
+	techsupportClient := collector.GetClient()
+	results, err := techsupportClient.ListCollections(techsupportInstance.Spec.Storage, techsupportInstance.Name,
+		collector.Techsupport, logger)
 	if err != nil {
 		return err
 	}
 	for i := range results {
-		table.Append(genListSnapshotRow(snapshotInstance.Name, results[i]))
+		table.Append(genListTechsupportRow(techsupportInstance.Name, results[i]))
 	}
 	return nil
 }
 
-// List collects snapshot
+// List collects techsupport
 func List(ctx context.Context, args []string, logger logr.Logger) error {
 	doc := `Usage:
-	sveltosctl snapshot list [options] [--snapshot=<name>] [--verbose]
+	sveltosctl techsupport list [options] [--techsupport=<name>] [--verbose]
 
-     --snapshot=<name>      List snapshots taken because of Snapshot instance with that name
+     --techsupport=<name>      List techsupports taken because of Techsupport instance with that name
 
 Options:
   -h --help                  Show this screen.
      --verbose               Verbose mode. Print each step.  
 
 Description:
-  The snapshot list command lists all snapshots taken.
+  The techsupport list command lists all techsupports taken.
 `
 
 	parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
@@ -140,9 +140,9 @@ Description:
 	}
 
 	snapshostName := ""
-	if passedSnapshotName := parsedArgs["--snapshot"]; passedSnapshotName != nil {
-		snapshostName = passedSnapshotName.(string)
+	if passedTechsupportName := parsedArgs["--techsupport"]; passedTechsupportName != nil {
+		snapshostName = passedTechsupportName.(string)
 	}
 
-	return listSnapshots(ctx, snapshostName, logger)
+	return listTechsupports(ctx, snapshostName, logger)
 }

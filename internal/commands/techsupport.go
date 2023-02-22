@@ -1,5 +1,5 @@
 /*
-Copyright 2022. projectsveltos.io. All rights reserved.
+Copyright 2023. projectsveltos.io. All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -27,24 +27,21 @@ import (
 	"github.com/go-logr/logr"
 
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	"github.com/projectsveltos/sveltosctl/internal/commands/snapshot"
+	"github.com/projectsveltos/sveltosctl/internal/commands/techsupport"
 )
 
-// Snapshot takes keyword then calls subcommand.
-func Snapshot(ctx context.Context, args []string, logger logr.Logger) error {
+// Techsupport takes keyword then calls subcommand.
+func Techsupport(ctx context.Context, args []string, logger logr.Logger) error {
 	doc := `Usage:
-  sveltosctl snapshot [options] <subcommand> [<args>...]
+  sveltosctl techsupport [options] <subcommand> [<args>...]
 
-    list          Displays all available collected snapshots.
-    diff          Displays diff between two collected snapshots.
-    rollback      Rollback to any previous configuration snapshot.
-    reconciler    Starts a snapshot reconciler.
+    list          Displays all available collected techsupports.
 
 Options:
   -h --help       Show this screen.
 
 Description:
-See 'sveltosctl snapshot <subcommand> --help' to read about a specific subcommand.
+See 'sveltosctl techsupport <subcommand> --help' to read about a specific subcommand.
 `
 
 	parser := &docopt.Parser{
@@ -66,23 +63,12 @@ See 'sveltosctl snapshot <subcommand> --help' to read about a specific subcomman
 	}
 
 	command := opts["<subcommand>"].(string)
-	arguments := append([]string{"snapshot", command}, opts["<args>"].([]string)...)
+	arguments := append([]string{"techsupport", command}, opts["<args>"].([]string)...)
 
-	if opts["<subcommand>"] == "reconciler" {
-		if err = watchResources(ctx, logger); err != nil {
-			logger.Error(err, "failed to watch resource")
-			return err
-		}
-		select {}
-	} else if opts["<subcommand>"] != nil {
+	if opts["<subcommand>"] != nil {
 		switch command {
-		//nolint: goconst // same command name
 		case "list":
-			err = snapshot.List(ctx, arguments, logger)
-		case "diff":
-			err = snapshot.Diff(ctx, arguments, logger)
-		case "rollback":
-			err = snapshot.Rollback(ctx, arguments, logger)
+			err = techsupport.List(ctx, arguments, logger)
 		default:
 			//nolint: forbidigo // print doc
 			fmt.Println(doc)

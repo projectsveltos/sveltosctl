@@ -42,8 +42,8 @@ import (
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
+	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/commands/snapshot"
-	"github.com/projectsveltos/sveltosctl/internal/snapshotter"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -66,7 +66,9 @@ var _ = Describe("Snapshot Diff", func() {
 		snapshotDir = filepath.Join(snapshotDir, snapshotInstance.Spec.Storage)
 		Expect(os.Mkdir(snapshotDir, os.ModePerm)).To(Succeed())
 		snapshotInstance.Spec.Storage = snapshotDir
-		tmpDir := filepath.Join(snapshotDir, snapshotInstance.Name)
+		tmpDir := filepath.Join(snapshotDir, "snapshot")
+		Expect(os.Mkdir(tmpDir, os.ModePerm)).To(Succeed())
+		tmpDir = filepath.Join(tmpDir, snapshotInstance.Name)
 		Expect(os.Mkdir(tmpDir, os.ModePerm)).To(Succeed())
 
 		clusterConfigurations := generateClusterConfiguration()
@@ -92,6 +94,9 @@ var _ = Describe("Snapshot Diff", func() {
 		os.Stdout = w
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
+
+		collector.InitializeClient(context.TODO(), klogr.New(), c, 10)
+
 		err = snapshot.ListSnapshotDiffs(context.TODO(), snapshotInstance.Name, timeOne, timeTwo, "", "", false, klogr.New())
 		Expect(err).To(BeNil())
 
@@ -148,7 +153,9 @@ var _ = Describe("Snapshot Diff", func() {
 		snapshotDir = filepath.Join(snapshotDir, snapshotInstance.Spec.Storage)
 		Expect(os.Mkdir(snapshotDir, os.ModePerm)).To(Succeed())
 		snapshotInstance.Spec.Storage = snapshotDir
-		tmpDir := filepath.Join(snapshotDir, snapshotInstance.Name)
+		tmpDir := filepath.Join(snapshotDir, "snapshot")
+		Expect(os.Mkdir(tmpDir, os.ModePerm)).To(Succeed())
+		tmpDir = filepath.Join(tmpDir, snapshotInstance.Name)
 		Expect(os.Mkdir(tmpDir, os.ModePerm)).To(Succeed())
 
 		classifierName := randomString()
@@ -220,8 +227,10 @@ var _ = Describe("Snapshot Diff", func() {
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
 
-		snapshotClient := snapshotter.GetClient()
-		artifactFolder, err := snapshotClient.GetCollectedSnapshotFolder(snapshotInstance, klogr.New())
+		collector.InitializeClient(context.TODO(), klogr.New(), c, 10)
+
+		snapshotClient := collector.GetClient()
+		artifactFolder, err := snapshotClient.GetFolder(snapshotInstance.Spec.Storage, snapshotInstance.Name, collector.Snapshot, klogr.New())
 		Expect(err).To(BeNil())
 		fromFolder := filepath.Join(*artifactFolder, timeOne)
 		toFolder := filepath.Join(*artifactFolder, timeTwo)
@@ -389,11 +398,18 @@ var _ = Describe("Snapshot Diff", func() {
 		name := randomString()
 		namespace := randomString()
 
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+		c := fake.NewClientBuilder().WithScheme(scheme).Build()
+		collector.InitializeClient(context.TODO(), klogr.New(), c, 10)
+
+		collectorClient := collector.GetClient()
+
 		oldFolder, err := os.MkdirTemp("", randomString())
 		Expect(err).To(BeNil())
 		clusterRole := getClusterRole()
 		oldConfigMap := createConfigMapWithPolicy(namespace, name, render.AsCode(clusterRole))
-		Expect(snapshotter.DumpObject(oldConfigMap, oldFolder, klogr.New())).To(Succeed())
+		Expect(collectorClient.DumpObject(oldConfigMap, oldFolder, klogr.New())).To(Succeed())
 
 		newFolder, err := os.MkdirTemp("", randomString())
 		Expect(err).To(BeNil())
@@ -401,7 +417,7 @@ var _ = Describe("Snapshot Diff", func() {
 			{Verbs: []string{"create", "get"}, APIGroups: []string{"cert-manager.io"}, Resources: []string{"certificaterequests"}},
 		}
 		newConfigMap := createConfigMapWithPolicy(namespace, name, render.AsCode(clusterRole))
-		Expect(snapshotter.DumpObject(newConfigMap, newFolder, klogr.New())).To(Succeed())
+		Expect(collectorClient.DumpObject(newConfigMap, newFolder, klogr.New())).To(Succeed())
 
 		oldResource := &configv1alpha1.Resource{
 			Kind:            "ClusterRole",
@@ -506,10 +522,16 @@ var _ = Describe("Snapshot Diff", func() {
 
 		Expect(addTypeInformationToObject(clusterRole)).To(Succeed())
 
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+		c := fake.NewClientBuilder().WithScheme(scheme).Build()
+		collector.InitializeClient(context.TODO(), klogr.New(), c, 10)
+		collectorClient := collector.GetClient()
+
 		name := randomString()
 		namespace := randomString()
 		configMap := createConfigMapWithPolicy(namespace, name, render.AsCode(clusterRole))
-		Expect(snapshotter.DumpObject(configMap, folder, klogr.New())).To(Succeed())
+		Expect(collectorClient.DumpObject(configMap, folder, klogr.New())).To(Succeed())
 		By(fmt.Sprintf("Dumped ConfigMap %s/%s", configMap.Namespace, configMap.Name))
 
 		clusterRoleGroup := "rbac.authorization.k8s.io/v1"

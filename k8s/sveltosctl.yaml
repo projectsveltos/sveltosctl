@@ -46,29 +46,34 @@ spec:
       serviceAccountName: sveltosctl
       containers:
       - name: sveltosctl
-        image: gianlucam76/sveltosctl-amd64:main
+        image: projectsveltos/sveltosctl-amd64:main
         imagePullPolicy: IfNotPresent
         command:
           - /sveltosctl
         args:
           - snapshot
           - reconciler
+          - v=5
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
           runAsUser: 0
         volumeMounts:
-        - mountPath: /snapshot
-          name: snapshot
+        - mountPath: /collection
+          name: collection
         - mountPath: /etc/localtime
           name: tz-config
+        - mountPath: /tmp
+          name: tmp
       volumes:
+      - emptyDir: {}
+        name: tmp
       - hostPath:
           path: /usr/share/zoneinfo/America/Los_Angeles
         name: tz-config
   volumeClaimTemplates:
   - metadata:
-      name: snapshot
+      name: collection
     spec:
       accessModes: [ "ReadWriteOnce" ]
       storageClassName: "standard"
@@ -119,9 +124,11 @@ rules:
       - get
       - list
       - update
+      - watch
   - apiGroups: ["utils.projectsveltos.io"]
     resources:
       - snapshots
+      - techsupports
     verbs:
       - get
       - list
@@ -130,17 +137,20 @@ rules:
   - apiGroups: ["utils.projectsveltos.io"]
     resources:
     - snapshots/finalizers
+    - techsupports/finalizers
     verbs:
     - patch
     - update      
   - apiGroups: ["utils.projectsveltos.io"]
     resources:
       - snapshots/status
+      - techsupports/status
     verbs:
       - '*'
   - apiGroups: ["cluster.x-k8s.io"]
     resources:
       - clusters
+      - machines
     verbs:
       - get
       - list
@@ -153,7 +163,14 @@ rules:
     verbs:
       - get
       - list
-      - watch      
+      - watch
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - get
+      - list
+      - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

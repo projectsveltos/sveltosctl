@@ -19,8 +19,6 @@ linters-settings:
       - github.com/sirupsen/logrus: "Use klog, zap, or logr for logging."
       - github.com/wojas/genericr: "Use klog, zap, or logr for logging."
       - logfmt: "Use klog, zap, or logr for logging."
-  dupl:
-    threshold: 200
   errorlint:
     # Use '%w' to format errors.
     errorf: true
@@ -118,7 +116,6 @@ linters:
     - bodyclose
     - depguard
     - dogsled
-    - dupl
     - durationcheck
     - errcheck
     - errname
