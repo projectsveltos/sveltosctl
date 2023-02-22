@@ -1,5 +1,5 @@
 /*
-Copyright 2022. projectsveltos.io. All rights reserved.
+Copyright 2023. projectsveltos.io. All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package snapshot_test
+package techsupport_test
 
 import (
 	"bytes"
@@ -34,35 +34,35 @@ import (
 
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
-	"github.com/projectsveltos/sveltosctl/internal/commands/snapshot"
+	"github.com/projectsveltos/sveltosctl/internal/commands/techsupport"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
-var _ = Describe("Snapshot List", func() {
+var _ = Describe("Techsupport List", func() {
 	BeforeEach(func() {
 	})
 
-	It("snapshot list displays all snapshots collected per Snapshot instance", func() {
-		snapshotInstance := &utilsv1alpha1.Snapshot{
+	It("techsupport list displays all techsupports collected per Techsupport instance", func() {
+		techsupportInstance := &utilsv1alpha1.Techsupport{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: randomString(),
 			},
-			Spec: utilsv1alpha1.SnapshotSpec{
+			Spec: utilsv1alpha1.TechsupportSpec{
 				Storage: randomString(),
 			},
 		}
 
 		numOfCollection := 4
-		snapshotDir := createSnapshotDirectories(snapshotInstance.Name, snapshotInstance.Spec.Storage,
+		techsupportDir := createTechsupportDirectories(techsupportInstance.Name, techsupportInstance.Spec.Storage,
 			numOfCollection)
-		snapshotInstance.Spec.Storage = snapshotDir
-		By(fmt.Sprintf("Created snapshot instance %s (storage %s)", snapshotInstance.Name, snapshotInstance.Spec.Storage))
+		techsupportInstance.Spec.Storage = techsupportDir
+		By(fmt.Sprintf("Created techsupport instance %s (storage %s)", techsupportInstance.Name, techsupportInstance.Spec.Storage))
 
 		old := os.Stdout // keep backup of the real stdout
 		r, w, _ := os.Pipe()
 		os.Stdout = w
 
-		initObjects := []client.Object{snapshotInstance}
+		initObjects := []client.Object{techsupportInstance}
 
 		scheme, err := utils.GetScheme()
 		Expect(err).To(BeNil())
@@ -71,7 +71,7 @@ var _ = Describe("Snapshot List", func() {
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
 		collector.InitializeClient(context.TODO(), klogr.New(), c, 10)
 
-		err = snapshot.ListSnapshots(context.TODO(), "", klogr.New())
+		err = techsupport.ListTechsupports(context.TODO(), "", klogr.New())
 		Expect(err).To(BeNil())
 
 		w.Close()
@@ -79,7 +79,7 @@ var _ = Describe("Snapshot List", func() {
 		_, err = io.Copy(&buf, r)
 		Expect(err).To(BeNil())
 		/*
-		  // Following is an example of snapshot list
+		  // Following is an example of techsupport list
 		   +-----------------+---------------------+
 		   | SNAPSHOT POLICY |        DATE         |
 		   +-----------------+---------------------+
@@ -91,7 +91,7 @@ var _ = Describe("Snapshot List", func() {
 		foundCollection := 0
 		lines := strings.Split(buf.String(), "\n")
 		for i := range lines {
-			if strings.Contains(lines[i], snapshotInstance.Name) {
+			if strings.Contains(lines[i], techsupportInstance.Name) {
 				foundCollection++
 			}
 		}

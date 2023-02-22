@@ -28,11 +28,10 @@ If you decide to run it as a binary:
 
 ### Run sveltosctl as a pod
 If you decide to run it as a pod in the management cluster, YAML is in manifest subdirectory.
+This assumes you have already [installed Sveltos](https://projectsveltos.github.io/sveltos/install).
 
 ```
-kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/main/manifest/utils.projectsveltos.io_snapshots.yaml
-
-kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/main/manifest/sveltosctl.yaml
+kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/main/manifest/manifest.yaml
 ```
 
 Please keep in mind it requires a PersistentVolume. So modify this section accordingly before posting the YAML.
@@ -73,8 +72,10 @@ You might also want to change the timezone of sveltosctl pod by using specific t
   - [Multi-tenancy: display admin permissions](#multi-tenancy-display-admin-permissions)
   - [Log severity settings](#log-severity-settings)
   - [Display outcome of ClusterProfile in DryRun mode](#display-outcome-of-clusterprofile-in-dryrun-mode)
-  - [Snapshot](#snapshot)
+  - [Techsupport](#techsupport)
     - [list](#list)
+  - [Snapshot](#snapshot)
+    - [list](#list-1)
     - [diff](#diff)
     - [rollback](#rollback)
   - [Admin RBACs](#admin-rbacs)
@@ -207,6 +208,55 @@ Usage:
      --namespace=<name>      Show which features would change in clusters in this namespace. If not specified all namespaces are considered.
      --cluster=<name>        Show which features would change in cluster with name. If not specified all cluster names are considered.
      --clusterprofile=<name> Show which features would change because of this clusterprofile. If not specified all clusterprofile names are considered.
+```
+
+## Techsupport
+
+When running sveltosctl as pod in the management cluster, it can take collect techsupports (both logs and resources).
+
+Define a Techsupport instance, following for instance will collect a techsupport every hour, collecting:
+ 
+1. logs for all pods in kube-system namespace (last 10 minutes,i.e, 600 seconds, of logs);
+2. All Secrets and Deployments
+
+from all managed clusters matching cluster selectors __env=fv__
+
+```
+apiVersion: utils.projectsveltos.io/v1alpha1
+kind: Techsupport
+metadata:
+ name: hourly
+spec:
+ clusterSelector: env=fv
+ schedule: “00 * * * *”
+ storage: /techsupport
+ logs:
+ - namespace: kube-system
+   sinceSeconds: 600
+ resources:
+ - group: “”
+   version: v1
+   kind: Secret
+ - group: “”
+   version: v1
+   kind: Deployment
+```
+
+where field _schedule_ is defined in [Cron format](https://en.wikipedia.org/wiki/Cron).
+
+
+### list
+  
+**techsupport list** can be used to display all collected techsupports:
+
+```
+kubectl exec -it -n projectsveltos sveltosctl-0 -- ./sveltosctl techsupport list --techsupport=hourly 
++--------------------+---------------------+
+| TECHSUPPORT POLICY |        DATE         |
++--------------------+---------------------+
+| hourly             | 2022-10-10:22:00:00 |
+| hourly             | 2022-10-10:23:00:00 |
++--------------------+---------------------+
 ```
 
 ## Snapshot

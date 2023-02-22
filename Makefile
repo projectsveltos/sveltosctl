@@ -8,7 +8,7 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
-REGISTRY ?= gianlucam76
+REGISTRY ?= projectsveltos
 IMAGE_NAME ?= sveltosctl
 export SVELTOSCTL_IMG ?= $(REGISTRY)/$(IMAGE_NAME) 
 TAG ?= main
@@ -74,7 +74,10 @@ generate-modules: ## Run go mod tidy to ensure modules are up to date
 .PHONY: generate
 generate: ## Run all generate-manifests-*, generate-go-deepcopy-*
 	$(MAKE) generate-modules generate-manifests generate-go-deepcopy
-	cp config/crd/bases/* manifest/
+	cp k8s/sveltosctl.yaml manifest/manifest.yaml
+	cat config/crd/bases/utils.projectsveltos.io_snapshots.yaml >> manifest/manifest.yaml
+	cat config/crd/bases/utils.projectsveltos.io_techsupports.yaml >> manifest/manifest.yaml
+
 
 .PHONY: generate-go-deepcopy
 generate-go-deepcopy: $(CONTROLLER_GEN) ## Run all generate-go-deepcopy-* targets

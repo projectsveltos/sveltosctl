@@ -10,10 +10,12 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo/v2 v2.6.0
 	github.com/onsi/gomega v1.24.1
-	github.com/projectsveltos/libsveltos v0.5.1-0.20230217184152-736d1e4355e5
-	github.com/projectsveltos/sveltos-manager v0.5.1-0.20230217204840-26da6b8a05a5
+	github.com/pkg/errors v0.9.1
+	github.com/projectsveltos/libsveltos v0.6.1-0.20230222215826-7e468f534c3c
+	github.com/projectsveltos/sveltos-manager v0.6.1-0.20230222233345-e1635abb0b36
 	github.com/robfig/cron v1.2.0
 	k8s.io/api v0.25.3
+	k8s.io/apiextensions-apiserver v0.25.2
 	k8s.io/apimachinery v0.25.3
 	k8s.io/client-go v0.25.3
 	k8s.io/klog/v2 v2.80.1
@@ -104,7 +106,6 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.3-0.20220114050600-8b9d41f48198 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.13.0 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.37.0 // indirect
@@ -140,7 +141,6 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	helm.sh/helm/v3 v3.10.3 // indirect
-	k8s.io/apiextensions-apiserver v0.25.2 // indirect
 	k8s.io/apiserver v0.25.2 // indirect
 	k8s.io/cli-runtime v0.25.3 // indirect
 	k8s.io/component-base v0.25.3 // indirect
