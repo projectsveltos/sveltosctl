@@ -2,17 +2,8 @@
 FROM golang:1.19 as builder
 
 ARG ARCH
-ARG PKEY
 ARG GIT_VERSION=unknown
 ARG LDFLAGS
-
-
-ENV GOPRIVATE github.com/projectsveltos
-RUN git config --global url."ssh://git@github.com/".insteadOf https://github.com/
-# replace with correct SSH if using customized
-ENV GIT_SSH_COMMAND 'ssh -i /workspace/.ssh/$PKEY -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
-COPY .ssh/ /workspace/.ssh/
-COPY .gitconfig /workspace/.gitconfig
 
 
 WORKDIR /workspace
