@@ -11,8 +11,8 @@ require (
 	github.com/onsi/ginkgo/v2 v2.6.0
 	github.com/onsi/gomega v1.24.1
 	github.com/pkg/errors v0.9.1
-	github.com/projectsveltos/libsveltos v0.7.2
-	github.com/projectsveltos/sveltos-manager v0.7.2
+	github.com/projectsveltos/libsveltos v0.7.2-0.20230317221215-fd97fbf75a5e
+	github.com/projectsveltos/sveltos-manager v0.7.1-0.20230317225810-1cd3479d82a0
 	github.com/robfig/cron v1.2.0
 	k8s.io/api v0.25.3
 	k8s.io/apiextensions-apiserver v0.25.3
