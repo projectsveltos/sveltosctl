@@ -147,7 +147,7 @@ func (a *k8sAccess) UpdateResource(ctx context.Context, obj client.Object, opts 
 
 // UpdateResourceStatus updates an obj Status
 // It is a simple wrapper around Status().Update, retrying in case of retryable error.
-func (a *k8sAccess) UpdateResourceStatus(ctx context.Context, obj client.Object, opts ...client.UpdateOption) error {
+func (a *k8sAccess) UpdateResourceStatus(ctx context.Context, obj client.Object, opts ...client.SubResourceUpdateOption) error {
 	i := 0
 	for {
 		err := a.client.Status().Update(ctx, obj, opts...)
