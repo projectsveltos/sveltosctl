@@ -11,8 +11,8 @@ require (
 	github.com/onsi/ginkgo/v2 v2.9.1
 	github.com/onsi/gomega v1.27.4
 	github.com/pkg/errors v0.9.1
-	github.com/projectsveltos/libsveltos v0.7.2-0.20230322205132-bd95caa97596
-	github.com/projectsveltos/sveltos-manager v0.7.1-0.20230322222301-e1cef8b7713a
+	github.com/projectsveltos/libsveltos v0.7.2-0.20230329131204-b73f2911e4ac
+	github.com/projectsveltos/sveltos-manager v0.7.1-0.20230329171803-41917216826b
 	github.com/robfig/cron v1.2.0
 	k8s.io/api v0.26.1
 	k8s.io/apiextensions-apiserver v0.26.1
@@ -20,7 +20,7 @@ require (
 	k8s.io/client-go v0.26.1
 	k8s.io/klog/v2 v2.80.1
 	k8s.io/kubectl v0.26.0
-	sigs.k8s.io/cluster-api v1.4.0-rc.1
+	sigs.k8s.io/cluster-api v1.4.0
 	sigs.k8s.io/controller-runtime v0.14.5
 	sigs.k8s.io/yaml v1.3.0
 )
