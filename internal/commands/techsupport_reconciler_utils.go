@@ -44,7 +44,6 @@ import (
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	"github.com/projectsveltos/libsveltos/lib/clusterproxy"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
@@ -414,5 +413,5 @@ func getClusterSummaryAdmin(techsupport *utilsv1alpha1.Techsupport) string {
 		return ""
 	}
 
-	return techsupport.Labels[configv1alpha1.AdminLabel]
+	return techsupport.Labels[libsveltosv1alpha1.AdminLabel]
 }
