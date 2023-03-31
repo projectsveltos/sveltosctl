@@ -531,6 +531,8 @@ github.com/posener/complete v1.2.3/go.mod h1:WZIdtGGp+qx0sLrYKtIRAruyNpv6hFCicSg
 github.com/poy/onpar v0.0.0-20200406201722-06f95a1c68e8/go.mod h1:nSbFQvMj97ZyhFRSJYtut+msi4sOY6zJDGCdSc+/rZU=
 github.com/poy/onpar v1.1.2 h1:QaNrNiZx0+Nar5dLgTVp5mXkyoVFIbepjyEoGSnhbAY=
 github.com/poy/onpar v1.1.2/go.mod h1:6X8FLNoxyr9kkmnlqpK6LSoiOtrO6MICtWwEuWkLjzg=
+github.com/projectsveltos/event-manager v0.7.1-0.20230329172814-41341bafafbd h1:19jfz0oRI8HjbajBb0+lmlP8z4sjb/0xtr17kKTcHkM=
+github.com/projectsveltos/event-manager v0.7.1-0.20230329172814-41341bafafbd/go.mod h1:EkEe44lNeNK2DZzzTlm85ldz9IzOKjk5KCvgA/G/rv8=
 github.com/projectsveltos/libsveltos v0.7.2-0.20230329131204-b73f2911e4ac h1:zMZ03uykGXtbiMza3eBBFHxOToNzHE/IsdsyVMOkAL4=
 github.com/projectsveltos/libsveltos v0.7.2-0.20230329131204-b73f2911e4ac/go.mod h1:y2Whauorx4Fo5vewbN8LySFp2JfSNzcgpRuOuyZF51c=
 github.com/projectsveltos/sveltos-manager v0.7.1-0.20230329171803-41917216826b h1:PAqvB/6p8JDIdgGlGse2VeAxvh5AaboEg5xAxiMfkYE=
