@@ -125,6 +125,54 @@ func collectSnapshot(ctx context.Context, c client.Client, snapshotName string, 
 	if err != nil {
 		return err
 	}
+	err = dumpEventSources(collectorClient, ctx, folder, logger)
+	if err != nil {
+		return err
+	}
+	err = dumpEventBasedAddOns(collectorClient, ctx, folder, logger)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func dumpEventSources(collectorClient *collector.Collector, ctx context.Context, folder string, logger logr.Logger) error {
+	logger.V(logs.LogDebug).Info("storing EventSources")
+	eventSources, err := utils.GetAccessInstance().ListEventSources(ctx, logger)
+	if err != nil {
+		return err
+	}
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d EventSources", len(eventSources.Items)))
+	for i := range eventSources.Items {
+		rr := &eventSources.Items[i]
+		err = collectorClient.DumpObject(rr, folder, logger)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func dumpEventBasedAddOns(collectorClient *collector.Collector, ctx context.Context, folder string, logger logr.Logger) error {
+	logger.V(logs.LogDebug).Info("storing EventBasedAddOns")
+	eventBasedAddOns, err := utils.GetAccessInstance().ListEventBasedAddOns(ctx, logger)
+	if err != nil {
+		return err
+	}
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d EventBasedAddOns", len(eventBasedAddOns.Items)))
+	for i := range eventBasedAddOns.Items {
+		r := &eventBasedAddOns.Items[i]
+		err = collectorClient.DumpObject(r, folder, logger)
+		if err != nil {
+			return err
+		}
+		err = dumpReferencedObjects(collectorClient, ctx, r.Spec.PolicyRefs, folder, logger)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
