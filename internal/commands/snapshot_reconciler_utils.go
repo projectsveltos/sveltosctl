@@ -133,6 +133,28 @@ func collectSnapshot(ctx context.Context, c client.Client, snapshotName string, 
 	if err != nil {
 		return err
 	}
+	err = dumpHealthChecks(collectorClient, ctx, folder, logger)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func dumpHealthChecks(collectorClient *collector.Collector, ctx context.Context, folder string, logger logr.Logger) error {
+	logger.V(logs.LogDebug).Info("storing HealthChecks")
+	healthChecks, err := utils.GetAccessInstance().ListHealthChecks(ctx, logger)
+	if err != nil {
+		return err
+	}
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d HealthChecks", len(healthChecks.Items)))
+	for i := range healthChecks.Items {
+		rr := &healthChecks.Items[i]
+		err = collectorClient.DumpObject(rr, folder, logger)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
