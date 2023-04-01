@@ -114,6 +114,9 @@ rules:
   - apiGroups: ["lib.projectsveltos.io"]
     resources:
       - classifiers
+      - eventsources
+      - healthchecks
+      - eventbasedaddons
     verbs:
       - get
       - list
