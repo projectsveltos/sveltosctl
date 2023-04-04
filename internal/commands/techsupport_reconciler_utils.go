@@ -98,6 +98,7 @@ func collectTechsupport(ctx context.Context, c client.Client, techsupportName st
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.V(logs.LogDebug).Info(fmt.Sprintf("Techsupport %s does not exist anymore. Nothing to do.", techsupportName))
+			return nil
 		}
 
 		return err
@@ -141,6 +142,10 @@ func collectTechsupport(ctx context.Context, c client.Client, techsupportName st
 				err = fmt.Errorf("%w; %v", err, tmpErr)
 			}
 		}
+	}
+
+	if err != nil {
+		logger.V(logs.LogInfo).Info("done collecting techsupport")
 	}
 
 	return err
