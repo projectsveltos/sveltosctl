@@ -88,7 +88,10 @@ func collectSnapshot(ctx context.Context, c client.Client, snapshotName string, 
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.V(logs.LogDebug).Info(fmt.Sprintf("Snapshot %s does not exist anymore. Nothing to do.", snapshotName))
+			return nil
 		}
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("Error fecthing snapshot: %v", err))
+		return err
 	}
 
 	collectorClient := collector.GetClient()
@@ -97,6 +100,7 @@ func collectSnapshot(ctx context.Context, c client.Client, snapshotName string, 
 		err = collectorClient.CleanOldCollections(snapshotInstance.Spec.Storage, snapshotInstance.Name, collector.Snapshot,
 			*snapshotInstance.Spec.SuccessfulSnapshotLimit, logger)
 		if err != nil {
+			logger.V(logs.LogInfo).Info(fmt.Sprintf("failed to clean %v", err))
 			return err
 		}
 	}
@@ -137,6 +141,9 @@ func collectSnapshot(ctx context.Context, c client.Client, snapshotName string, 
 	if err != nil {
 		return err
 	}
+
+	logger.V(logs.LogInfo).Info("done collecting snapshot")
+
 	return nil
 }
 
