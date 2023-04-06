@@ -18,7 +18,6 @@ package show
 
 import (
 	"context"
-	"encoding/base64"
 	"flag"
 	"fmt"
 	"os"
@@ -259,21 +258,9 @@ func collectResourceContent(ctx context.Context, resource libsveltosv1alpha1.Pol
 	}
 	data := make(map[string]string)
 	for key, value := range secret.Data {
-		data[key], err = decode(value)
-		if err != nil {
-			return nil, err
-		}
+		data[key] = string(value)
 	}
 	return collectContent(data, logger)
-}
-
-func decode(encoded []byte) (string, error) {
-	decoded, err := base64.StdEncoding.DecodeString(string(encoded))
-	if err != nil {
-		return "", err
-	}
-
-	return string(decoded), nil
 }
 
 func collectContent(data map[string]string, logger logr.Logger) ([]*unstructured.Unstructured, error) {
