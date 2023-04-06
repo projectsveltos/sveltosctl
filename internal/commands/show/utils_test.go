@@ -17,7 +17,6 @@ limitations under the License.
 package show_test
 
 import (
-	"encoding/base64"
 	"fmt"
 	"time"
 	"unicode/utf8"
@@ -187,7 +186,7 @@ func createSecretWithPolicy(namespace, configMapName string, policyStrs ...strin
 	}
 	for i := range policyStrs {
 		key := fmt.Sprintf("policy%d.yaml", i)
-		secret.Data[key] = []byte(base64.StdEncoding.EncodeToString([]byte(policyStrs[i])))
+		secret.Data[key] = []byte(policyStrs[i])
 	}
 
 	Expect(addTypeInformationToObject(secret)).To(Succeed())
