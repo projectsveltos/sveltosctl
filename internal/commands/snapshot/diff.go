@@ -18,7 +18,6 @@ package snapshot
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -273,7 +272,7 @@ func listSnapshotDiffsBewteenSamples(fromFolder, toFolder, passedNamespace, pass
 	err = listFeatureDiff(fromFolder, toFolder, fromClusterConfigurationMap, toClusterConfigurationMap,
 		passedNamespace, passedCluster, rawDiff, table, logger)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	return nil
@@ -626,7 +625,7 @@ func hasDiff(fromFolder, toFolder string, from, to *configv1alpha1.Resource, raw
 		fmt.Sprintf("%s from %s", resourceInfo, toFolder),
 		fromResource, edits))
 
-	if rawDiff {
+	if rawDiff && diff != "" {
 		//nolint: forbidigo // print diff
 		fmt.Println(diff)
 	}
@@ -697,10 +696,7 @@ func getResourceFromResourceOwner(folder string, resource *configv1alpha1.Resour
 		}
 		data = make(map[string]string)
 		for key, value := range secret.Data {
-			data[key], err = decode(value)
-			if err != nil {
-				return "", err
-			}
+			data[key] = string(value)
 		}
 	}
 
@@ -727,15 +723,6 @@ func getResourceFromResourceOwner(folder string, resource *configv1alpha1.Resour
 
 	return "", fmt.Errorf("resource %s %s/%s not found in %s",
 		resource.Kind, resource.Namespace, resource.Name, ownerPath)
-}
-
-func decode(encoded []byte) (string, error) {
-	decoded, err := base64.StdEncoding.DecodeString(string(encoded))
-	if err != nil {
-		return "", err
-	}
-
-	return string(decoded), nil
 }
 
 func buildOwnerPath(folder string, resource *configv1alpha1.Resource) string {
