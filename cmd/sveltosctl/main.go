@@ -42,7 +42,7 @@ func main() {
 	doc := `Usage:
 	sveltosctl [options] <command> [<args>...]
 
-    show           Display information on deployed policies (resources and helm releases) in each cluster
+    show           Display information on deployed Kubernetes addons (resources and helm releases) in each cluster
                    or for ClusterProfiles in DryRun mode, what changes would take effect if the ClusterProfile
                    mode was to be moved out of DryRun mode.
     snapshot       Displays collected snaphost. Visualize diffs between two collected snapshots.

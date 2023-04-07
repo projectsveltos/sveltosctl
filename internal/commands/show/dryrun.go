@@ -139,16 +139,17 @@ func displayDryRunForCluster(clusterReport *configv1alpha1.ClusterReport, table 
 	}
 }
 
-// DryRun displays information about which features would change in which cluster due to a ClusterProfile currently in DryRun mode,
+// DryRun displays information about which Kubernetes addons would change in which cluster due
+// to a ClusterProfile currently in DryRun mode,
 func DryRun(ctx context.Context, args []string, logger logr.Logger) error {
 	doc := `Usage:
   sveltosctl show dryrun [options] [--namespace=<name>] [--cluster=<name>] [--clusterprofile=<name>] [--verbose]
 
-     --namespace=<name>      Show which features would change in clusters in this namespace.
+     --namespace=<name>      Show which Kubernetes addons would change in clusters in this namespace.
                              If not specified all namespaces are considered.
-     --cluster=<name>        Show which features would change in cluster with name.
+     --cluster=<name>        Show which Kubernetes addons would change in cluster with name.
                              If not specified all cluster names are considered.
-     --clusterprofile=<name> Show which features would change because of this clusterprofile.
+     --clusterprofile=<name> Show which Kubernetes addons would change because of this clusterprofile.
                              If not specified all clusterprofile names are considered.
 
 Options:
@@ -156,7 +157,7 @@ Options:
      --verbose               Verbose mode. Print each step.  
 
 Description:
-  The show dryrun command shows information about which features would change in a cluster due to ClusterProfiles in DryRun mode.
+  The show dryrun command shows information about which Kubernetes addons would change in a cluster due to ClusterProfiles in DryRun mode.
 `
 	parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
 	if err != nil {
