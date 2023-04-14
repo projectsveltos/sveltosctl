@@ -44,7 +44,8 @@ func main() {
 
     show           Display information on deployed Kubernetes addons (resources and helm releases) in each cluster
                    or for ClusterProfiles in DryRun mode, what changes would take effect if the ClusterProfile
-                   mode was to be moved out of DryRun mode.
+                   mode was to be moved out of DryRun mode. Displays also information on which permissions each
+                   tenant admin has in each managed cluster.
     snapshot       Displays collected snaphost. Visualize diffs between two collected snapshots.
     techsupport    Displays collected techsupport.
     register       Onboard an existing non CAPI cluster by creating all necessary internal resources.

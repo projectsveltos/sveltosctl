@@ -36,10 +36,10 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	configv1alpha1 "github.com/projectsveltos/addon-manager/api/v1alpha1"
 	eventv1alpha1 "github.com/projectsveltos/event-manager/api/v1alpha1"
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
 )
 
@@ -119,6 +119,11 @@ func addToScheme(scheme *runtime.Scheme) error {
 // GetScheme returns scheme
 func (a *k8sAccess) GetScheme() *runtime.Scheme {
 	return a.scheme
+}
+
+// GetClient returns scheme
+func (a *k8sAccess) GetClient() client.Client {
+	return a.client
 }
 
 // ListNamespaces gets all namespaces.

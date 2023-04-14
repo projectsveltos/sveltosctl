@@ -10,10 +10,10 @@
 
 Please refere to sveltos [documentation](https://projectsveltos.github.io/sveltos/).
 
-**sveltosctl** is the command line client for Sveltos. **sveltosctl** nicely displays resources and helm charts info in custer deployed using [ClusterProfile](https://github.com/projectsveltos/sveltos-manager). It also provides the ability to generate configuration snapshots and rollback system to a previously taken configuration snapshot.
+**sveltosctl** is the command line client for Sveltos. **sveltosctl** nicely displays resources and helm charts info in custer deployed using [ClusterProfile](https://github.com/projectsveltos/addon-manager). It also provides the ability to generate configuration snapshots and rollback system to a previously taken configuration snapshot.
 
 It assumes:
-1. [ClusterProfile](https://github.com/projectsveltos/sveltos-manager) is used to programmatically define which resources/helm charts need to be deployed in which CAPI Clusters;
+1. [ClusterProfile](https://github.com/projectsveltos/addon-manager) is used to programmatically define which resources/helm charts need to be deployed in which CAPI Clusters;
 2. management cluster can be accessed 
  
 > Note: sveltosctl can run as binary though it is advised to run it as pod in a management cluster to get access to all of its features.
@@ -362,7 +362,7 @@ To see Sveltos CLI for snapshot in action, have a look at this [video](https://y
 
 ❤️ Your contributions are always welcome! If you want to contribute, have questions, noticed any bug or want to get the latest project news, you can connect with us in the following ways:
 
-1. Open a bug/feature enhancement on github [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/projectsveltos/sveltos-manager/issues)
+1. Open a bug/feature enhancement on github [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/projectsveltos/addon-manager/issues)
 2. Chat with us on the Slack in the #projectsveltos channel [![Slack](https://img.shields.io/badge/join%20slack-%23projectsveltos-brighteen)](https://join.slack.com/t/projectsveltos/shared_invite/zt-1hraownbr-W8NTs6LTimxLPB8Erj8Q6Q)
 3. [Contact Us](mailto:support@projectsveltos.io)
 
