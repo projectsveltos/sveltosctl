@@ -10,9 +10,8 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo/v2 v2.9.2
 	github.com/onsi/gomega v1.27.5
-	github.com/pkg/errors v0.9.1
-	github.com/projectsveltos/addon-manager v0.8.1-0.20230413115359-9326201f2a38
-	github.com/projectsveltos/event-manager v0.8.1-0.20230414074954-8a3fca739961
+	github.com/projectsveltos/addon-manager v0.8.1-0.20230414135010-9713aaed75d8
+	github.com/projectsveltos/event-manager v0.8.1-0.20230414140740-2fd519c6ea99
 	github.com/projectsveltos/libsveltos v0.8.1-0.20230413131254-2ba7acd7d39b
 	github.com/robfig/cron v1.2.0
 	k8s.io/api v0.26.1
@@ -109,6 +108,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc2 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.14.0 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.37.0 // indirect
