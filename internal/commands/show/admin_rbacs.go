@@ -42,12 +42,12 @@ var (
 	// resourceKind indentifies the type of resource (ClusterProfile, ConfigMap, Secret)
 	// resourceNamespace and resourceName is the kubernetes resource namespace/name
 	// clusters is the list of clusters where resource content is deployed
-	genAdminRbac = func(clusterKind, clusterNamespace, clusterName, admin,
+	genAdminRbac = func(clusterKind, clusterNamespace, clusterName, serviceAccountNamespace, serviceAccountName,
 		namespace, apigroups, resources, resourceNames, verbs string,
 	) []string {
 		return []string{
 			fmt.Sprintf("%s:%s/%s", clusterKind, clusterNamespace, clusterName),
-			admin,
+			fmt.Sprintf("%s/%s", serviceAccountNamespace, serviceAccountName),
 			namespace,
 			apigroups,
 			resources,
@@ -57,7 +57,8 @@ var (
 	}
 )
 
-func displayAdminRbacs(ctx context.Context, passedNamespace, passedCluster, passedAdmin string,
+func displayAdminRbacs(ctx context.Context,
+	passedNamespace, passedCluster, passedServiceAccountNamespace, passedServiceAccountName string,
 	logger logr.Logger) error {
 
 	// Collect all RoleRequest
@@ -69,6 +70,8 @@ func displayAdminRbacs(ctx context.Context, passedNamespace, passedCluster, pass
 		return err
 	}
 
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d roleRequests", len(roleRequests.Items)))
+
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"CLUSTER", "ADMIN", "NAMESPACE", "API GROUPS", "RESOURCES", "RESOURCE NAMES", "VERBS"})
 
@@ -78,7 +81,8 @@ func displayAdminRbacs(ctx context.Context, passedNamespace, passedCluster, pass
 	for k := range clusterMap {
 		l := logger.WithValues("cluster", fmt.Sprintf("%s:%s/%s", k.Kind, k.Namespace, k.Name))
 		l.V(logs.LogDebug).Info("considering cluster")
-		err = parseCluster(ctx, &k, clusterMap[k], passedNamespace, passedCluster, passedAdmin, table, l)
+		err = parseCluster(ctx, &k, clusterMap[k], passedNamespace, passedCluster, passedServiceAccountNamespace,
+			passedServiceAccountName, table, l)
 		if err != nil {
 			return err
 		}
@@ -102,8 +106,9 @@ func createRoleRequestsPerClusterMap(roleRequests *libsveltosv1alpha1.RoleReques
 	return clusterMap
 }
 
-func parseMatchihgCluster(rr *libsveltosv1alpha1.RoleRequest, clusterMap map[corev1.ObjectReference][]*libsveltosv1alpha1.RoleRequest,
-	logger logr.Logger) map[corev1.ObjectReference][]*libsveltosv1alpha1.RoleRequest {
+func parseMatchihgCluster(rr *libsveltosv1alpha1.RoleRequest,
+	clusterMap map[corev1.ObjectReference][]*libsveltosv1alpha1.RoleRequest, logger logr.Logger,
+) map[corev1.ObjectReference][]*libsveltosv1alpha1.RoleRequest {
 
 	logger = logger.WithValues("rolerequest", rr.Name)
 	logger.V(logs.LogDebug).Info("parsing matching clusters for roleRequets")
@@ -116,15 +121,17 @@ func parseMatchihgCluster(rr *libsveltosv1alpha1.RoleRequest, clusterMap map[cor
 	return clusterMap
 }
 
-func parseCluster(ctx context.Context, cluster *corev1.ObjectReference, roleRequests []*libsveltosv1alpha1.RoleRequest,
-	passedNamespace, passedCluster, passedAdmin string,
+func parseCluster(ctx context.Context, cluster *corev1.ObjectReference,
+	roleRequests []*libsveltosv1alpha1.RoleRequest,
+	passedNamespace, passedCluster, passedServiceAccountNamespace, passedServiceAccountName string,
 	table *tablewriter.Table, logger logr.Logger) error {
 
 	if passedNamespace == "" || passedNamespace == cluster.Namespace {
 		if passedCluster == "" || passedCluster == cluster.Name {
 			logger.V(logs.LogDebug).Info("examining admin rbacs in cluster")
 			for i := range roleRequests {
-				if err := parseRoleRequest(ctx, roleRequests[i], cluster.Namespace, cluster.Name, cluster.Kind, passedAdmin,
+				if err := parseRoleRequest(ctx, roleRequests[i], cluster.Namespace,
+					cluster.Name, cluster.Kind, passedServiceAccountNamespace, passedServiceAccountName,
 					table, logger); err != nil {
 					return err
 				}
@@ -135,15 +142,36 @@ func parseCluster(ctx context.Context, cluster *corev1.ObjectReference, roleRequ
 	return nil
 }
 
+func shouldParseRoleRequest(roleRequest *libsveltosv1alpha1.RoleRequest,
+	passedServiceAccountNamespace, passedServiceAccountName string) bool {
+
+	if passedServiceAccountNamespace != "" {
+		if passedServiceAccountNamespace != roleRequest.Spec.ServiceAccountNamespace {
+			return false
+		}
+	}
+
+	if passedServiceAccountName != "" {
+		if passedServiceAccountName != roleRequest.Spec.ServiceAccountName {
+			return false
+		}
+	}
+
+	return true
+}
+
 func parseRoleRequest(ctx context.Context, roleRequest *libsveltosv1alpha1.RoleRequest,
-	clusterNamespace, clusterName, clusterKind, passedAdmin string,
+	clusterNamespace, clusterName, clusterKind, passedServiceAccountNamespace, passedServiceAccountName string,
 	table *tablewriter.Table, logger logr.Logger) error {
 
-	logger = logger.WithValues("admin", roleRequest.Spec.Admin)
-	if passedAdmin == "" || passedAdmin == roleRequest.Spec.Admin {
+	logger = logger.WithValues("admin", fmt.Sprintf("%s/%s",
+		roleRequest.Spec.ServiceAccountNamespace, roleRequest.Spec.ServiceAccountName))
+	logger.V(logs.LogDebug).Info("considering rolerequest %s", roleRequest.Name)
+	if shouldParseRoleRequest(roleRequest, passedServiceAccountNamespace, passedServiceAccountName) {
 		logger.V(logs.LogDebug).Info("rolerequest is for admin")
 		for i := range roleRequest.Spec.RoleRefs {
-			if err := parseReferencedResource(ctx, clusterNamespace, clusterName, clusterKind, roleRequest.Spec.Admin,
+			if err := parseReferencedResource(ctx, clusterNamespace, clusterName, clusterKind,
+				roleRequest.Spec.ServiceAccountNamespace, roleRequest.Spec.ServiceAccountName,
 				roleRequest.Spec.RoleRefs[i], table, logger); err != nil {
 				return err
 			}
@@ -153,7 +181,8 @@ func parseRoleRequest(ctx context.Context, roleRequest *libsveltosv1alpha1.RoleR
 	return nil
 }
 
-func parseReferencedResource(ctx context.Context, clusterNamespace, clusterName, clusterKind, admin string,
+func parseReferencedResource(ctx context.Context,
+	clusterNamespace, clusterName, clusterKind, serviceAccountNamespace, serviceAccountName string,
 	resource libsveltosv1alpha1.PolicyRef, table *tablewriter.Table, logger logr.Logger) error {
 
 	// fetch resource
@@ -164,14 +193,14 @@ func parseReferencedResource(ctx context.Context, clusterNamespace, clusterName,
 
 	for i := range content {
 		if content[i].GroupVersionKind().Kind == "Role" {
-			err = processRole(content[i], clusterNamespace, clusterName, clusterKind, admin,
-				table, logger)
+			err = processRole(content[i], clusterNamespace, clusterName, clusterKind,
+				serviceAccountNamespace, serviceAccountName, table, logger)
 			if err != nil {
 				return err
 			}
 		} else if content[i].GroupVersionKind().Kind == "ClusterRole" {
-			err = processClusterRole(content[i], clusterNamespace, clusterName, clusterKind, admin,
-				table, logger)
+			err = processClusterRole(content[i], clusterNamespace, clusterName, clusterKind,
+				serviceAccountNamespace, serviceAccountName, table, logger)
 			if err != nil {
 				return err
 			}
@@ -183,7 +212,8 @@ func parseReferencedResource(ctx context.Context, clusterNamespace, clusterName,
 	return nil
 }
 
-func processRole(u *unstructured.Unstructured, clusterNamespace, clusterName, clusterKind, admin string,
+func processRole(u *unstructured.Unstructured,
+	clusterNamespace, clusterName, clusterKind, serviceAccountNamespace, serviceAccountName string,
 	table *tablewriter.Table, logger logr.Logger) error {
 
 	role := &rbacv1.Role{}
@@ -200,15 +230,16 @@ func processRole(u *unstructured.Unstructured, clusterNamespace, clusterName, cl
 			resourceNames = strings.Join(rule.ResourceNames, ",")
 		}
 
-		table.Append(genAdminRbac(clusterKind, clusterNamespace, clusterName, admin, role.Namespace,
-			strings.Join(rule.APIGroups, ","), strings.Join(rule.Resources, ","),
+		table.Append(genAdminRbac(clusterKind, clusterNamespace, clusterName, serviceAccountNamespace,
+			serviceAccountName, role.Namespace, strings.Join(rule.APIGroups, ","), strings.Join(rule.Resources, ","),
 			resourceNames, strings.Join(rule.Verbs, ",")))
 	}
 
 	return nil
 }
 
-func processClusterRole(u *unstructured.Unstructured, clusterNamespace, clusterName, clusterKind, admin string,
+func processClusterRole(u *unstructured.Unstructured,
+	clusterNamespace, clusterName, clusterKind, serviceAccountNamespace, serviceAccountName string,
 	table *tablewriter.Table, logger logr.Logger) error {
 
 	clusterRole := &rbacv1.ClusterRole{}
@@ -225,8 +256,8 @@ func processClusterRole(u *unstructured.Unstructured, clusterNamespace, clusterN
 			resourceNames = strings.Join(rule.ResourceNames, ",")
 		}
 
-		table.Append(genAdminRbac(clusterKind, clusterNamespace, clusterName, admin, "*",
-			strings.Join(rule.APIGroups, ","), strings.Join(rule.Resources, ","),
+		table.Append(genAdminRbac(clusterKind, clusterNamespace, clusterName, serviceAccountNamespace, serviceAccountName,
+			"*", strings.Join(rule.APIGroups, ","), strings.Join(rule.Resources, ","),
 			resourceNames, strings.Join(rule.Verbs, ",")))
 	}
 
@@ -295,14 +326,16 @@ func collectContent(data map[string]string, logger logr.Logger) ([]*unstructured
 // AdminPermissions displays information about permissions each admin has in each managed cluster
 func AdminPermissions(ctx context.Context, args []string, logger logr.Logger) error {
 	doc := `Usage:
-  sveltosctl show admin-rbac [options] [--namespace=<name>] [--cluster=<name>] [--admin=<name>] [--verbose]
+  sveltosctl show admin-rbac [options] [--namespace=<name>] [--cluster=<name>] [--serviceAccountName=<name>] [--serviceAccountNamespace=<name>] [--verbose]
 
-     --admin=<name>          Show permissions for this admin.
-	                         If not specified all admins are considered.
-     --namespace=<name>      Show which admin permissions in clusters in this namespace.
-                             If not specified all namespaces are considered.
-     --cluster=<name>        Show which admin permissions in cluster with name.
-                             If not specified all cluster names are considered.
+     --serviceAccountName=<name>            Show permissions for this ServiceAccount.
+                                            If not specified all admins are considered.
+     --serviceAccountNamespace=<namespace>  Show permissions for this ServiceAccounts in this namespace.
+                                            If not specified all namespaces are considered.
+     --namespace=<name>                     Show serviceAccount permissions in clusters in this namespace.
+                                            If not specified all namespaces are considered.
+     --cluster=<name>                       Show serviceAccount permissions in cluster with name.
+                                            If not specified all cluster names are considered.
 
 Options:
   -h --help                  Show this screen.
@@ -343,10 +376,15 @@ Description:
 		cluster = passedCluster.(string)
 	}
 
-	admin := ""
-	if passedAdmin := parsedArgs["--admin"]; passedAdmin != nil {
-		admin = passedAdmin.(string)
+	saName := ""
+	if passedSaName := parsedArgs["--serviceAccountName"]; passedSaName != nil {
+		saName = passedSaName.(string)
 	}
 
-	return displayAdminRbacs(ctx, namespace, cluster, admin, logger)
+	saNamespace := ""
+	if passedSaNamespace := parsedArgs["--serviceAccountNamespace"]; passedSaNamespace != nil {
+		saNamespace = passedSaNamespace.(string)
+	}
+
+	return displayAdminRbacs(ctx, namespace, cluster, saNamespace, saName, logger)
 }

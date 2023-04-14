@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 
+	configv1alpha1 "github.com/projectsveltos/addon-manager/api/v1alpha1"
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
@@ -147,7 +148,9 @@ func collectSnapshot(ctx context.Context, c client.Client, snapshotName string, 
 	return nil
 }
 
-func dumpHealthChecks(collectorClient *collector.Collector, ctx context.Context, folder string, logger logr.Logger) error {
+func dumpHealthChecks(collectorClient *collector.Collector, ctx context.Context, folder string,
+	logger logr.Logger) error {
+
 	logger.V(logs.LogDebug).Info("storing HealthChecks")
 	healthChecks, err := utils.GetAccessInstance().ListHealthChecks(ctx, logger)
 	if err != nil {
@@ -165,7 +168,9 @@ func dumpHealthChecks(collectorClient *collector.Collector, ctx context.Context,
 	return nil
 }
 
-func dumpEventSources(collectorClient *collector.Collector, ctx context.Context, folder string, logger logr.Logger) error {
+func dumpEventSources(collectorClient *collector.Collector, ctx context.Context, folder string,
+	logger logr.Logger) error {
+
 	logger.V(logs.LogDebug).Info("storing EventSources")
 	eventSources, err := utils.GetAccessInstance().ListEventSources(ctx, logger)
 	if err != nil {
@@ -183,7 +188,9 @@ func dumpEventSources(collectorClient *collector.Collector, ctx context.Context,
 	return nil
 }
 
-func dumpEventBasedAddOns(collectorClient *collector.Collector, ctx context.Context, folder string, logger logr.Logger) error {
+func dumpEventBasedAddOns(collectorClient *collector.Collector, ctx context.Context, folder string,
+	logger logr.Logger) error {
+
 	logger.V(logs.LogDebug).Info("storing EventBasedAddOns")
 	eventBasedAddOns, err := utils.GetAccessInstance().ListEventBasedAddOns(ctx, logger)
 	if err != nil {
@@ -196,7 +203,10 @@ func dumpEventBasedAddOns(collectorClient *collector.Collector, ctx context.Cont
 		if err != nil {
 			return err
 		}
-		err = dumpReferencedObjects(collectorClient, ctx, r.Spec.PolicyRefs, folder, logger)
+
+		policyRefs := convertConfigPolicyRefsToLibsveltosPolicyRefs(r.Spec.PolicyRefs)
+
+		err = dumpReferencedObjects(collectorClient, ctx, policyRefs, folder, logger)
 		if err != nil {
 			return err
 		}
@@ -205,7 +215,9 @@ func dumpEventBasedAddOns(collectorClient *collector.Collector, ctx context.Cont
 	return nil
 }
 
-func dumpRoleRequests(collectorClient *collector.Collector, ctx context.Context, folder string, logger logr.Logger) error {
+func dumpRoleRequests(collectorClient *collector.Collector, ctx context.Context, folder string,
+	logger logr.Logger) error {
+
 	logger.V(logs.LogDebug).Info("storing RoleRequests")
 	roleRequests, err := utils.GetAccessInstance().ListRoleRequests(ctx, logger)
 	if err != nil {
@@ -227,7 +239,9 @@ func dumpRoleRequests(collectorClient *collector.Collector, ctx context.Context,
 	return nil
 }
 
-func dumpClassifiers(collectorClient *collector.Collector, ctx context.Context, folder string, logger logr.Logger) error {
+func dumpClassifiers(collectorClient *collector.Collector, ctx context.Context, folder string,
+	logger logr.Logger) error {
+
 	logger.V(logs.LogDebug).Info("storing Classifiers")
 	classifiers, err := utils.GetAccessInstance().ListClassifiers(ctx, logger)
 	if err != nil {
@@ -245,7 +259,9 @@ func dumpClassifiers(collectorClient *collector.Collector, ctx context.Context, 
 	return nil
 }
 
-func dumpClusterProfiles(collectorClient *collector.Collector, ctx context.Context, folder string, logger logr.Logger) error {
+func dumpClusterProfiles(collectorClient *collector.Collector, ctx context.Context, folder string,
+	logger logr.Logger) error {
+
 	logger.V(logs.LogDebug).Info("storing ClusterProfiles")
 	clusterProfiles, err := utils.GetAccessInstance().ListClusterProfiles(ctx, logger)
 	if err != nil {
@@ -258,7 +274,10 @@ func dumpClusterProfiles(collectorClient *collector.Collector, ctx context.Conte
 		if err != nil {
 			return err
 		}
-		err = dumpReferencedObjects(collectorClient, ctx, cc.Spec.PolicyRefs, folder, logger)
+
+		policyRefs := convertConfigPolicyRefsToLibsveltosPolicyRefs(cc.Spec.PolicyRefs)
+
+		err = dumpReferencedObjects(collectorClient, ctx, policyRefs, folder, logger)
 		if err != nil {
 			return err
 		}
@@ -267,8 +286,8 @@ func dumpClusterProfiles(collectorClient *collector.Collector, ctx context.Conte
 	return nil
 }
 
-func dumpReferencedObjects(collectorClient *collector.Collector, ctx context.Context, referencedObjects []libsveltosv1alpha1.PolicyRef,
-	folder string, logger logr.Logger) error {
+func dumpReferencedObjects(collectorClient *collector.Collector, ctx context.Context,
+	referencedObjects []libsveltosv1alpha1.PolicyRef, folder string, logger logr.Logger) error {
 
 	logger.V(logs.LogDebug).Info("storing ClusterProfiles's referenced resources")
 	var object client.Object
@@ -388,4 +407,17 @@ func updateSnaphotPredicate(e event.UpdateEvent) bool {
 	}
 
 	return false
+}
+
+func convertConfigPolicyRefsToLibsveltosPolicyRefs(input []configv1alpha1.PolicyRef) []libsveltosv1alpha1.PolicyRef {
+	policyRefs := make([]libsveltosv1alpha1.PolicyRef, len(input))
+
+	for i := range input {
+		policyRefs[i] = libsveltosv1alpha1.PolicyRef{
+			Kind:      input[i].Kind,
+			Namespace: input[i].Namespace,
+			Name:      input[i].Name,
+		}
+	}
+	return policyRefs
 }
