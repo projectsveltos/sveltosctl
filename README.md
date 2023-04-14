@@ -351,12 +351,14 @@ To see Sveltos CLI for snapshot in action, have a look at this [video](https://y
 
 **snapshot show admin-rbac** can be used to display admin's RBACs per cluster:
 
+```
 ./bin/sveltosctl show admin-rbac                                                                           
-+---------------------------------------------+----------+-----------+------------+-----------+----------------+----------------+
-|                   CLUSTER                   |  ADMIN   | NAMESPACE | API GROUPS | RESOURCES | RESOURCE NAMES |     VERBS      |
-+---------------------------------------------+----------+-----------+------------+-----------+----------------+----------------+
-| Cluster:default/sveltos-management-workload | eng      | default   |            | pods      | pods           | get,watch,list |
-+---------------------------------------------+----------+-----------+------------+-----------+----------------+----------------+
++---------------------------------------------+-------------+-----------+------------+-----------+----------------+----------------+
+|                   CLUSTER                   |  ADMIN      | NAMESPACE | API GROUPS | RESOURCES | RESOURCE NAMES |     VERBS      |
++---------------------------------------------+-------------+-----------+------------+-----------+----------------+----------------+
+| Cluster:default/sveltos-management-workload | eng/devops  | default   |            | pods      | pods           | get,watch,list |
++---------------------------------------------+-------------+-----------+------------+-----------+----------------+----------------+
+```
 
 ## Contributing 
 
