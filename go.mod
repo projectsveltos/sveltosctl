@@ -10,9 +10,9 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo/v2 v2.9.2
 	github.com/onsi/gomega v1.27.5
-	github.com/projectsveltos/addon-manager v0.8.1-0.20230414135010-9713aaed75d8
-	github.com/projectsveltos/event-manager v0.8.1-0.20230414140740-2fd519c6ea99
-	github.com/projectsveltos/libsveltos v0.8.1-0.20230413131254-2ba7acd7d39b
+	github.com/projectsveltos/addon-manager v0.9.0
+	github.com/projectsveltos/event-manager v0.9.0
+	github.com/projectsveltos/libsveltos v0.9.0
 	github.com/robfig/cron v1.2.0
 	k8s.io/api v0.26.1
 	k8s.io/apiextensions-apiserver v0.26.1
