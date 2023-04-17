@@ -91,7 +91,8 @@ var _ = Describe("Admin RBACs", func() {
 				Name:       clusterName,
 			},
 		}
-		roleRequest := getRoleRequest(matchingCluster, []corev1.ConfigMap{*configMap}, []corev1.Secret{*secret}, randomString())
+		roleRequest := getRoleRequest(matchingCluster, []corev1.ConfigMap{*configMap}, []corev1.Secret{*secret},
+			randomString(), randomString())
 
 		initObjects := []client.Object{roleRequest, configMap, secret}
 
@@ -104,7 +105,7 @@ var _ = Describe("Admin RBACs", func() {
 		os.Stdout = w
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
-		err = show.DisplayAdminRbacs(context.TODO(), "", "", "", klogr.New())
+		err = show.DisplayAdminRbacs(context.TODO(), "", "", "", "", klogr.New())
 		Expect(err).To(BeNil())
 
 		w.Close()
@@ -114,13 +115,13 @@ var _ = Describe("Admin RBACs", func() {
 
 		/*
 			Expected
-			      +--------------------------------------+------------+-----------+------------+-----------+----------------+----------------+
-			      |               CLUSTER                |   ADMIN    | NAMESPACE | API GROUPS | RESOURCES | RESOURCE NAMES |     VERBS      |
-			      +--------------------------------------+------------+-----------+------------+-----------+----------------+----------------+
-			      | SveltosCluster:hjcodszbpx/41bvjygery | 2j9ll3f66n | default   |            | pods       |                | get,watch,list |
-			      | SveltosCluster:hjcodszbpx/41bvjygery | 2j9ll3f66n | *         |            | pods       |                | get,watch,list |
-			      | SveltosCluster:hjcodszbpx/41bvjygery | 2j9ll3f66n | *         |            | namespaces |                | *              |
-			      +--------------------------------------+------------+-----------+------------+------------+----------------+----------------+
+			      +--------------------------------------+-------------+-----------+------------+-----------+----------------+----------------+
+			      |               CLUSTER                |    ADMIN    | NAMESPACE | API GROUPS | RESOURCES | RESOURCE NAMES |     VERBS      |
+			      +--------------------------------------+-------------+-----------+------------+-----------+----------------+----------------+
+			      | SveltosCluster:hjcodszbpx/41bvjygery | 2j9l/l3f66n | default   |            | pods       |                | get,watch,list |
+			      | SveltosCluster:hjcodszbpx/41bvjygery | 2j9l/l3f66n | *         |            | pods       |                | get,watch,list |
+			      | SveltosCluster:hjcodszbpx/41bvjygery | 2j9l/l3f66n | *         |            | namespaces |                | *              |
+			      +--------------------------------------+-------------+-----------+------------+------------+----------------+----------------+
 		*/
 
 		clusterInfo := fmt.Sprintf("%s:%s/%s", libsveltosv1alpha1.SveltosClusterKind, clusterNamespace, clusterName)
@@ -128,7 +129,8 @@ var _ = Describe("Admin RBACs", func() {
 		clusterRoleView, clusterRoleModify, roleView := false, false, false
 		for i := range lines {
 			l := lines[i]
-			if strings.Contains(l, clusterInfo) && strings.Contains(l, roleRequest.Spec.Admin) {
+			if strings.Contains(l, clusterInfo) && strings.Contains(l, roleRequest.Spec.ServiceAccountNamespace) &&
+				strings.Contains(l, roleRequest.Spec.ServiceAccountName) {
 				if strings.Contains(l, "default") && strings.Contains(l, "pods") && strings.Contains(l, "get,watch,list") {
 					roleView = true
 				} else if strings.Contains(l, "*") && strings.Contains(l, "namespaces") {
@@ -148,15 +150,17 @@ var _ = Describe("Admin RBACs", func() {
 })
 
 func getRoleRequest(matchingClusters []corev1.ObjectReference,
-	configMaps []corev1.ConfigMap, secrets []corev1.Secret, admin string) *libsveltosv1alpha1.RoleRequest {
+	configMaps []corev1.ConfigMap, secrets []corev1.Secret,
+	serviceAccountNamespace, serviceAccountName string) *libsveltosv1alpha1.RoleRequest {
 
 	roleRequest := libsveltosv1alpha1.RoleRequest{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: randomString(),
 		},
 		Spec: libsveltosv1alpha1.RoleRequestSpec{
-			RoleRefs: make([]libsveltosv1alpha1.PolicyRef, 0),
-			Admin:    admin,
+			RoleRefs:                make([]libsveltosv1alpha1.PolicyRef, 0),
+			ServiceAccountNamespace: serviceAccountNamespace,
+			ServiceAccountName:      serviceAccountName,
 		},
 		Status: libsveltosv1alpha1.RoleRequestStatus{
 			MatchingClusterRefs: matchingClusters,

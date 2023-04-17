@@ -27,8 +27,8 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/olekukonko/tablewriter"
 
+	configv1alpha1 "github.com/projectsveltos/addon-manager/api/v1alpha1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -39,7 +39,7 @@ var (
 	// lastApplied represents the time resource was updated
 	// clusterProfileNames is the list of all ClusterProfiles causing the resource to be deployed
 	// in the cluster
-	genFeatureRow = func(cluster, resourceType, resourceNamespace, resourceName, resourceVersion,
+	genAddOnsRow = func(cluster, resourceType, resourceNamespace, resourceName, resourceVersion,
 		lastApplied string, clusterProfileNames []string) []string {
 		clusterProfiles := strings.Join(clusterProfileNames, ";")
 		return []string{
@@ -54,13 +54,13 @@ var (
 	}
 )
 
-func displayFeatures(ctx context.Context, passedNamespace, passedCluster, passedClusterProfile string,
+func displayAddOns(ctx context.Context, passedNamespace, passedCluster, passedClusterProfile string,
 	logger logr.Logger) error {
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"CLUSTER", "RESOURCE TYPE", "NAMESPACE", "NAME", "VERSION", "TIME", "CLUSTER PROFILES"})
 
-	if err := displayFeaturesInNamespaces(ctx, passedNamespace, passedCluster,
+	if err := displayAddOnsInNamespaces(ctx, passedNamespace, passedCluster,
 		passedClusterProfile, table, logger); err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func displayFeatures(ctx context.Context, passedNamespace, passedCluster, passed
 	return nil
 }
 
-func displayFeaturesInNamespaces(ctx context.Context, passedNamespace, passedCluster, passedClusterProfile string,
+func displayAddOnsInNamespaces(ctx context.Context, passedNamespace, passedCluster, passedClusterProfile string,
 	table *tablewriter.Table, logger logr.Logger) error {
 
 	instance := utils.GetAccessInstance()
@@ -84,7 +84,7 @@ func displayFeaturesInNamespaces(ctx context.Context, passedNamespace, passedClu
 		ns := &namespaces.Items[i]
 		if doConsiderNamespace(ns, passedNamespace) {
 			logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering namespace: %s", ns.Name))
-			err = displayFeaturesInNamespace(ctx, ns.Name, passedCluster, passedClusterProfile,
+			err = displayAddOnsInNamespace(ctx, ns.Name, passedCluster, passedClusterProfile,
 				table, logger)
 			if err != nil {
 				return err
@@ -95,7 +95,7 @@ func displayFeaturesInNamespaces(ctx context.Context, passedNamespace, passedClu
 	return nil
 }
 
-func displayFeaturesInNamespace(ctx context.Context, namespace, passedCluster, passedClusterProfile string,
+func displayAddOnsInNamespace(ctx context.Context, namespace, passedCluster, passedClusterProfile string,
 	table *tablewriter.Table, logger logr.Logger) error {
 
 	instance := utils.GetAccessInstance()
@@ -111,14 +111,14 @@ func displayFeaturesInNamespace(ctx context.Context, namespace, passedCluster, p
 		cc := &clusterConfigurations.Items[i]
 		if doConsiderClusterConfiguration(cc, passedCluster) {
 			logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering ClusterConfiguration: %s", cc.Name))
-			displayFeaturesForCluster(cc, passedClusterProfile, table, logger)
+			displayAddOnsForCluster(cc, passedClusterProfile, table, logger)
 		}
 	}
 
 	return nil
 }
 
-func displayFeaturesForCluster(clusterConfiguration *configv1alpha1.ClusterConfiguration, passedClusterProfile string,
+func displayAddOnsForCluster(clusterConfiguration *configv1alpha1.ClusterConfiguration, passedClusterProfile string,
 	table *tablewriter.Table, logger logr.Logger) {
 
 	instance := utils.GetAccessInstance()
@@ -132,7 +132,7 @@ func displayFeaturesForCluster(clusterConfiguration *configv1alpha1.ClusterConfi
 	clusterInfo := fmt.Sprintf("%s/%s", clusterConfiguration.Namespace, clusterName)
 	for chart := range helmCharts {
 		if doConsiderClusterProfile(helmCharts[chart], passedClusterProfile) {
-			table.Append(genFeatureRow(clusterInfo, "helm chart", chart.Namespace, chart.ReleaseName, chart.ChartVersion,
+			table.Append(genAddOnsRow(clusterInfo, "helm chart", chart.Namespace, chart.ReleaseName, chart.ChartVersion,
 				chart.LastAppliedTime.String(), helmCharts[chart]))
 		}
 	}
@@ -140,23 +140,23 @@ func displayFeaturesForCluster(clusterConfiguration *configv1alpha1.ClusterConfi
 	resources := instance.GetResources(clusterConfiguration, logger)
 	for resource := range resources {
 		if doConsiderClusterProfile(resources[resource], passedClusterProfile) {
-			table.Append(genFeatureRow(clusterInfo, fmt.Sprintf("%s:%s", resource.Group, resource.Kind),
+			table.Append(genAddOnsRow(clusterInfo, fmt.Sprintf("%s:%s", resource.Group, resource.Kind),
 				resource.Namespace, resource.Name, "N/A",
 				resource.LastAppliedTime.String(), resources[resource]))
 		}
 	}
 }
 
-// Features displays information about features deployed in clusters
-func Features(ctx context.Context, args []string, logger logr.Logger) error {
+// AddOns displays information about Kubernetes AddOns deployed in clusters
+func AddOns(ctx context.Context, args []string, logger logr.Logger) error {
 	doc := `Usage:
-  sveltosctl show features [options] [--namespace=<name>] [--cluster=<name>] [--clusterprofile=<name>] [--verbose]
+  sveltosctl show addons [options] [--namespace=<name>] [--cluster=<name>] [--clusterprofile=<name>] [--verbose]
 
-     --namespace=<name>      Show features deployed in clusters in this namespace.
+     --namespace=<name>      Show Kubernetes addons deployed in clusters in this namespace.
                              If not specified all namespaces are considered.
-     --cluster=<name>        Show features deployed in cluster with name.
+     --cluster=<name>        Show Kubernetes addons deployed in cluster with name.
                              If not specified all cluster names are considered.
-     --clusterprofile=<name> Show features deployed because of this clusterprofile.
+     --clusterprofile=<name> Show Kubernetes addons deployed because of this clusterprofile.
                              If not specified all clusterprofile names are considered.
 
 Options:
@@ -164,7 +164,7 @@ Options:
      --verbose               Verbose mode. Print each step.  
 
 Description:
-  The show features command shows information about features deployed in clusters.
+  The show addons command shows information about Kubernetes addons deployed in clusters.
 `
 	parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
 	if err != nil {
@@ -203,5 +203,5 @@ Description:
 		clusterProfile = passedClusterProfile.(string)
 	}
 
-	return displayFeatures(ctx, namespace, cluster, clusterProfile, logger)
+	return displayAddOns(ctx, namespace, cluster, clusterProfile, logger)
 }

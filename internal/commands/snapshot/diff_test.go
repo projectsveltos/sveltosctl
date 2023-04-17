@@ -39,8 +39,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	configv1alpha1 "github.com/projectsveltos/addon-manager/api/v1alpha1"
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
-	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/commands/snapshot"
@@ -176,8 +176,9 @@ var _ = Describe("Snapshot Diff", func() {
 				Name: classifierName,
 			},
 			Spec: libsveltosv1alpha1.RoleRequestSpec{
-				Admin:           randomString(),
-				ClusterSelector: libsveltosv1alpha1.Selector("zone:west"),
+				ServiceAccountNamespace: randomString(),
+				ServiceAccountName:      randomString(),
+				ClusterSelector:         libsveltosv1alpha1.Selector("zone:west"),
 			},
 		}
 		Expect(addTypeInformationToObject(roleRequest)).To(Succeed())
