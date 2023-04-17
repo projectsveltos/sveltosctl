@@ -42,8 +42,9 @@ var _ = Describe("RoleRequest", func() {
 					Name: randomString(),
 				},
 				Spec: libsveltosv1alpha1.RoleRequestSpec{
-					Admin:           randomString(),
-					ClusterSelector: libsveltosv1alpha1.Selector("zone:east"),
+					ServiceAccountNamespace: randomString(),
+					ServiceAccountName:      randomString(),
+					ClusterSelector:         libsveltosv1alpha1.Selector("zone:east"),
 				},
 			}
 			initObjects = append(initObjects, rr)

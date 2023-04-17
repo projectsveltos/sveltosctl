@@ -89,7 +89,9 @@ func (c *collectionTechsupport) setFailureMessage(m string) {
 	c.techsupportInstance.Status.FailureMessage = &m
 }
 
-func collectTechsupport(ctx context.Context, c client.Client, techsupportName string, logger logr.Logger) error {
+func collectTechsupport(ctx context.Context, c client.Client, techsupportName string,
+	logger logr.Logger) error {
+
 	logger = logger.WithValues("techsupport", techsupportName)
 	logger.V(logs.LogInfo).Info("collect techsupport")
 
@@ -97,7 +99,8 @@ func collectTechsupport(ctx context.Context, c client.Client, techsupportName st
 	err := c.Get(ctx, types.NamespacedName{Name: techsupportName}, techsupportInstance)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.V(logs.LogDebug).Info(fmt.Sprintf("Techsupport %s does not exist anymore. Nothing to do.", techsupportName))
+			logger.V(logs.LogDebug).Info(
+				fmt.Sprintf("Techsupport %s does not exist anymore. Nothing to do.", techsupportName))
 			return nil
 		}
 
@@ -107,22 +110,23 @@ func collectTechsupport(ctx context.Context, c client.Client, techsupportName st
 	collectorClient := collector.GetClient()
 
 	if techsupportInstance.Spec.SuccessfulTechsupportLimit != nil {
-		err = collectorClient.CleanOldCollections(techsupportInstance.Spec.Storage, techsupportInstance.Name, collector.Techsupport,
-			*techsupportInstance.Spec.SuccessfulTechsupportLimit, logger)
+		err = collectorClient.CleanOldCollections(techsupportInstance.Spec.Storage, techsupportInstance.Name,
+			collector.Techsupport, *techsupportInstance.Spec.SuccessfulTechsupportLimit, logger)
 		if err != nil {
 			return err
 		}
 	}
 
 	now := time.Now()
-	folder := collectorClient.GetFolderPath(techsupportInstance.Spec.Storage, techsupportInstance.Name, collector.Techsupport, now)
+	folder := collectorClient.GetFolderPath(techsupportInstance.Spec.Storage, techsupportInstance.Name,
+		collector.Techsupport, now)
 
 	err = nil
 	for i := range techsupportInstance.Status.MatchingClusterRefs {
 		cluster := &techsupportInstance.Status.MatchingClusterRefs[i]
-		l := logger.WithValues("cluster", fmt.Sprintf("%s:%s/%s", utils.GetAccessInstance().GetClusterType(cluster),
+		l := logger.WithValues("cluster", fmt.Sprintf("%s:%s/%s", clusterproxy.GetClusterType(cluster),
 			cluster.Namespace, cluster.Name))
-		clusterFolder := path.Join(folder, fmt.Sprintf("%s:%s/%s", utils.GetAccessInstance().GetClusterType(cluster),
+		clusterFolder := path.Join(folder, fmt.Sprintf("%s:%s/%s", clusterproxy.GetClusterType(cluster),
 			cluster.Namespace, cluster.Name))
 		if tmpErr := collectTechsupportForCluster(ctx, c, techsupportInstance, cluster, clusterFolder, l); tmpErr != nil {
 			l.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect techsupport: %v", tmpErr))
@@ -164,9 +168,10 @@ func collectTechsupportForCluster(ctx context.Context, c client.Client, techsupp
 	}
 	logger.V(logs.LogInfo).Info("collecting techsupport")
 
-	instance := utils.GetAccessInstance()
-	remoteRestConfig, err := instance.GetKubernetesRestConfig(ctx, cluster.Namespace, cluster.Name,
-		getClusterSummaryAdmin(techsupportInstance), utils.GetAccessInstance().GetClusterType(cluster), logger)
+	saNamespace, saName := getClusterSummaryServiceAccountInfo(techsupportInstance)
+
+	remoteRestConfig, err := clusterproxy.GetKubernetesRestConfig(ctx, utils.GetAccessInstance().GetClient(),
+		cluster.Namespace, cluster.Name, saNamespace, saName, clusterproxy.GetClusterType(cluster), logger)
 	if err != nil {
 		return err
 	}
@@ -176,8 +181,8 @@ func collectTechsupportForCluster(ctx context.Context, c client.Client, techsupp
 		return err
 	}
 
-	remoteClient, err := instance.GetKubernetesClient(ctx, cluster.Namespace, cluster.Name,
-		getClusterSummaryAdmin(techsupportInstance), utils.GetAccessInstance().GetClusterType(cluster), logger)
+	remoteClient, err := clusterproxy.GetKubernetesClient(ctx, utils.GetAccessInstance().GetClient(),
+		cluster.Namespace, cluster.Name, saNamespace, saName, clusterproxy.GetClusterType(cluster), logger)
 	if err != nil {
 		return err
 	}
@@ -411,12 +416,14 @@ func requeueTechsupportForCluster(
 	return requests
 }
 
-// getClusterSummaryAdmin returns the name of the admin that created the ClusterProfile
-// instance owing this ClusterProfile instance
-func getClusterSummaryAdmin(techsupport *utilsv1alpha1.Techsupport) string {
+// getClusterSummaryServiceAccountInfo returns the name of the ServiceAccount
+// (presenting a tenant admin) that created the ClusterProfile instance owing this
+// ClusterProfile instance
+func getClusterSummaryServiceAccountInfo(techsupport *utilsv1alpha1.Techsupport) (namespace, name string) {
 	if techsupport.Labels == nil {
-		return ""
+		return "", ""
 	}
 
-	return techsupport.Labels[libsveltosv1alpha1.AdminLabel]
+	return techsupport.Labels[libsveltosv1alpha1.ServiceAccountNamespaceLabel],
+		techsupport.Labels[libsveltosv1alpha1.ServiceAccountNameLabel]
 }

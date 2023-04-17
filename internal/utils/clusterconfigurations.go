@@ -23,8 +23,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	configv1alpha1 "github.com/projectsveltos/addon-manager/api/v1alpha1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 )
 
 func (a *k8sAccess) GetClusterNameFromClusterConfiguration(clusterConfiguration *configv1alpha1.ClusterConfiguration) string {

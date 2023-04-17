@@ -8,12 +8,11 @@ require (
 	github.com/go-logr/logr v1.2.3
 	github.com/hexops/gotextdiff v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/onsi/ginkgo/v2 v2.9.1
-	github.com/onsi/gomega v1.27.4
-	github.com/pkg/errors v0.9.1
-	github.com/projectsveltos/event-manager v0.8.1-0.20230401135809-8434f134eb64
-	github.com/projectsveltos/libsveltos v0.8.1-0.20230401081813-e8d366a6d41e
-	github.com/projectsveltos/sveltos-manager v0.8.1-0.20230401131540-2854a585cb29
+	github.com/onsi/ginkgo/v2 v2.9.2
+	github.com/onsi/gomega v1.27.5
+	github.com/projectsveltos/addon-manager v0.9.1-0.20230417125250-c20c7b963c19
+	github.com/projectsveltos/event-manager v0.9.1-0.20230417130320-77c7f447480a
+	github.com/projectsveltos/libsveltos v0.9.1-0.20230417113503-3f9a563f5522
 	github.com/robfig/cron v1.2.0
 	k8s.io/api v0.26.1
 	k8s.io/apiextensions-apiserver v0.26.1
@@ -21,7 +20,7 @@ require (
 	k8s.io/client-go v0.26.1
 	k8s.io/klog/v2 v2.80.1
 	k8s.io/kubectl v0.26.0
-	sigs.k8s.io/cluster-api v1.4.0
+	sigs.k8s.io/cluster-api v1.4.1
 	sigs.k8s.io/controller-runtime v0.14.5
 	sigs.k8s.io/yaml v1.3.0
 )
@@ -62,7 +61,7 @@ require (
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.20.0 // indirect
 	github.com/go-openapi/swag v0.22.3 // indirect
-	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 // indirect
+	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/gobuffalo/flect v1.0.2 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect
@@ -109,6 +108,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc2 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.14.0 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.37.0 // indirect

@@ -21,8 +21,8 @@ import (
 
 	"github.com/go-logr/logr"
 
+	configv1alpha1 "github.com/projectsveltos/addon-manager/api/v1alpha1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 )
 
 // ListClusterReports returns all current ClusterProfiles
