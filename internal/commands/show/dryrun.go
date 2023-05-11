@@ -125,6 +125,7 @@ func displayDryRunInNamespace(ctx context.Context, namespace, passedCluster, pas
 func displayDryRunForCluster(clusterReport *configv1alpha1.ClusterReport, table *tablewriter.Table) {
 	clusterProfileName := clusterReport.Labels[controllers.ClusterProfileLabelName]
 	clusterInfo := fmt.Sprintf("%s/%s", clusterReport.Spec.ClusterNamespace, clusterReport.Spec.ClusterName)
+
 	for i := range clusterReport.Status.ReleaseReports {
 		report := &clusterReport.Status.ReleaseReports[i]
 		table.Append(genDryRunRow(clusterInfo, "helm release", report.ReleaseNamespace, report.ReleaseName,
@@ -133,6 +134,13 @@ func displayDryRunForCluster(clusterReport *configv1alpha1.ClusterReport, table 
 
 	for i := range clusterReport.Status.ResourceReports {
 		report := &clusterReport.Status.ResourceReports[i]
+		groupKind := fmt.Sprintf("%s:%s", report.Resource.Group, report.Resource.Kind)
+		table.Append(genDryRunRow(clusterInfo, groupKind, report.Resource.Namespace, report.Resource.Name,
+			report.Action, report.Message, clusterProfileName))
+	}
+
+	for i := range clusterReport.Status.KustomizeResourceReports {
+		report := &clusterReport.Status.KustomizeResourceReports[i]
 		groupKind := fmt.Sprintf("%s:%s", report.Resource.Group, report.Resource.Kind)
 		table.Append(genDryRunRow(clusterInfo, groupKind, report.Resource.Namespace, report.Resource.Name,
 			report.Action, report.Message, clusterProfileName))
