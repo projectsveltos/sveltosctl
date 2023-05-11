@@ -137,6 +137,13 @@ func displayDryRunForCluster(clusterReport *configv1alpha1.ClusterReport, table 
 		table.Append(genDryRunRow(clusterInfo, groupKind, report.Resource.Namespace, report.Resource.Name,
 			report.Action, report.Message, clusterProfileName))
 	}
+
+	for i := range clusterReport.Status.KustomizeResourceReports {
+		report := &clusterReport.Status.KustomizeResourceReports[i]
+		groupKind := fmt.Sprintf("%s:%s", report.Resource.Group, report.Resource.Kind)
+		table.Append(genDryRunRow(clusterInfo, groupKind, report.Resource.Namespace, report.Resource.Name,
+			report.Action, report.Message, clusterProfileName))
+	}
 }
 
 // DryRun displays information about which Kubernetes addons would change in which cluster due
