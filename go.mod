@@ -1,6 +1,6 @@
 module github.com/projectsveltos/sveltosctl
 
-go 1.19
+go 1.20
 
 require (
 	github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815
@@ -10,8 +10,9 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/onsi/ginkgo/v2 v2.9.2
 	github.com/onsi/gomega v1.27.5
-	github.com/projectsveltos/addon-manager v0.10.1-0.20230522134352-510e3ae033fa
-	github.com/projectsveltos/event-manager v0.10.1-0.20230522135705-35550c881726
+	github.com/pkg/errors v0.9.1
+	github.com/projectsveltos/addon-manager v0.10.1-0.20230529124105-352722250627
+	github.com/projectsveltos/event-manager v0.10.1-0.20230529130513-80a804c7878b
 	github.com/projectsveltos/libsveltos v0.10.2-0.20230512214029-a48927eeb92d
 	github.com/robfig/cron v1.2.0
 	k8s.io/api v0.26.2
@@ -122,7 +123,6 @@ require (
 	github.com/opencontainers/go-digest/blake3 v0.0.0-20220411205349-bde1400a84be // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc2.0.20221005185240-3a7f492d3f1b // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.14.0 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.37.0 // indirect

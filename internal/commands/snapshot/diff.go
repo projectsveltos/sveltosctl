@@ -592,10 +592,7 @@ func appendChartsAndResources(cpr *configv1alpha1.ClusterProfileResource, charts
 			c.LastAppliedTime = nil
 			charts = append(charts, c)
 		}
-		for j := range cpr.Features[i].Resources {
-			r := cpr.Features[i].Resources[j]
-			resources = append(resources, r)
-		}
+		resources = append(resources, cpr.Features[i].Resources...)
 	}
 
 	return charts, resources
