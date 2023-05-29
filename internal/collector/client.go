@@ -493,7 +493,7 @@ func collectLogs(ctx context.Context, clientset *kubernetes.Clientset,
 	}
 	// close fo on exit and check for its returned error
 	defer func() {
-		if cerr := fo.Close(); err != nil {
+		if cerr := fo.Close(); cerr != nil {
 			if err == nil {
 				err = cerr
 			}

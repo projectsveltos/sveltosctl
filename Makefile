@@ -11,7 +11,7 @@ endif
 REGISTRY ?= projectsveltos
 IMAGE_NAME ?= sveltosctl
 export SVELTOSCTL_IMG ?= $(REGISTRY)/$(IMAGE_NAME)
-TAG ?= main
+TAG ?= dev
 ARCH ?= amd64
 
 # Directories.
@@ -32,8 +32,10 @@ KUBECTL := $(TOOLS_BIN_DIR)/kubectl
 SETUP_ENVTEST := $(TOOLS_BIN_DIR)/setup_envs
 CONTROLLER_GEN := $(TOOLS_BIN_DIR)/controller-gen
 
-$(GOLANGCI_LINT): $(TOOLS_DIR)/go.mod # Build golangci-lint from tools folder.
-	cd $(TOOLS_DIR); $(GOBUILD) -tags=tools -o $(subst hack/tools/,,$@) github.com/golangci/golangci-lint/cmd/golangci-lint
+GOLANGCI_LINT_VERSION := "v1.52.2"
+
+$(GOLANGCI_LINT): # Build golangci-lint from tools folder.
+	cd $(TOOLS_DIR); ./get-golangci-lint.sh $(GOLANGCI_LINT_VERSION)
 
 $(GOIMPORTS):
 	cd $(TOOLS_DIR); $(GOBUILD) -tags=tools -o $(subst hack/tools/,,$@) golang.org/x/tools/cmd/goimports
