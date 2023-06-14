@@ -37,7 +37,7 @@ var _ = Describe("Set", func() {
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
 		Expect(loglevel.UpdateDebuggingConfiguration(context.TODO(), libsveltosv1alpha1.LogLevelDebug,
-			string(libsveltosv1alpha1.ComponentSveltosManager))).To(Succeed())
+			string(libsveltosv1alpha1.ComponentAddonManager))).To(Succeed())
 
 		k8sAccess := utils.GetAccessInstance()
 
@@ -46,17 +46,17 @@ var _ = Describe("Set", func() {
 		Expect(currentDC).ToNot(BeNil())
 		Expect(currentDC.Spec.Configuration).ToNot(BeNil())
 		Expect(len(currentDC.Spec.Configuration)).To(Equal(1))
-		Expect(currentDC.Spec.Configuration[0].Component).To(Equal(libsveltosv1alpha1.ComponentSveltosManager))
+		Expect(currentDC.Spec.Configuration[0].Component).To(Equal(libsveltosv1alpha1.ComponentAddonManager))
 		Expect(currentDC.Spec.Configuration[0].LogLevel).To(Equal(libsveltosv1alpha1.LogLevelDebug))
 
 		Expect(loglevel.UpdateDebuggingConfiguration(context.TODO(), libsveltosv1alpha1.LogLevelInfo,
-			string(libsveltosv1alpha1.ComponentSveltosManager))).To(Succeed())
+			string(libsveltosv1alpha1.ComponentAddonManager))).To(Succeed())
 		currentDC, err = k8sAccess.GetDebuggingConfiguration(context.TODO())
 		Expect(err).To(BeNil())
 		Expect(currentDC).ToNot(BeNil())
 		Expect(currentDC.Spec.Configuration).ToNot(BeNil())
 		Expect(len(currentDC.Spec.Configuration)).To(Equal(1))
-		Expect(currentDC.Spec.Configuration[0].Component).To(Equal(libsveltosv1alpha1.ComponentSveltosManager))
+		Expect(currentDC.Spec.Configuration[0].Component).To(Equal(libsveltosv1alpha1.ComponentAddonManager))
 		Expect(currentDC.Spec.Configuration[0].LogLevel).To(Equal(libsveltosv1alpha1.LogLevelInfo))
 	})
 })

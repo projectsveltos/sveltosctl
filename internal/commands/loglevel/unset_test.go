@@ -34,7 +34,7 @@ var _ = Describe("Unset", func() {
 		dc := getDebuggingConfiguration()
 		dc.Spec.Configuration = []libsveltosv1alpha1.ComponentConfiguration{
 			{Component: libsveltosv1alpha1.ComponentClassifier, LogLevel: libsveltosv1alpha1.LogLevelInfo},
-			{Component: libsveltosv1alpha1.ComponentSveltosManager, LogLevel: libsveltosv1alpha1.LogLevelInfo},
+			{Component: libsveltosv1alpha1.ComponentAddonManager, LogLevel: libsveltosv1alpha1.LogLevelInfo},
 		}
 
 		initObjects := []client.Object{dc}
@@ -54,7 +54,7 @@ var _ = Describe("Unset", func() {
 		Expect(currentDC).ToNot(BeNil())
 		Expect(currentDC.Spec.Configuration).ToNot(BeNil())
 		Expect(len(currentDC.Spec.Configuration)).To(Equal(1))
-		Expect(currentDC.Spec.Configuration[0].Component).To(Equal(libsveltosv1alpha1.ComponentSveltosManager))
+		Expect(currentDC.Spec.Configuration[0].Component).To(Equal(libsveltosv1alpha1.ComponentAddonManager))
 		Expect(currentDC.Spec.Configuration[0].LogLevel).To(Equal(libsveltosv1alpha1.LogLevelInfo))
 
 	})
