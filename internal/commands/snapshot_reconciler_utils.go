@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 
-	configv1alpha1 "github.com/projectsveltos/addon-manager/api/v1alpha1"
+	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
@@ -142,8 +142,32 @@ func collectSnapshot(ctx context.Context, c client.Client, snapshotName string, 
 	if err != nil {
 		return err
 	}
+	err = dumpAddonConstraints(collectorClient, ctx, folder, logger)
+	if err != nil {
+		return err
+	}
 
 	logger.V(logs.LogInfo).Info("done collecting snapshot")
+
+	return nil
+}
+
+func dumpAddonConstraints(collectorClient *collector.Collector, ctx context.Context, folder string,
+	logger logr.Logger) error {
+
+	logger.V(logs.LogDebug).Info("storing AddonConstraints")
+	addonConstraints, err := utils.GetAccessInstance().ListAddonConstraints(ctx, logger)
+	if err != nil {
+		return err
+	}
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d AddonConstraints", len(addonConstraints.Items)))
+	for i := range addonConstraints.Items {
+		rr := &addonConstraints.Items[i]
+		err = collectorClient.DumpObject(rr, folder, logger)
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }

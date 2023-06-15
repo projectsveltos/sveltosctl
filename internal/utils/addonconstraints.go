@@ -1,5 +1,5 @@
 /*
-Copyright 2022. projectsveltos.io. All rights reserved.
+Copyright 2023. projectsveltos.io. All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,16 +21,16 @@ import (
 
 	"github.com/go-logr/logr"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 )
 
-// ListClusterProfiles returns all current ClusterProfiles
-func (a *k8sAccess) ListClusterProfiles(ctx context.Context,
-	logger logr.Logger) (*configv1alpha1.ClusterProfileList, error) {
+// ListAddonConstraints returns all current AddonConstraints
+func (a *k8sAccess) ListAddonConstraints(ctx context.Context,
+	logger logr.Logger) (*libsveltosv1alpha1.AddonConstraintList, error) {
 
-	logger.V(logs.LogDebug).Info("Get all ClusterProfiles")
-	clusterProfiles := &configv1alpha1.ClusterProfileList{}
-	err := a.client.List(ctx, clusterProfiles)
-	return clusterProfiles, err
+	logger.V(logs.LogDebug).Info("Get all AddonConstraints")
+	addonConstraints := &libsveltosv1alpha1.AddonConstraintList{}
+	err := a.client.List(ctx, addonConstraints)
+	return addonConstraints, err
 }

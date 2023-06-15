@@ -34,7 +34,7 @@ import (
 	"k8s.io/klog/v2/klogr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
-	configv1alpha1 "github.com/projectsveltos/addon-manager/api/v1alpha1"
+	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
@@ -44,7 +44,7 @@ import (
 
 func rollbackConfiguration(ctx context.Context,
 	snapshotName, sample, passedNamespace, passedCluster, passedClusterProfile,
-	passedClassifier, passedRoleRequest string,
+	passedClassifier, passedRoleRequest, passedAddonConstraint string,
 	logger logr.Logger) error {
 
 	logger.V(logs.LogDebug).Info(fmt.Sprintf("Getting Snapshot %s", snapshotName))
@@ -75,11 +75,11 @@ func rollbackConfiguration(ctx context.Context,
 	}
 
 	return rollbackConfigurationToSnapshot(ctx, folder, passedNamespace, passedCluster, passedClusterProfile,
-		passedClassifier, passedRoleRequest, logger)
+		passedClassifier, passedRoleRequest, passedAddonConstraint, logger)
 }
 
 func rollbackConfigurationToSnapshot(ctx context.Context, folder, passedNamespace, passedCluster,
-	passedClusterProfile, passedClassifier, passedRoleRequest string,
+	passedClusterProfile, passedClassifier, passedRoleRequest, passedAddonConstraint string,
 	logger logr.Logger) error {
 
 	logger.V(logs.LogDebug).Info("roll back configuration: configmaps")
@@ -114,6 +114,12 @@ func rollbackConfigurationToSnapshot(ctx context.Context, folder, passedNamespac
 
 	logger.V(logs.LogDebug).Info("roll back configuration: rolerequests")
 	err = getAndRollbackRoleRequests(ctx, folder, passedRoleRequest, logger)
+	if err != nil {
+		return err
+	}
+
+	logger.V(logs.LogDebug).Info("roll back configuration: addonconstraints")
+	err = getAndRollbackAddonConstraints(ctx, folder, passedAddonConstraint, logger)
 	if err != nil {
 		return err
 	}
@@ -254,6 +260,28 @@ func getAndRollbackClassifiers(ctx context.Context, folder, passedClassifier str
 		if passedClassifier == "" || cl.GetName() == passedClassifier {
 			logger.V(logs.LogDebug).Info(fmt.Sprintf("rollback Classifier %s", cl.GetName()))
 			err = rollbackClassifier(ctx, cl, logger)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func getAndRollbackAddonConstraints(ctx context.Context, folder, passedAddonConstraint string, logger logr.Logger) error {
+	snapshotClient := collector.GetClient()
+	addonConstraints, err := snapshotClient.GetClusterResources(folder, libsveltosv1alpha1.AddonConstraintKind, logger)
+	if err != nil {
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect AddonConstraints from folder %s", folder))
+		return err
+	}
+
+	for i := range addonConstraints {
+		ac := addonConstraints[i]
+		if passedAddonConstraint == "" || ac.GetName() == passedAddonConstraint {
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("rollback RoleRequest %s", ac.GetName()))
+			err = rollbackClassifier(ctx, ac, logger)
 			if err != nil {
 				return err
 			}
@@ -531,7 +559,7 @@ func rollbackClassifier(ctx context.Context, resource *unstructured.Unstructured
 func Rollback(ctx context.Context, args []string, logger logr.Logger) error {
 	//nolint: lll // command syntax
 	doc := `Usage:
-	sveltosctl snapshot rollback [options] --snapshot=<name> --sample=<name> [--namespace=<name>] [--clusterprofile=<name>] [--cluster=<name>] [--classifier=<name>] [--rolerequest=<name>] [--verbose]
+	sveltosctl snapshot rollback [options] --snapshot=<name> --sample=<name> [--namespace=<name>] [--clusterprofile=<name>] [--cluster=<name>] [--classifier=<name>] [--rolerequest=<name>] [--addonconstraint=<name>] [--verbose]
 
      --snapshot=<name>       Name of the Snapshot instance
      --sample=<name>         Name of the directory containing this sample.
@@ -546,6 +574,8 @@ func Rollback(ctx context.Context, args []string, logger logr.Logger) error {
                              If not specified all classifiers are updated.
      --rolerequest=<name>    Rollback only roleRequest with this name.
                              If not specified all roleRequests are updated.
+     --addonconstaint=<name> Rollback only addonconstraint with this name.
+                             If not specified all addonconstraints are updated.
 
 Options:
   -h --help                  Show this screen.
@@ -558,6 +588,7 @@ Description:
   - RoleRequest, Spec section
   - ConfigMaps/Secrets referenced by at least one ClusterProfile/RoleRequest at the time snapshot was taken.
   - Classifiers
+  - AddonConstraints
   If, at the time the rollback happens, such resources do not exist, those will be recreated.
   If such resources exist, Data/BinaryData for ConfigMaps and Data/StringData for Secrets will be updated.
   - Clusters, only labels will be updated.
@@ -612,6 +643,11 @@ Description:
 		cluster = passedCluster.(string)
 	}
 
+	addonConstraint := ""
+	if passedAddonConstraint := parsedArgs["--addonconstraint"]; passedAddonConstraint != nil {
+		addonConstraint = passedAddonConstraint.(string)
+	}
+
 	return rollbackConfiguration(ctx, snapshostName, sample, namespace, cluster, clusterProfile,
-		classifier, roleRequest, logger)
+		classifier, roleRequest, addonConstraint, logger)
 }

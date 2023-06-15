@@ -79,7 +79,10 @@ generate: ## Run all generate-manifests-*, generate-go-deepcopy-*
 	cp k8s/sveltosctl.yaml manifest/manifest.yaml
 	cat config/crd/bases/utils.projectsveltos.io_snapshots.yaml >> manifest/manifest.yaml
 	cat config/crd/bases/utils.projectsveltos.io_techsupports.yaml >> manifest/manifest.yaml
+	MANIFEST_IMG=$(SVELTOSCTL_IMG)-$(ARCH) MANIFEST_TAG=$(TAG) $(MAKE) set-manifest-image
 
+set-manifest-image:
+	sed -i'' -e 's@image: .*@image: '"${MANIFEST_IMG}:$(MANIFEST_TAG)"'@' ./manifest/manifest.yaml
 
 .PHONY: generate-go-deepcopy
 generate-go-deepcopy: $(CONTROLLER_GEN) ## Run all generate-go-deepcopy-* targets
@@ -128,7 +131,7 @@ build: fmt vet ## Build manager binary.
 ##@ Testing
 
 # KUBEBUILDER_ENVTEST_KUBERNETES_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-KUBEBUILDER_ENVTEST_KUBERNETES_VERSION = 1.26.0
+KUBEBUILDER_ENVTEST_KUBERNETES_VERSION = 1.27.1
 
 ifeq ($(shell go env GOOS),darwin) # Use the darwin/amd64 binary until an arm64 version is available
 KUBEBUILDER_ASSETS ?= $(shell $(SETUP_ENVTEST) use --use-env -p path --arch amd64 $(KUBEBUILDER_ENVTEST_KUBERNETES_VERSION))
