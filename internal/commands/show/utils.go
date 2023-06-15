@@ -19,7 +19,7 @@ package show
 import (
 	corev1 "k8s.io/api/core/v1"
 
-	configv1alpha1 "github.com/projectsveltos/addon-manager/api/v1alpha1"
+	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
 )
 
 func doConsiderNamespace(ns *corev1.Namespace, passedNamespace string) bool {

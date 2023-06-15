@@ -11,7 +11,7 @@ endif
 REGISTRY ?= projectsveltos
 IMAGE_NAME ?= sveltosctl
 export SVELTOSCTL_IMG ?= $(REGISTRY)/$(IMAGE_NAME)
-TAG ?= v0.11.0
+TAG ?= main
 ARCH ?= amd64
 
 # Directories.
@@ -79,7 +79,10 @@ generate: ## Run all generate-manifests-*, generate-go-deepcopy-*
 	cp k8s/sveltosctl.yaml manifest/manifest.yaml
 	cat config/crd/bases/utils.projectsveltos.io_snapshots.yaml >> manifest/manifest.yaml
 	cat config/crd/bases/utils.projectsveltos.io_techsupports.yaml >> manifest/manifest.yaml
+	MANIFEST_IMG=$(SVELTOSCTL_IMG)-$(ARCH) MANIFEST_TAG=$(TAG) $(MAKE) set-manifest-image
 
+set-manifest-image:
+	sed -i'' -e 's@image: .*@image: '"${MANIFEST_IMG}:$(MANIFEST_TAG)"'@' ./manifest/manifest.yaml
 
 .PHONY: generate-go-deepcopy
 generate-go-deepcopy: $(CONTROLLER_GEN) ## Run all generate-go-deepcopy-* targets
