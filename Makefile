@@ -11,7 +11,7 @@ endif
 REGISTRY ?= projectsveltos
 IMAGE_NAME ?= sveltosctl
 export SVELTOSCTL_IMG ?= $(REGISTRY)/$(IMAGE_NAME)
-TAG ?= main
+TAG ?= dev
 ARCH ?= amd64
 
 # Directories.
