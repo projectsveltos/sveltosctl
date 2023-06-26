@@ -11,9 +11,9 @@ require (
 	github.com/onsi/ginkgo/v2 v2.9.2
 	github.com/onsi/gomega v1.27.5
 	github.com/pkg/errors v0.9.1
-	github.com/projectsveltos/addon-controller v0.11.1-0.20230615085921-5385adf5f213
+	github.com/projectsveltos/addon-controller v0.11.1-0.20230626081643-5073109212bc
 	github.com/projectsveltos/event-manager v0.11.1-0.20230615113438-0a2b671e037e
-	github.com/projectsveltos/libsveltos v0.11.1-0.20230615070804-fbfe41402262
+	github.com/projectsveltos/libsveltos v0.11.1-0.20230626065432-955123c9c74a
 	github.com/robfig/cron v1.2.0
 	k8s.io/api v0.26.2
 	k8s.io/apiextensions-apiserver v0.26.1
@@ -67,7 +67,7 @@ require (
 	github.com/fluxcd/pkg/tar v0.2.0 // indirect
 	github.com/fluxcd/source-controller/api v1.0.0-rc.1 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
-	github.com/getkin/kin-openapi v0.117.0 // indirect
+	github.com/getkin/kin-openapi v0.118.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-gorp/gorp/v3 v3.0.5 // indirect

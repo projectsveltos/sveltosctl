@@ -25,12 +25,12 @@ import (
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 )
 
-// ListAddonConstraints returns all current AddonConstraints
-func (a *k8sAccess) ListAddonConstraints(ctx context.Context,
-	logger logr.Logger) (*libsveltosv1alpha1.AddonConstraintList, error) {
+// ListAddonCompliances returns all current AddonCompliances
+func (a *k8sAccess) ListAddonCompliances(ctx context.Context,
+	logger logr.Logger) (*libsveltosv1alpha1.AddonComplianceList, error) {
 
-	logger.V(logs.LogDebug).Info("Get all AddonConstraints")
-	addonConstraints := &libsveltosv1alpha1.AddonConstraintList{}
-	err := a.client.List(ctx, addonConstraints)
-	return addonConstraints, err
+	logger.V(logs.LogDebug).Info("Get all AddonCompliances")
+	addonCompliances := &libsveltosv1alpha1.AddonComplianceList{}
+	err := a.client.List(ctx, addonCompliances)
+	return addonCompliances, err
 }

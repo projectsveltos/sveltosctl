@@ -142,7 +142,7 @@ func collectSnapshot(ctx context.Context, c client.Client, snapshotName string, 
 	if err != nil {
 		return err
 	}
-	err = dumpAddonConstraints(collectorClient, ctx, folder, logger)
+	err = dumpAddonCompliances(collectorClient, ctx, folder, logger)
 	if err != nil {
 		return err
 	}
@@ -152,17 +152,17 @@ func collectSnapshot(ctx context.Context, c client.Client, snapshotName string, 
 	return nil
 }
 
-func dumpAddonConstraints(collectorClient *collector.Collector, ctx context.Context, folder string,
+func dumpAddonCompliances(collectorClient *collector.Collector, ctx context.Context, folder string,
 	logger logr.Logger) error {
 
-	logger.V(logs.LogDebug).Info("storing AddonConstraints")
-	addonConstraints, err := utils.GetAccessInstance().ListAddonConstraints(ctx, logger)
+	logger.V(logs.LogDebug).Info("storing AddonCompliances")
+	addonCompliances, err := utils.GetAccessInstance().ListAddonCompliances(ctx, logger)
 	if err != nil {
 		return err
 	}
-	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d AddonConstraints", len(addonConstraints.Items)))
-	for i := range addonConstraints.Items {
-		rr := &addonConstraints.Items[i]
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d AddonCompliances", len(addonCompliances.Items)))
+	for i := range addonCompliances.Items {
+		rr := &addonCompliances.Items[i]
 		err = collectorClient.DumpObject(rr, folder, logger)
 		if err != nil {
 			return err

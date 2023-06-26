@@ -32,20 +32,20 @@ import (
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
-var _ = Describe("AddonConstraints", func() {
-	It("ListAddonConstraints returns list of all addonConstraints", func() {
+var _ = Describe("AddonCompliances", func() {
+	It("ListAddonCompliances returns list of all AddonCompliances", func() {
 		initObjects := []client.Object{}
 
 		for i := 0; i < 10; i++ {
-			addonConstraint := &libsveltosv1alpha1.AddonConstraint{
+			AddonCompliance := &libsveltosv1alpha1.AddonCompliance{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: randomString(),
 				},
-				Spec: libsveltosv1alpha1.AddonConstraintSpec{
+				Spec: libsveltosv1alpha1.AddonComplianceSpec{
 					ClusterSelector: libsveltosv1alpha1.Selector("zone:west"),
 				},
 			}
-			initObjects = append(initObjects, addonConstraint)
+			initObjects = append(initObjects, AddonCompliance)
 		}
 
 		scheme := runtime.NewScheme()
@@ -53,8 +53,8 @@ var _ = Describe("AddonConstraints", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		k8sAccess := utils.GetK8sAccess(scheme, c)
-		addonConstraints, err := k8sAccess.ListAddonConstraints(context.TODO(), klogr.New())
+		AddonCompliances, err := k8sAccess.ListAddonCompliances(context.TODO(), klogr.New())
 		Expect(err).To(BeNil())
-		Expect(len(addonConstraints.Items)).To(Equal(len(initObjects)))
+		Expect(len(AddonCompliances.Items)).To(Equal(len(initObjects)))
 	})
 })
