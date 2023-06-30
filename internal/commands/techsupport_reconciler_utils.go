@@ -372,7 +372,7 @@ func updateTechsupportPredicate(e event.UpdateEvent) bool {
 }
 
 func requeueTechsupportForCluster(
-	o client.Object,
+	ctx context.Context, o client.Object,
 ) []reconcile.Request {
 
 	cluster := o

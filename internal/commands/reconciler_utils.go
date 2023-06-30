@@ -146,7 +146,7 @@ func startSnapshotReconciler(ctx context.Context, mgr manager.Manager, logger lo
 		return err
 	}
 
-	if err := c.Watch(&source.Kind{Type: &utilsv1alpha1.Snapshot{}},
+	if err := c.Watch(source.Kind(mgr.GetCache(), &utilsv1alpha1.Snapshot{}),
 		handler.EnqueueRequestsFromMapFunc(handlerMapFun),
 		addModifyDeletePredicates(),
 	); err != nil {
@@ -180,7 +180,7 @@ func startTechsupportReconciler(ctx context.Context, mgr manager.Manager, logger
 		return nil, err
 	}
 
-	err = c.Watch(&source.Kind{Type: &utilsv1alpha1.Techsupport{}},
+	err = c.Watch(source.Kind(mgr.GetCache(), &utilsv1alpha1.Techsupport{}),
 		handler.EnqueueRequestsFromMapFunc(handlerMapFun),
 		addModifyDeletePredicates(),
 	)
@@ -189,7 +189,7 @@ func startTechsupportReconciler(ctx context.Context, mgr manager.Manager, logger
 		return nil, err
 	}
 
-	err = c.Watch(&source.Kind{Type: &libsveltosv1alpha1.SveltosCluster{}},
+	err = c.Watch(source.Kind(mgr.GetCache(), &libsveltosv1alpha1.SveltosCluster{}),
 		handler.EnqueueRequestsFromMapFunc(requeueTechsupportForCluster),
 		SveltosClusterPredicates(mgr.GetLogger().WithValues("predicate", "sveltosclusterpredicate")),
 	)
@@ -215,7 +215,7 @@ func startTechsupportReconciler(ctx context.Context, mgr manager.Manager, logger
 func watchForCAPI(mgr ctrl.Manager, c controller.Controller, logger logr.Logger) error {
 	// When cluster-api cluster changes, according to ClusterPredicates,
 	// one or more ClusterProfiles need to be reconciled.
-	if err := c.Watch(&source.Kind{Type: &clusterv1.Cluster{}},
+	if err := c.Watch(source.Kind(mgr.GetCache(), &clusterv1.Cluster{}),
 		handler.EnqueueRequestsFromMapFunc(requeueTechsupportForCluster),
 		ClusterPredicates(mgr.GetLogger().WithValues("predicate", "clusterpredicate")),
 	); err != nil {
@@ -303,7 +303,7 @@ func addFinalizer(ctx context.Context, instance client.Object, finalizer string)
 		types.NamespacedName{Name: instance.GetName()}, instance)
 }
 
-func handlerMapFun(o client.Object) []reconcile.Request {
+func handlerMapFun(ctx context.Context, o client.Object) []reconcile.Request {
 	logger := klogr.New().WithValues(
 		"objectMapper",
 		"handler",
