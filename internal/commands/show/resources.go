@@ -163,13 +163,13 @@ func printResource(resourceStatus *libsveltosv1alpha1.ResourceStatus,
 	resourceName := resourceStatus.ObjectRef.Name
 
 	if resourceStatus.Resource == nil {
-		logger.V(logs.LogInfo).Info("resources are not collected. Check configuration.")
+		logger.V(logs.LogDebug).Info("resources are not collected. Check configuration.")
 		return nil
 	}
 
 	resource, err := libsveltosutils.GetUnstructured(resourceStatus.Resource)
 	if err != nil {
-		logger.V(logs.LogInfo).Info(fmt.Sprintf("failed to get resource %s:%s/%s",
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to get resource %s:%s/%s",
 			gvk, resourceNamespace, resourceName))
 		return err
 	}
