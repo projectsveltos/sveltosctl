@@ -13,7 +13,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/projectsveltos/addon-controller v0.12.1-0.20230704204117-79a8900a6399
 	github.com/projectsveltos/event-manager v0.12.1-0.20230705123033-06deae70be00
-	github.com/projectsveltos/libsveltos v0.12.1-0.20230704163255-7f5099a7ffd0
+	github.com/projectsveltos/libsveltos v0.12.1-0.20230706135125-94028dd2ba7b
 	github.com/robfig/cron v1.2.0
 	k8s.io/api v0.27.2
 	k8s.io/apiextensions-apiserver v0.27.2
