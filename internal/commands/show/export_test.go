@@ -21,4 +21,5 @@ var (
 	DisplayDryRun     = displayDryRun
 	ShowUsage         = showUsage
 	DisplayAdminRbacs = displayAdminRbacs
+	DisplayResources  = displayResources
 )
