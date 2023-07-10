@@ -36,6 +36,7 @@ func Show(ctx context.Context, args []string, logger logr.Logger) error {
   sveltosctl show [options] <subcommand> [<args>...]
 
     addons        Displays information on Kubernetes addons (resources and helm releases) deployed in clusters.
+    resources     Displays information from resources collected from managed clusters.
     usage         Displays information on which CAPI clusters will be affected by a policy (ClusterProfile or referenced ConfigMaps/Secrets) change.
     dryrun        Displays information on ClusterProfiles in DryRun mode. It displays what changes would
                   take effect if a ClusterProfile were to be moved out of DryRun mode.
@@ -73,6 +74,8 @@ See 'sveltosctl show <subcommand> --help' to read about a specific subcommand.
 		switch command {
 		case "addons":
 			err = show.AddOns(ctx, arguments, logger)
+		case "resources":
+			err = show.Resources(ctx, arguments, logger)
 		case "dryrun":
 			err = show.DryRun(ctx, arguments, logger)
 		case "usage":

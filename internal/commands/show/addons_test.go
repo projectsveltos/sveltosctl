@@ -59,7 +59,7 @@ var _ = Describe("AddOnss", func() {
 		}
 	})
 
-	It("show addonss displays deployed helm charts", func() {
+	It("show addons displays deployed helm charts", func() {
 		clusterProfileName1 := randomString()
 		charts1 := []configv1alpha1.Chart{
 			*generateChart(), *generateChart(),

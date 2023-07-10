@@ -82,7 +82,7 @@ You might also want to change the timezone of sveltosctl pod by using specific t
   - [Contributing](#contributing)
   - [License](#license)
 
-## Display deployed resources and helm releases
+## Display deployed add-ons
 
 **show addons** can be used to display list of Kubernetes addons (resources/helm) releases deployed in CAPI clusters.
 Displayed information contains:
@@ -113,6 +113,27 @@ Usage:
      --namespace=<name>      Show addons deployed in clusters in this namespace. If not specified all namespaces are considered.
      --cluster=<name>        Show addons deployed in cluster with name. If not specified all cluster names are considered.
      --clusterprofile=<name> Show addons deployed because of this clusterprofile. If not specified all clusterprofile names are considered.
+```
+
+## Display information about resources in managed cluster
+
+**show resources** looks at all the HealthCheckReport instances and display information about those.
+Defining ClusterHealthCheck/HealthCheck you can define which information to collect from which managed clusters. 
+Please see [documentation](https://projectsveltos.github.io/sveltos/)
+
+For instance:
+
+```
++-------------------------------------+--------------------------+----------------+-------------------------+----------------------------+
+|               CLUSTER               |           GVK            |   NAMESPACE    |          NAME           |          MESSAGE           |
++-------------------------------------+--------------------------+----------------+-------------------------+----------------------------+
+| default/sveltos-management-workload | apps/v1, Kind=Deployment | kube-system    | calico-kube-controllers | All replicas 1 are healthy |
+|                                     |                          | kube-system    | coredns                 | All replicas 2 are healthy |
+|                                     |                          | projectsveltos | sveltos-agent-manager   | All replicas 1 are healthy |
+| gke/production                      | apps/v1, Kind=Deployment | kube-system    | calico-kube-controllers | All replicas 1 are healthy |
+|                                     |                          | kube-system    | coredns                 | All replicas 2 are healthy |
+|                                     |                          | projectsveltos | sveltos-agent-manager   | All replicas 1 are healthy |
++-------------------------------------+--------------------------+----------------+-------------------------+----------------------------+
 ```
 
 ## Display usage

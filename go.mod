@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815
+	github.com/fatih/color v1.15.0
 	github.com/gdexlab/go-render v1.0.1
 	github.com/go-logr/logr v1.2.4
 	github.com/hexops/gotextdiff v1.0.3
@@ -11,17 +12,18 @@ require (
 	github.com/onsi/ginkgo/v2 v2.11.0
 	github.com/onsi/gomega v1.27.8
 	github.com/pkg/errors v0.9.1
-	github.com/projectsveltos/addon-controller v0.12.1-0.20230704204117-79a8900a6399
-	github.com/projectsveltos/event-manager v0.12.1-0.20230705123033-06deae70be00
-	github.com/projectsveltos/libsveltos v0.12.1-0.20230704163255-7f5099a7ffd0
+	github.com/projectsveltos/addon-controller v0.13.1-0.20230710125141-790bd86a586a
+	github.com/projectsveltos/event-manager v0.13.1-0.20230710134813-d4929ed0e2c2
+	github.com/projectsveltos/libsveltos v0.13.1-0.20230710120721-2074a30e9c99
 	github.com/robfig/cron v1.2.0
+	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.27.2
 	k8s.io/apiextensions-apiserver v0.27.2
-	k8s.io/apimachinery v0.27.2
+	k8s.io/apimachinery v0.27.3
 	k8s.io/client-go v0.27.2
 	k8s.io/klog/v2 v2.90.1
 	k8s.io/kubectl v0.27.2
-	sigs.k8s.io/cluster-api v1.5.0-beta.0
+	sigs.k8s.io/cluster-api v1.5.0-beta.1
 	sigs.k8s.io/controller-runtime v0.15.0
 	sigs.k8s.io/yaml v1.3.0
 )
@@ -61,12 +63,11 @@ require (
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d // indirect
-	github.com/fatih/color v1.15.0 // indirect
 	github.com/fluxcd/pkg/apis/acl v0.1.0 // indirect
-	github.com/fluxcd/pkg/apis/meta v1.0.0 // indirect
+	github.com/fluxcd/pkg/apis/meta v1.1.1 // indirect
 	github.com/fluxcd/pkg/http/fetch v0.5.2 // indirect
 	github.com/fluxcd/pkg/tar v0.2.0 // indirect
-	github.com/fluxcd/source-controller/api v1.0.0-rc.1 // indirect
+	github.com/fluxcd/source-controller/api v1.0.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/getkin/kin-openapi v0.118.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
@@ -167,7 +168,6 @@ require (
 	google.golang.org/grpc v1.55.0 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	helm.sh/helm/v3 v3.12.1 // indirect
 	k8s.io/apiserver v0.27.2 // indirect
