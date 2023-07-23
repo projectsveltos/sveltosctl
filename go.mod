@@ -12,9 +12,9 @@ require (
 	github.com/onsi/ginkgo/v2 v2.11.0
 	github.com/onsi/gomega v1.27.8
 	github.com/pkg/errors v0.9.1
-	github.com/projectsveltos/addon-controller v0.13.1-0.20230710125141-790bd86a586a
-	github.com/projectsveltos/event-manager v0.13.1-0.20230710134813-d4929ed0e2c2
-	github.com/projectsveltos/libsveltos v0.13.1-0.20230710120721-2074a30e9c99
+	github.com/projectsveltos/addon-controller v0.14.1-0.20230723133822-7ed1558bf9f7
+	github.com/projectsveltos/event-manager v0.14.1-0.20230723142234-6255b7a079eb
+	github.com/projectsveltos/libsveltos v0.14.1-0.20230723115557-8c564d7df10c
 	github.com/robfig/cron v1.2.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.27.2
@@ -23,7 +23,7 @@ require (
 	k8s.io/client-go v0.27.2
 	k8s.io/klog/v2 v2.90.1
 	k8s.io/kubectl v0.27.2
-	sigs.k8s.io/cluster-api v1.5.0-beta.1
+	sigs.k8s.io/cluster-api v1.5.0-rc.1
 	sigs.k8s.io/controller-runtime v0.15.0
 	sigs.k8s.io/yaml v1.3.0
 )
@@ -153,20 +153,20 @@ require (
 	go.opentelemetry.io/otel v1.14.0 // indirect
 	go.opentelemetry.io/otel/trace v1.14.0 // indirect
 	go.starlark.net v0.0.0-20200306205701-8dd3e2ee1dd5 // indirect
-	golang.org/x/crypto v0.10.0 // indirect
-	golang.org/x/net v0.11.0 // indirect
-	golang.org/x/oauth2 v0.9.0 // indirect
+	golang.org/x/crypto v0.11.0 // indirect
+	golang.org/x/net v0.12.0 // indirect
+	golang.org/x/oauth2 v0.10.0 // indirect
 	golang.org/x/sync v0.2.0 // indirect
-	golang.org/x/sys v0.9.0 // indirect
-	golang.org/x/term v0.9.0 // indirect
-	golang.org/x/text v0.10.0 // indirect
+	golang.org/x/sys v0.10.0 // indirect
+	golang.org/x/term v0.10.0 // indirect
+	golang.org/x/text v0.11.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.9.3 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
 	google.golang.org/grpc v1.55.0 // indirect
-	google.golang.org/protobuf v1.30.0 // indirect
+	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	helm.sh/helm/v3 v3.12.1 // indirect
