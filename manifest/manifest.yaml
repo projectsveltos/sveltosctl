@@ -46,7 +46,7 @@ spec:
       serviceAccountName: sveltosctl
       containers:
       - name: sveltosctl
-        image: projectsveltos/sveltosctl-amd64:main
+        image: projectsveltos/sveltosctl-amd64:dev
         imagePullPolicy: IfNotPresent
         command:
           - /sveltosctl
@@ -122,6 +122,7 @@ rules:
     verbs:
       - get
       - list
+      - update
   - apiGroups: ["lib.projectsveltos.io"]
     resources:
       - sveltosclusters
@@ -169,6 +170,7 @@ rules:
       - get
       - list
       - watch
+      - update
   - apiGroups: ["apiextensions.k8s.io"]
     resources:
       - customresourcedefinitions
