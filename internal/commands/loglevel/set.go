@@ -131,7 +131,7 @@ Description:
 			},
 			ClusterName: clusterName,
 			ClusterType: clusterType,
-		},
+		}
 		return updateDebuggingConfiguration(ctx, logSeverity, component, dc) 
 	}
 	instance := utils.GetAccessInstance()
