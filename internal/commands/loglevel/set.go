@@ -124,7 +124,7 @@ Description:
 	}
 
 	if namespace != "" && clusterName != "" && clusterType != "" {
-		return updateDebuggingConfigurationInManaged(ctx, logSeverity, component, namespace, clusterName)
+		return updateDebuggingConfiguration(ctx, logSeverity, component, namespace, clusterName, clusterType)
 	}
 
 	return updateDebuggingConfiguration(ctx, logSeverity, component)
