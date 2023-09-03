@@ -127,9 +127,11 @@ Description:
 	if namespace != "" && clusterName != "" && clusterType != "" {
 		dc := &libsveltosv1alpha1.DebuggingConfiguration{
 			ObjectMeta: metav1.ObjectMeta{
+				Namespace: namespace,
+			},
+			Spec: libsveltosv1alpha1.DebuggingConfigurationSpec{
 				ClusterName: clusterName,
 				ClusterType: clusterType,
-				Namespace:   namespace,
 			},
 		}
 		return updateDebuggingConfiguration(ctx, logSeverity, component, dc)
