@@ -27,9 +27,9 @@ import (
 )
 
 func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1alpha1.LogLevel,
-	component, namespace, clusterName, clusterType string) error {
+	component string, dc *libsveltosv1alpha1.DebuggingConfiguration,) error {
 
-	cc, err := collectLogLevelConfiguration(ctx, namespace, clusterName, clusterType)
+	cc, err := collectLogLevelConfiguration(ctx, dc)
 	if err != nil {
 		return nil
 	}
@@ -62,7 +62,7 @@ func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1a
 		)
 	}
 
-	return updateLogLevelConfiguration(ctx, spec, namespace, clusterName, clusterType)
+	return updateLogLevelConfiguration(ctx, spec, dc)
 }
 
 // Set displays/changes log verbosity for a given component
@@ -124,8 +124,24 @@ Description:
 	}
 
 	if namespace != "" && clusterName != "" && clusterType != "" {
-		return updateDebuggingConfiguration(ctx, logSeverity, component, namespace, clusterName, clusterType)
+		dc := &libsveltosv1alpha1.DebuggingConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				ClusterName: clusterName,
+				ClusterType: clusterType,
+				Namespace:   namespace,
+			},
+		}
+	} else{
+		instance := utils.GetAccessInstance()
+
+		dc, err := instance.GetDebuggingConfiguration(ctx)
+		if err != nil {
+			if apierrors.IsNotFound(err) {
+				return make([]*componentConfiguration, 0), nil
+			}
+			return nil, err
+		}
 	}
 
-	return updateDebuggingConfiguration(ctx, logSeverity, component)
+	return updateDebuggingConfiguration(ctx, logSeverity, component, dc)
 }
