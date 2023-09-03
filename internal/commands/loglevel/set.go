@@ -123,5 +123,9 @@ Description:
 		logSeverity = libsveltosv1beta1.LogLevelVerbose
 	}
 
-	return updateDebuggingConfiguration(ctx, logSeverity, component, namespace, clusterName, clusterType)
+	if namespace != "" && clusterName != "" && clusterType != "" {
+		return updateDebuggingConfigurationInManaged(ctx, logSeverity, component, namespace, clusterName)
+	}
+
+	return updateDebuggingConfiguration(ctx, logSeverity, component)
 }
