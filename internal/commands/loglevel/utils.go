@@ -60,26 +60,10 @@ func collectLogLevelConfiguration(ctx context.Context, dc *libsveltosv1alpha1.De
 func updateLogLevelConfiguration(
 	ctx context.Context,
 	spec []libsveltosv1alpha1.ComponentConfiguration,
-	namespace, clusterName, clusterType string,
+	dc *libsveltosv1alpha1.DebuggingConfiguration,
 ) error {
 
-	instance := utils.GetAccessInstance()
-
-	dc, err := instance.GetDebuggingConfiguration(ctx, namespace, clusterName, clusterType)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			dc = &libsveltosv1beta1.DebuggingConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "default",
-					Namespace: namespace,
-				},
-			}
-		} else {
-			return err
-		}
-	}
-
-	dc.Spec = libsveltosv1beta1.DebuggingConfigurationSpec{
+	dc.Spec = libsveltosv1alpha1.DebuggingConfigurationSpec{
 		Configuration: spec,
 	}
 
