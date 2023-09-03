@@ -27,7 +27,7 @@ import (
 	. "github.com/onsi/gomega"
 	"k8s.io/klog/v2/textlogger"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 )
 
@@ -91,16 +91,16 @@ var _ = Describe("Client", func() {
 	})
 
 	It("GetResult returns InProgress when request is still queued (currently in progress)", func() {
-		techsupportName := randomString()
+		snapshotName := randomString()
 
 		d := collector.GetClient()
 		defer d.ClearInternalStruct()
 
-		key := collector.GetKey(techsupportName, collector.Techsupport)
+		key := collector.GetKey(snapshotName, collector.Snapshot)
 		d.SetInProgress([]string{key})
 		Expect(len(d.GetInProgress())).To(Equal(1))
 
-		result := d.GetResult(context.TODO(), techsupportName, collector.Techsupport)
+		result := d.GetResult(context.TODO(), snapshotName, collector.Snapshot)
 		Expect(result.Err).To(BeNil())
 		Expect(result.ResultStatus).To(Equal(collector.InProgress))
 	})
@@ -129,8 +129,8 @@ var _ = Describe("Client", func() {
 		Expect(result.Err).To(BeNil())
 		Expect(result.ResultStatus).To(Equal(collector.Unavailable))
 
-		techsupportName := randomString()
-		result = d.GetResult(context.TODO(), techsupportName, collector.Techsupport)
+		snapshotName2 := randomString()
+		result = d.GetResult(context.TODO(), snapshotName2, collector.Snapshot)
 		Expect(result.Err).To(BeNil())
 		Expect(result.ResultStatus).To(Equal(collector.Unavailable))
 	})
@@ -242,11 +242,11 @@ var _ = Describe("Client", func() {
 		u, err := instance.GetUnstructured([]byte(clusterConfigurationInstance))
 		Expect(err).To(BeNil())
 		Expect(u).ToNot(BeNil())
-		Expect(u.GetKind()).To(Equal(configv1alpha1.ClusterConfigurationKind))
+		Expect(u.GetKind()).To(Equal(configv1beta1.ClusterConfigurationKind))
 	})
 
 	It("getResourcesForKind returns all resources of a given namespaced kind", func() {
-		snapshotFolder := createDirectoryWithClusterConfigurations(randomString(), randomString(), collector.Techsupport)
+		snapshotFolder := createDirectoryWithClusterConfigurations(randomString(), randomString())
 		defer os.RemoveAll(snapshotFolder)
 
 		By(fmt.Sprintf("reading content of directory %s", snapshotFolder))
@@ -258,7 +258,7 @@ var _ = Describe("Client", func() {
 			namespaceFolder := filepath.Join(snapshotFolder, files[i].Name())
 			By(fmt.Sprintf("finding resources in folder %s", namespaceFolder))
 			instance := collector.GetClient()
-			list, err := collector.GetResourcesForKind(instance, namespaceFolder, configv1alpha1.ClusterConfigurationKind,
+			list, err := collector.GetResourcesForKind(instance, namespaceFolder, configv1beta1.ClusterConfigurationKind,
 				textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 			Expect(err).To(BeNil())
 			Expect(list).ToNot(BeNil())
@@ -267,7 +267,7 @@ var _ = Describe("Client", func() {
 	})
 
 	It("getResourcesForKind returns all resources of a given cluster kind", func() {
-		snapshotFolder := createDirectoryWithClusterProfiles(randomString(), randomString(), collector.Snapshot)
+		snapshotFolder := createDirectoryWithClusterProfiles(randomString(), randomString())
 		defer os.RemoveAll(snapshotFolder)
 
 		By(fmt.Sprintf("reading content of directory %s", snapshotFolder))
@@ -277,7 +277,7 @@ var _ = Describe("Client", func() {
 
 		By(fmt.Sprintf("finding resources in folder %s", snapshotFolder))
 		instance := collector.GetClient()
-		list, err := collector.GetResourcesForKind(instance, snapshotFolder, configv1alpha1.ClusterProfileKind,
+		list, err := collector.GetResourcesForKind(instance, snapshotFolder, configv1beta1.ClusterProfileKind,
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 		Expect(list).ToNot(BeNil())
@@ -285,11 +285,11 @@ var _ = Describe("Client", func() {
 	})
 
 	It("GetNamespacedResources returns all resource of a given Kind in a snapshot folder", func() {
-		snapshotFolder := createDirectoryWithClusterConfigurations(randomString(), randomString(), collector.Snapshot)
+		snapshotFolder := createDirectoryWithClusterConfigurations(randomString(), randomString())
 		defer os.RemoveAll(snapshotFolder)
 
 		d := collector.GetClient()
-		resourceMap, err := d.GetNamespacedResources(snapshotFolder, configv1alpha1.ClusterConfigurationKind,
+		resourceMap, err := d.GetNamespacedResources(snapshotFolder, configv1beta1.ClusterConfigurationKind,
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 		Expect(resourceMap).ToNot(BeNil())
@@ -300,7 +300,7 @@ var _ = Describe("Client", func() {
 			for j := range resources {
 				u := resources[j]
 				Expect(u.GetNamespace()).To(Equal(k))
-				Expect(u.GetKind()).To(Equal(configv1alpha1.ClusterConfigurationKind))
+				Expect(u.GetKind()).To(Equal(configv1beta1.ClusterConfigurationKind))
 			}
 		}
 	})
@@ -310,7 +310,7 @@ var _ = Describe("Client", func() {
 		snapshotStorage := randomString()
 		By(fmt.Sprintf("snapshot instance %s (storage %s)", snapshotName, snapshotStorage))
 
-		snapshotFolder := createDirectoryWithClusterConfigurations(snapshotStorage, snapshotName, collector.Snapshot)
+		snapshotFolder := createDirectoryWithClusterConfigurations(snapshotStorage, snapshotName)
 		defer os.RemoveAll(snapshotFolder)
 
 		// createDirectoryWithClusterConfigurations creates a temporary directory and then creates following subdirectories:
@@ -348,7 +348,7 @@ var _ = Describe("Client", func() {
 		storage := randomString()
 		By(fmt.Sprintf("snapshot instance %s (storage %s)", snapshotName, storage))
 
-		snapshotFolder := createDirectoryWithClusterConfigurations(storage, snapshotName, collector.Snapshot)
+		snapshotFolder := createDirectoryWithClusterConfigurations(storage, snapshotName)
 		defer os.RemoveAll(snapshotFolder)
 
 		// createDirectoryWithClusterConfigurations creates a temporary directory and then creates following subdirectories:
@@ -369,8 +369,8 @@ var _ = Describe("Client", func() {
 	})
 })
 
-func createDirectoryWithClusterConfigurations(storage, requestorName string, collectionType collector.CollectionType) string {
-	snapshotDir := createDirectory(storage, requestorName, collectionType)
+func createDirectoryWithClusterConfigurations(storage, requestorName string) string {
+	snapshotDir := createDirectory(storage, requestorName)
 
 	By(fmt.Sprintf("Created temporary directory %s", snapshotDir))
 	d := collector.GetClient()
@@ -387,8 +387,8 @@ func createDirectoryWithClusterConfigurations(storage, requestorName string, col
 	return snapshotDir
 }
 
-func createDirectoryWithClusterProfiles(storage, requestorName string, collectionType collector.CollectionType) string {
-	snapshotDir := createDirectory(storage, requestorName, collectionType)
+func createDirectoryWithClusterProfiles(storage, requestorName string) string {
+	snapshotDir := createDirectory(storage, requestorName)
 
 	By(fmt.Sprintf("Created temporary directory %s", snapshotDir))
 	d := collector.GetClient()
@@ -404,13 +404,10 @@ func createDirectoryWithClusterProfiles(storage, requestorName string, collectio
 	return snapshotDir
 }
 
-func createDirectory(storage, requestorName string, collectionType collector.CollectionType) string {
+func createDirectory(storage, requestorName string) string {
 	dir, err := os.MkdirTemp("", randomString())
 	Expect(err).To(BeNil())
 	timeFolder := time.Now().Format(collector.TimeFormat)
 
-	if collectionType == collector.Snapshot {
-		return filepath.Join(dir, storage, "snapshot", requestorName, timeFolder)
-	}
-	return filepath.Join(dir, storage, "techsupport", requestorName, timeFolder)
+	return filepath.Join(dir, storage, "snapshot", requestorName, timeFolder)
 }

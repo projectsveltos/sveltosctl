@@ -30,27 +30,27 @@ import (
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
 // addDeployedHelmCharts adds provided charts as deployed in clusterConfiguration status
-func addDeployedHelmCharts(clusterConfiguration *configv1alpha1.ClusterConfiguration,
-	clusterProfileName string, charts []configv1alpha1.Chart) *configv1alpha1.ClusterConfiguration {
+func addDeployedHelmCharts(clusterConfiguration *configv1beta1.ClusterConfiguration,
+	clusterProfileName string, charts []configv1beta1.Chart) *configv1beta1.ClusterConfiguration {
 
 	if clusterConfiguration.Status.ClusterProfileResources == nil {
-		clusterConfiguration.Status.ClusterProfileResources = make([]configv1alpha1.ClusterProfileResource, 0)
+		clusterConfiguration.Status.ClusterProfileResources = make([]configv1beta1.ClusterProfileResource, 0)
 	}
 
 	for i := range clusterConfiguration.Status.ClusterProfileResources {
 		cfr := &clusterConfiguration.Status.ClusterProfileResources[i]
 		if cfr.ClusterProfileName == clusterProfileName {
 			if cfr.Features == nil {
-				cfr.Features = make([]configv1alpha1.Feature, 0)
+				cfr.Features = make([]configv1beta1.Feature, 0)
 			}
 			cfr.Features = append(cfr.Features,
-				configv1alpha1.Feature{
-					FeatureID: configv1alpha1.FeatureHelm,
+				configv1beta1.Feature{
+					FeatureID: configv1beta1.FeatureHelm,
 					Charts:    charts,
 				})
 
@@ -58,10 +58,10 @@ func addDeployedHelmCharts(clusterConfiguration *configv1alpha1.ClusterConfigura
 		}
 	}
 
-	cfr := &configv1alpha1.ClusterProfileResource{
+	cfr := &configv1beta1.ClusterProfileResource{
 		ClusterProfileName: clusterProfileName,
-		Features: []configv1alpha1.Feature{
-			{FeatureID: configv1alpha1.FeatureHelm, Charts: charts},
+		Features: []configv1beta1.Feature{
+			{FeatureID: configv1beta1.FeatureHelm, Charts: charts},
 		},
 	}
 	clusterConfiguration.Status.ClusterProfileResources = append(clusterConfiguration.Status.ClusterProfileResources, *cfr)
@@ -70,22 +70,22 @@ func addDeployedHelmCharts(clusterConfiguration *configv1alpha1.ClusterConfigura
 }
 
 // addDeployedResources adds provided resources as deployed in clusterConfiguration status
-func addDeployedResources(clusterConfiguration *configv1alpha1.ClusterConfiguration,
-	clusterProfileName string, resources []configv1alpha1.Resource) *configv1alpha1.ClusterConfiguration {
+func addDeployedResources(clusterConfiguration *configv1beta1.ClusterConfiguration,
+	clusterProfileName string, resources []configv1beta1.Resource) *configv1beta1.ClusterConfiguration {
 
 	if clusterConfiguration.Status.ClusterProfileResources == nil {
-		clusterConfiguration.Status.ClusterProfileResources = make([]configv1alpha1.ClusterProfileResource, 0)
+		clusterConfiguration.Status.ClusterProfileResources = make([]configv1beta1.ClusterProfileResource, 0)
 	}
 
 	for i := range clusterConfiguration.Status.ClusterProfileResources {
 		cfr := &clusterConfiguration.Status.ClusterProfileResources[i]
 		if cfr.ClusterProfileName == clusterProfileName {
 			if cfr.Features == nil {
-				cfr.Features = make([]configv1alpha1.Feature, 0)
+				cfr.Features = make([]configv1beta1.Feature, 0)
 			}
 			cfr.Features = append(cfr.Features,
-				configv1alpha1.Feature{
-					FeatureID: configv1alpha1.FeatureResources,
+				configv1beta1.Feature{
+					FeatureID: configv1beta1.FeatureResources,
 					Resources: resources,
 				})
 
@@ -93,10 +93,10 @@ func addDeployedResources(clusterConfiguration *configv1alpha1.ClusterConfigurat
 		}
 	}
 
-	cfr := &configv1alpha1.ClusterProfileResource{
+	cfr := &configv1beta1.ClusterProfileResource{
 		ClusterProfileName: clusterProfileName,
-		Features: []configv1alpha1.Feature{
-			{FeatureID: configv1alpha1.FeatureResources, Resources: resources},
+		Features: []configv1beta1.Feature{
+			{FeatureID: configv1beta1.FeatureResources, Resources: resources},
 		},
 	}
 	clusterConfiguration.Status.ClusterProfileResources = append(clusterConfiguration.Status.ClusterProfileResources, *cfr)
@@ -104,9 +104,9 @@ func addDeployedResources(clusterConfiguration *configv1alpha1.ClusterConfigurat
 	return clusterConfiguration
 }
 
-func generateChart() *configv1alpha1.Chart {
+func generateChart() *configv1beta1.Chart {
 	t := metav1.Time{Time: time.Now()}
-	return &configv1alpha1.Chart{
+	return &configv1beta1.Chart{
 		RepoURL:         randomString(),
 		ReleaseName:     randomString(),
 		Namespace:       randomString(),
@@ -115,9 +115,9 @@ func generateChart() *configv1alpha1.Chart {
 	}
 }
 
-func generateResource() *configv1alpha1.Resource {
+func generateResource() *configv1beta1.Resource {
 	t := metav1.Time{Time: time.Now()}
-	return &configv1alpha1.Resource{
+	return &configv1beta1.Resource{
 		Name:            randomString(),
 		Namespace:       randomString(),
 		Group:           randomString(),
@@ -126,8 +126,8 @@ func generateResource() *configv1alpha1.Resource {
 	}
 }
 
-func generateReleaseReport(action string) *configv1alpha1.ReleaseReport {
-	return &configv1alpha1.ReleaseReport{
+func generateReleaseReport(action string) *configv1beta1.ReleaseReport {
+	return &configv1beta1.ReleaseReport{
 		ReleaseName:      randomString(),
 		ReleaseNamespace: randomString(),
 		ChartVersion:     randomString(),
@@ -135,9 +135,9 @@ func generateReleaseReport(action string) *configv1alpha1.ReleaseReport {
 	}
 }
 
-func generateResourceReport(action string) *configv1alpha1.ResourceReport {
-	return &configv1alpha1.ResourceReport{
-		Resource: configv1alpha1.Resource{
+func generateResourceReport(action string) *configv1beta1.ResourceReport {
+	return &configv1beta1.ResourceReport{
+		Resource: configv1beta1.Resource{
 			Name:      randomString(),
 			Namespace: randomString(),
 			Group:     randomString(),

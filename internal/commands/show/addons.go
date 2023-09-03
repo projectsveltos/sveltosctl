@@ -27,7 +27,7 @@ import (
 	"github.com/go-logr/logr"
 	"github.com/olekukonko/tablewriter"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -118,7 +118,7 @@ func displayAddOnsInNamespace(ctx context.Context, namespace, passedCluster, pas
 	return nil
 }
 
-func displayAddOnsForCluster(clusterConfiguration *configv1alpha1.ClusterConfiguration, passedProfile string,
+func displayAddOnsForCluster(clusterConfiguration *configv1beta1.ClusterConfiguration, passedProfile string,
 	table *tablewriter.Table, logger logr.Logger) {
 
 	instance := utils.GetAccessInstance()

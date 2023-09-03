@@ -134,7 +134,6 @@ rules:
   - apiGroups: ["utils.projectsveltos.io"]
     resources:
       - snapshots
-      - techsupports
     verbs:
       - get
       - list
@@ -143,14 +142,12 @@ rules:
   - apiGroups: ["utils.projectsveltos.io"]
     resources:
     - snapshots/finalizers
-    - techsupports/finalizers
     verbs:
     - patch
     - update      
   - apiGroups: ["utils.projectsveltos.io"]
     resources:
       - snapshots/status
-      - techsupports/status
     verbs:
       - '*'
   - apiGroups: ["cluster.x-k8s.io"]

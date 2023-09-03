@@ -34,7 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/commands/show"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -43,16 +43,16 @@ var _ = Describe("Resources", func() {
 	It("show resources displays resources from various managed clusters", func() {
 		message := "All replicas 1 are healthy"
 
-		hcr := &libsveltosv1beta1.HealthCheckReport{
+		hcr := &libsveltosv1alpha1.HealthCheckReport{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      randomString(),
 				Namespace: randomString(),
 			},
-			Spec: libsveltosv1beta1.HealthCheckReportSpec{
+			Spec: libsveltosv1alpha1.HealthCheckReportSpec{
 				ClusterNamespace: randomString(),
 				ClusterName:      randomString(),
-				ClusterType:      libsveltosv1beta1.ClusterTypeSveltos,
-				ResourceStatuses: []libsveltosv1beta1.ResourceStatus{
+				ClusterType:      libsveltosv1alpha1.ClusterTypeSveltos,
+				ResourceStatuses: []libsveltosv1alpha1.ResourceStatus{
 					{
 						Resource: nil,
 						ObjectRef: corev1.ObjectReference{
@@ -62,7 +62,7 @@ var _ = Describe("Resources", func() {
 							Name:       randomString(),
 						},
 						Message:      message,
-						HealthStatus: libsveltosv1beta1.HealthStatusHealthy,
+						HealthStatus: libsveltosv1alpha1.HealthStatusHealthy,
 					},
 					{
 						Resource: nil,
@@ -73,7 +73,7 @@ var _ = Describe("Resources", func() {
 							Name:       randomString(),
 						},
 						Message:      message,
-						HealthStatus: libsveltosv1beta1.HealthStatusHealthy,
+						HealthStatus: libsveltosv1alpha1.HealthStatusHealthy,
 					},
 				},
 			},

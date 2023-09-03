@@ -41,14 +41,10 @@ var _ = Describe("RoleRequest", func() {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: randomString(),
 				},
-				Spec: libsveltosv1beta1.RoleRequestSpec{
+				Spec: libsveltosv1alpha1.RoleRequestSpec{
 					ServiceAccountNamespace: randomString(),
 					ServiceAccountName:      randomString(),
-					ClusterSelector: libsveltosv1beta1.Selector{
-						LabelSelector: metav1.LabelSelector{
-							MatchLabels: map[string]string{"zone": "east"},
-						},
-					},
+					ClusterSelector:         libsveltosv1alpha1.Selector("zone:east"),
 				},
 			}
 			initObjects = append(initObjects, rr)

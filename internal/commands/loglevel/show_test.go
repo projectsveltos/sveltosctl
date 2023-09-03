@@ -35,10 +35,10 @@ import (
 )
 
 var _ = Describe("Show", func() {
-	It("show displays current log level settings", func() {
+	It("show displays current log level settings in managed cluster", func() {
 		dc := getDebuggingConfiguration()
-		dc.Spec.Configuration = []libsveltosv1beta1.ComponentConfiguration{
-			{Component: libsveltosv1beta1.ComponentClassifier, LogLevel: libsveltosv1beta1.LogLevelDebug},
+		dc.Spec.Configuration = []libsveltosv1alpha1.ComponentConfiguration{
+			{Component: libsveltosv1alpha1.ComponentClassifier, LogLevel: libsveltosv1alpha1.LogLevelDebug},
 		}
 
 		old := os.Stdout // keep backup of the real stdout
@@ -52,7 +52,7 @@ var _ = Describe("Show", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
-		err = loglevel.ShowLogSettings(context.TODO())
+		err = loglevel.ShowLogSettings(context.TODO(), "", "", "")
 		Expect(err).To(BeNil())
 
 		w.Close()
@@ -61,7 +61,7 @@ var _ = Describe("Show", func() {
 		Expect(err).To(BeNil())
 
 		/*
-			// This is an example of how the table needs to look like
+		// This is an example of how the table needs to look like
 			   +------------------+---------------+
 			   |      COMPONENT   | VERBOSIRY     |
 			   +------------------+---------------+

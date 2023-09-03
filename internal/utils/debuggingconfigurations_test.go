@@ -28,13 +28,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
 var _ = Describe("DebuggingConfigurations", func() {
+
 	It("GetDebuggingConfiguration returns the default instance", func() {
-		dc := &libsveltosv1beta1.DebuggingConfiguration{
+		dc := &libsveltosv1alpha1.DebuggingConfiguration{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: utils.DefaultInstanceName,
 			},
@@ -46,14 +47,14 @@ var _ = Describe("DebuggingConfigurations", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		k8sAccess := utils.GetK8sAccess(scheme, c)
-		currentDC, err := k8sAccess.GetDebuggingConfiguration(context.TODO())
+		currentDC, err := k8sAccess.GetDebuggingConfiguration(context.TODO(), "", "", "")
 		Expect(err).To(BeNil())
 		Expect(currentDC).ToNot(BeNil())
 		Expect(currentDC.Name).To(Equal(dc.Name))
 	})
 
 	It("UpdateDebuggingConfiguration updates default DebuggingConfiguration instance", func() {
-		dc := &libsveltosv1beta1.DebuggingConfiguration{
+		dc := &libsveltosv1alpha1.DebuggingConfiguration{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: utils.DefaultInstanceName,
 			},
@@ -64,16 +65,17 @@ var _ = Describe("DebuggingConfigurations", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 		k8sAccess := utils.GetK8sAccess(scheme, c)
-		Expect(k8sAccess.UpdateDebuggingConfiguration(context.TODO(), dc)).To(Succeed())
+		Expect(k8sAccess.UpdateDebuggingConfiguration(context.TODO(), dc, "", "", "")).To(Succeed())
 
-		currentDC := &libsveltosv1beta1.DebuggingConfiguration{}
+		currentDC := &libsveltosv1alpha1.DebuggingConfiguration{}
 		Expect(c.Get(context.TODO(), types.NamespacedName{Name: utils.DefaultInstanceName}, currentDC)).To(Succeed())
-		currentDC.Spec.Configuration = []libsveltosv1beta1.ComponentConfiguration{
-			{Component: libsveltosv1beta1.ComponentClassifier, LogLevel: libsveltosv1beta1.LogLevelDebug},
+		currentDC.Spec.Configuration = []libsveltosv1alpha1.ComponentConfiguration{
+			{Component: libsveltosv1alpha1.ComponentClassifier, LogLevel: libsveltosv1alpha1.LogLevelDebug},
 		}
 
-		Expect(k8sAccess.UpdateDebuggingConfiguration(context.TODO(), currentDC)).To(Succeed())
+		Expect(k8sAccess.UpdateDebuggingConfiguration(context.TODO(), currentDC, "", "", "")).To(Succeed())
 		Expect(c.Get(context.TODO(), types.NamespacedName{Name: utils.DefaultInstanceName}, currentDC)).To(Succeed())
 		Expect(len(currentDC.Spec.Configuration)).To(Equal(1))
 	})
 })
+

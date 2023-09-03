@@ -21,16 +21,16 @@ import (
 
 	"github.com/go-logr/logr"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 )
 
 // ListClusterProfiles returns all current Profiles
 func (a *k8sAccess) ListProfiles(ctx context.Context,
-	logger logr.Logger) (*configv1alpha1.ProfileList, error) {
+	logger logr.Logger) (*configv1beta1.ProfileList, error) {
 
 	logger.V(logs.LogDebug).Info("Get all Profiles")
-	profiles := &configv1alpha1.ProfileList{}
+	profiles := &configv1beta1.ProfileList{}
 	err := a.client.List(ctx, profiles)
 	return profiles, err
 }

@@ -64,7 +64,14 @@ func onboardSveltosCluster(ctx context.Context, clusterNamespace, clusterName st
 		return err
 	}
 
-	return patchSecret(ctx, clusterNamespace, secretName, kubeconfigData, logger)
+	err = patchSecret(ctx, clusterNamespace, secretName, kubeconfigData, logger)
+	if err != nil {
+		return err
+	}
+
+	//nolint: forbidigo // print success message
+	fmt.Printf("cluster %s successfully registered/updated in namespace %s.", clusterName, clusterNamespace)
+	return nil
 }
 
 func patchSveltosCluster(ctx context.Context, clusterNamespace, clusterName string,
@@ -72,7 +79,7 @@ func patchSveltosCluster(ctx context.Context, clusterNamespace, clusterName stri
 
 	instance := utils.GetAccessInstance()
 
-	currentSveltosCluster := &libsveltosv1beta1.SveltosCluster{}
+	currentSveltosCluster := &libsveltosv1alpha1.SveltosCluster{}
 	err := instance.GetResource(ctx, types.NamespacedName{Namespace: clusterNamespace, Name: clusterName},
 		currentSveltosCluster)
 	if err != nil {
@@ -82,7 +89,7 @@ func patchSveltosCluster(ctx context.Context, clusterNamespace, clusterName stri
 			currentSveltosCluster.Name = clusterName
 			currentSveltosCluster.Labels = labels
 			if renew {
-				currentSveltosCluster.Spec.TokenRequestRenewalOption = &libsveltosv1beta1.TokenRequestRenewalOption{
+				currentSveltosCluster.Spec.TokenRequestRenewalOption = &libsveltosv1alpha1.TokenRequestRenewalOption{
 					RenewTokenRequestInterval: metav1.Duration{Duration: 24 * time.Hour},
 				}
 			}
