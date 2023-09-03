@@ -129,11 +129,10 @@ Description:
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 			},
-			Spec: libsveltosv1alpha1.DebuggingConfigurationSpec{
-				ClusterName: clusterName,
-				ClusterType: clusterType,
-			},
-		}
+			ClusterName: clusterName,
+			ClusterType: clusterType,
+		},
+	}
 		return updateDebuggingConfiguration(ctx, logSeverity, component, dc)
 	} 
 	instance := utils.GetAccessInstance()
