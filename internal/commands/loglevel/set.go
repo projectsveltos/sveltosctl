@@ -68,13 +68,16 @@ func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1b
 // Set displays/changes log verbosity for a given component
 func Set(ctx context.Context, args []string) error {
 	doc := `Usage:
-  sveltosctl log-level set --component=<name> (--info|--debug|--verbose)
+  sveltosctl log-level set --component=<name> (--info|--debug|--verbose) [--namespace=<namespace>] [--clusterName=<cluster-name>] [--clusterType=<cluster-type>]
 Options:
-  -h --help             Show this screen.
-     --component=<name> Name of the component for which log severity is being set.
-     --info             Set log severity to info.
-     --debug            Set log severity to debug.
-     --verbose          Set log severity to verbose.
+  -h --help                  	  Show this screen.
+     --component=<name>      	  Name of the component for which log severity is being set.
+     --info                  	  Set log severity to info.
+     --debug                 	  Set log severity to debug.
+     --verbose               	  Set log severity to verbose.
+	 --namespace=<namespace> 	  Namespace in the managed cluster (optional).
+     --clusterName=<cluster-name> Name of the managed cluster (optional).
+	 --clusterType=<cluster-type> Type of the managed cluster (optional).
 	 
 Description:
   The log-level set command set log severity for the specified component.
@@ -99,13 +102,21 @@ Description:
 	debug := parsedArgs["--debug"].(bool)
 	verbose := parsedArgs["--verbose"].(bool)
 
-	var logSeverity libsveltosv1beta1.LogLevel
+	namespace := parsedArgs["--namespace"].(string)
+	clusterName:= parsedArgs["--clusterName"].(string)
+	clusterType:= parsedArgs["--clusterType"].(string)
+
+	var logSeverity libsveltosv1alpha1.LogLevel
 	if info {
 		logSeverity = libsveltosv1beta1.LogLevelInfo
 	} else if debug {
 		logSeverity = libsveltosv1beta1.LogLevelDebug
 	} else if verbose {
 		logSeverity = libsveltosv1beta1.LogLevelVerbose
+	}
+
+	if namespace != "" && clusterName != "" {
+		return updateDebuggingConfigurationInManaged(ctx, logSeverity, component, namespace, clusterName)
 	}
 
 	return updateDebuggingConfiguration(ctx, logSeverity, component)
