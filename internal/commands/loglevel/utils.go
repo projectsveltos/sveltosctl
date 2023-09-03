@@ -41,17 +41,7 @@ func (c byComponent) Less(i, j int) bool {
 	return c[i].component < c[j].component
 }
 
-func collectLogLevelConfiguration(ctx context.Context, namespace, clusterName, clusterType string) ([]*componentConfiguration, error) {
-	instance := utils.GetAccessInstance()
-
-	dc, err := instance.GetDebuggingConfiguration(ctx, namespace, clusterName, clusterType)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return make([]*componentConfiguration, 0), nil
-		}
-		return nil, err
-	}
-
+func collectLogLevelConfiguration(ctx context.Context, dc *libsveltosv1alpha1.DebuggingConfiguration) ([]*componentConfiguration, error) {
 	configurationSettings := make([]*componentConfiguration, len(dc.Spec.Configuration))
 
 	for i, c := range dc.Spec.Configuration {
