@@ -50,20 +50,6 @@ type SnapshotSpec struct {
 	SuccessfulSnapshotLimit *int32 `json:"successfulSnapshotLimit,omitempty"`
 }
 
-// +kubebuilder:validation:Enum:=Collected;InProgress;Failed
-type SnapshotRunStatus string
-
-const (
-	// SnapshotRunStatusInProgress indicates that snapshot is being collected
-	SnapshotRunStatusInProgress = SnapshotRunStatus("InProgress")
-
-	// SnapshotRunStatusCollected indicates that snapshot has been collected
-	SnapshotRunStatusCollected = SnapshotRunStatus("Collected")
-
-	// SnapshotRunStatusFailed indicates that last snapshot collection failed
-	SnapshotRunStatusFailed = SnapshotRunStatus("Failed")
-)
-
 // SnapshotStatus defines the observed state of Snapshot
 type SnapshotStatus struct {
 	// Information when next snapshot is scheduled
@@ -75,7 +61,7 @@ type SnapshotStatus struct {
 	LastRunTime *metav1.Time `json:"lastRunTime,omitempty"`
 
 	// Status indicates what happened to last snapshot collection.
-	LastRunStatus *SnapshotRunStatus `json:"lastRunStatus,omitempty"`
+	LastRunStatus *CollectionStatus `json:"lastRunStatus,omitempty"`
 
 	// FailureMessage provides more information about the error, if
 	// any occurred

@@ -35,7 +35,7 @@ func RegisterCluster(ctx context.Context, args []string, logger logr.Logger) err
 	doc := `Usage:
 	sveltosctl register <command> [<args>...]
 
-	cluster       Imports a non CAPI cluster.
+	cluster       Imports a non CAPI cluster to be managed by Sveltos.
 
 Options:
 	-h --help      Show this screen.

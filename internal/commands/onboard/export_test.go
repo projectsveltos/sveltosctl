@@ -22,4 +22,5 @@ var (
 
 const (
 	SveltosKubeconfigSecretNamePostfix = sveltosKubeconfigSecretNamePostfix
+	Kubeconfig                         = kubeconfig
 )

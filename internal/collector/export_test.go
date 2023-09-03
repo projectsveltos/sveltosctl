@@ -1,5 +1,5 @@
 /*
-Copyright 2022. projectsveltos.io. All rights reserved.
+Copyright 2022-23. projectsveltos.io. All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,65 +14,65 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package snapshotter
+package collector
 
 var (
 	RemoveFromSlice       = removeFromSlice
 	StoreResult           = storeResult
 	GetRequestStatus      = getRequestStatus
 	ProcessRequests       = processRequests
-	CollectSnapshot       = collectSnapshot
-	DumpClassifiers       = dumpClassifiers
-	DumpRoleRequests      = dumpRoleRequests
 	GetArtifactFolderName = getArtifactFolderName
 
-	GetResourcesForKind        = (*deployer).getResourcesForKind
+	GetResourcesForKind        = (*Collector).getResourcesForKind
 	AddTypeInformationToObject = addTypeInformationToObject
+	GetKey                     = getKey
 )
 
 const (
 	TimeFormat = timeFormat
 )
 
-func (d *deployer) ClearInternalStruct() {
+func (d *Collector) ClearInternalStruct() {
 	d.dirty = make([]string, 0)
 	d.inProgress = make([]string, 0)
 	d.jobQueue = make([]requestParams, 0)
 	d.results = make(map[string]error)
 }
 
-func (d *deployer) SetInProgress(inProgress []string) {
+func (d *Collector) SetInProgress(inProgress []string) {
 	d.inProgress = inProgress
 }
 
-func (d *deployer) GetInProgress() []string {
+func (d *Collector) GetInProgress() []string {
 	return d.inProgress
 }
 
-func (d *deployer) SetDirty(dirty []string) {
+func (d *Collector) SetDirty(dirty []string) {
 	d.dirty = dirty
 }
 
-func (d *deployer) GetDirty() []string {
+func (d *Collector) GetDirty() []string {
 	return d.dirty
 }
 
-func (d *deployer) SetJobQueue(key string) {
+func (d *Collector) SetJobQueue(requestorName string, collectionType CollectionType) {
 	reqParam := requestParams{
-		key: key,
+		requestorName:  requestorName,
+		collectionType: collectionType,
+		collectMethod:  nil,
 	}
 	d.jobQueue = []requestParams{reqParam}
 }
 
-func (d *deployer) GetJobQueue() []requestParams {
+func (d *Collector) GetJobQueue() []requestParams {
 	return d.jobQueue
 }
 
-func (d *deployer) SetResults(results map[string]error) {
+func (d *Collector) SetResults(results map[string]error) {
 	d.results = results
 }
 
-func (d *deployer) GetResults() map[string]error {
+func (d *Collector) GetResults() map[string]error {
 	return d.results
 }
 

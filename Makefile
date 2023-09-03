@@ -7,22 +7,25 @@ GOBIN=$(shell go env GOPATH)/bin
 else
 GOBIN=$(shell go env GOBIN)
 endif
+GO_INSTALL := ./scripts/go_install.sh
 
-REGISTRY ?= gianlucam76
+REGISTRY ?= projectsveltos
 IMAGE_NAME ?= sveltosctl
-export SVELTOSCTL_IMG ?= $(REGISTRY)/$(IMAGE_NAME) 
+export SVELTOSCTL_IMG ?= $(REGISTRY)/$(IMAGE_NAME)
 TAG ?= main
 ARCH ?= amd64
 
 # Directories.
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 TOOLS_DIR := hack/tools
-TOOLS_BIN_DIR := $(TOOLS_DIR)/bin
 BIN_DIR := bin
+TOOLS_BIN_DIR := $(abspath $(TOOLS_DIR)/$(BIN_DIR))
 
 LDFLAGS := $(shell source ./hack/version.sh; version::ldflags)
 
 GOBUILD=go build
+
+GENERATED_FILES:=./manifest/manifest.yaml
 
 ## Tool Binaries
 GOLANGCI_LINT := $(TOOLS_BIN_DIR)/golangci-lint
@@ -32,24 +35,46 @@ KUBECTL := $(TOOLS_BIN_DIR)/kubectl
 SETUP_ENVTEST := $(TOOLS_BIN_DIR)/setup_envs
 CONTROLLER_GEN := $(TOOLS_BIN_DIR)/controller-gen
 
-$(GOLANGCI_LINT): $(TOOLS_DIR)/go.mod # Build golangci-lint from tools folder.
-	cd $(TOOLS_DIR); $(GOBUILD) -tags=tools -o $(subst hack/tools/,,$@) github.com/golangci/golangci-lint/cmd/golangci-lint
+GOLANGCI_LINT_VERSION := "v1.57.2"
+
+KUSTOMIZE_VER := v4.5.2
+KUSTOMIZE_BIN := kustomize
+KUSTOMIZE := $(abspath $(TOOLS_BIN_DIR)/$(KUSTOMIZE_BIN)-$(KUSTOMIZE_VER))
+KUSTOMIZE_PKG := sigs.k8s.io/kustomize/kustomize/v4
+$(KUSTOMIZE): # Build kustomize from tools folder.
+	CGO_ENABLED=0 GOBIN=$(TOOLS_BIN_DIR) $(GO_INSTALL) $(KUSTOMIZE_PKG) $(KUSTOMIZE_BIN) $(KUSTOMIZE_VER)
+
+SETUP_ENVTEST_VER := v0.0.0-20240215143116-d0396a3d6f9f
+SETUP_ENVTEST_BIN := setup-envtest
+SETUP_ENVTEST := $(abspath $(TOOLS_BIN_DIR)/$(SETUP_ENVTEST_BIN)-$(SETUP_ENVTEST_VER))
+SETUP_ENVTEST_PKG := sigs.k8s.io/controller-runtime/tools/setup-envtest
+setup-envtest: $(SETUP_ENVTEST) ## Set up envtest (download kubebuilder assets)
+	@echo KUBEBUILDER_ASSETS=$(KUBEBUILDER_ASSETS)
+
+$(SETUP_ENVTEST_BIN): $(SETUP_ENVTEST) ## Build a local copy of setup-envtest.
+
+$(SETUP_ENVTEST): # Build setup-envtest from tools folder.
+	GOBIN=$(TOOLS_BIN_DIR) $(GO_INSTALL) $(SETUP_ENVTEST_PKG) $(SETUP_ENVTEST_BIN) $(SETUP_ENVTEST_VER)
+
+$(CONTROLLER_GEN): $(TOOLS_DIR)/go.mod # Build controller-gen from tools folder.
+	cd $(TOOLS_DIR); $(GOBUILD) -tags=tools -o $(subst $(TOOLS_DIR)/hack/tools/,,$@) sigs.k8s.io/controller-tools/cmd/controller-gen
+
+$(GOLANGCI_LINT): # Build golangci-lint from tools folder.
+	cd $(TOOLS_DIR); ./get-golangci-lint.sh $(GOLANGCI_LINT_VERSION)
 
 $(GOIMPORTS):
-	cd $(TOOLS_DIR); $(GOBUILD) -tags=tools -o $(subst hack/tools/,,$@) golang.org/x/tools/cmd/goimports
+	cd $(TOOLS_DIR); $(GOBUILD) -tags=tools -o $(subst $(TOOLS_DIR)/hack/tools/,,$@) golang.org/x/tools/cmd/goimports
 
 $(GINKGO): $(TOOLS_DIR)/go.mod
-	cd $(TOOLS_DIR) && $(GOBUILD) -tags tools -o $(subst hack/tools/,,$@) github.com/onsi/ginkgo/v2/ginkgo
+	cd $(TOOLS_DIR) && $(GOBUILD) -tags tools -o $(subst $(TOOLS_DIR)/hack/tools/,,$@) github.com/onsi/ginkgo/v2/ginkgo
+
+$(KIND): $(TOOLS_DIR)/go.mod
+	cd $(TOOLS_DIR) && $(GOBUILD) -tags tools -o $(subst $(TOOLS_DIR)/hack/tools/,,$@) sigs.k8s.io/kind
 
 $(KUBECTL):
 	curl -L https://storage.googleapis.com/kubernetes-release/release/$(K8S_LATEST_VER)/bin/$(OS)/$(ARCH)/kubectl -o $@
 	chmod +x $@
 
-$(SETUP_ENVTEST): $(TOOLS_DIR)/go.mod # Build setup-envtest from tools folder.
-	cd $(TOOLS_DIR); $(GOBUILD) -tags=tools -o $(subst hack/tools/,,$@) sigs.k8s.io/controller-runtime/tools/setup-envtest
-
-$(CONTROLLER_GEN): $(TOOLS_DIR) # Build controller-gen from tools folder.
-	cd $(TOOLS_DIR); $(GOBUILD) -tags=tools -o $(subst hack/tools/,,$@) sigs.k8s.io/controller-tools/cmd/controller-gen
 
 .PHONY: help
 help: ## Display this help.
@@ -68,13 +93,20 @@ clean: ## Remove all built tools
 
 .PHONY: generate-modules
 generate-modules: ## Run go mod tidy to ensure modules are up to date
-	GOPRIVATE=github.com/projectsveltos go mod tidy
-	cd $(TOOLS_DIR); GOPRIVATE=github.com/projectsveltos go mod tidy
+	go mod tidy
+	cd $(TOOLS_DIR); go mod tidy
 
 .PHONY: generate
 generate: ## Run all generate-manifests-*, generate-go-deepcopy-*
 	$(MAKE) generate-modules generate-manifests generate-go-deepcopy
-	cp config/crd/bases/* manifest/
+	cp k8s/sveltosctl.yaml manifest/manifest.yaml
+	cat config/crd/bases/utils.projectsveltos.io_snapshots.yaml >> manifest/manifest.yaml
+	cat config/crd/bases/utils.projectsveltos.io_techsupports.yaml >> manifest/manifest.yaml
+	MANIFEST_IMG=$(SVELTOSCTL_IMG) MANIFEST_TAG=$(TAG) $(MAKE) set-manifest-image
+	$(MAKE) fmt
+
+set-manifest-image:
+	sed -i'' -e 's@image: .*@image: '"${MANIFEST_IMG}:$(MANIFEST_TAG)"'@' ./manifest/manifest.yaml
 
 .PHONY: generate-go-deepcopy
 generate-go-deepcopy: $(CONTROLLER_GEN) ## Run all generate-go-deepcopy-* targets
@@ -96,10 +128,11 @@ PKEY ?= id_rsa
 
 .PHONY: docker-build
 docker-build: ## Build the docker image for sveltosctl
-	mkdir -p .ssh; cp -rf $(HOME)/.ssh/* .ssh/; cp -rf $(HOME)/.gitconfig .
-	docker build --pull --network=host --build-arg PKEY=$(PKEY) --build-arg LDFLAGS="$(LDFLAGS)" --build-arg ARCH=$(ARCH) -t $(REGISTRY)/$(IMAGE_NAME)-$(ARCH):$(TAG) -f Dockerfile . \
-	&& rm -rf .ssh &&  rm -f .gitconfig
+	docker build --build-arg BUILDOS=linux --build-arg TARGETARCH=amd64 --build-arg LDFLAGS="$(LDFLAGS)" --build-arg ARCH=$(ARCH) -t $(REGISTRY)/$(IMAGE_NAME)-$(ARCH):$(TAG) -f Dockerfile . 
 
+.PHONY: docker-buildx
+docker-buildx: ## docker build for multiple arch and push to docker hub
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t $(SVELTOSCTL_IMG):$(TAG) .
 
 ##@ Build
 
@@ -115,15 +148,24 @@ fmt goimports: $(GOIMPORTS) ## Format and adjust import modules.
 lint: $(GOLANGCI_LINT) ## Lint codebase
 	$(GOLANGCI_LINT) run -v --fast=false --max-issues-per-linter 0 --max-same-issues 0 --timeout 5m	
 
+.PHONY: check-manifests
+check-manifests: generate ## Verify manifests file is up to date
+	test `git status --porcelain $(GENERATED_FILES) | grep -cE '(^\?)|(^ M)'` -eq 0 || (echo "The manifest file changed, please 'make generate' and commit the results"; exit 1)
+
 .PHONY: build
 build: fmt vet ## Build manager binary.
 	 go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/sveltosctl cmd/sveltosctl/main.go
 
+build-all:
+	GOOS=linux GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/sveltosctl-linux-arm64 cmd/sveltosctl/main.go
+	GOOS=linux GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/sveltosctl-linux-amd64 cmd/sveltosctl/main.go
+	GOOS=darwin GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/sveltosctl-darwin-arm64 cmd/sveltosctl/main.go
+	GOOS=darwin GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/sveltosctl-darwin-amd64 cmd/sveltosctl/main.go
 
 ##@ Testing
 
 # KUBEBUILDER_ENVTEST_KUBERNETES_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-KUBEBUILDER_ENVTEST_KUBERNETES_VERSION = 1.25.0
+KUBEBUILDER_ENVTEST_KUBERNETES_VERSION = 1.30.0
 
 ifeq ($(shell go env GOOS),darwin) # Use the darwin/amd64 binary until an arm64 version is available
 KUBEBUILDER_ASSETS ?= $(shell $(SETUP_ENVTEST) use --use-env -p path --arch amd64 $(KUBEBUILDER_ENVTEST_KUBERNETES_VERSION))
@@ -133,5 +175,5 @@ endif
 
 
 .PHONY: test
-test: fmt vet $(SETUP_ENVTEST) ## Run uts.
+test: | check-manifests fmt vet $(SETUP_ENVTEST) ## Run uts.
 	KUBEBUILDER_ASSETS="$(KUBEBUILDER_ASSETS)" go test $(shell go list ./... |grep -v test/fv |grep -v pkg/deployer/fake |grep -v test/helpers) $(TEST_ARGS) -coverprofile cover.out 

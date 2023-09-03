@@ -21,11 +21,11 @@ import (
 
 	"github.com/go-logr/logr"
 
+	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 )
 
-// ListClusterReports returns all current ClusterProfiles
+// ListClusterProfiles returns all current ClusterProfiles
 func (a *k8sAccess) ListClusterProfiles(ctx context.Context,
 	logger logr.Logger) (*configv1alpha1.ClusterProfileList, error) {
 

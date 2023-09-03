@@ -1,26 +1,4 @@
 linters-settings:
-  depguard:
-    list-type: blacklist
-    packages:
-      # Following logging implementations are allowed:
-      #   k8s.io/klog
-      #   go.uber.org/zap
-      #   go-logr/logr
-      #
-      # note that the following list will grow.
-      - github.com/google/glog
-      - log
-      - github.com/sirupsen/logrus
-      - github.com/wojas/genericr
-      - logfmt
-    packages-with-error-message:
-      - github.com/google/glog: "Use klog, zap, or logr for logging."
-      - log: "Use klog, zap, or logr for logging."
-      - github.com/sirupsen/logrus: "Use klog, zap, or logr for logging."
-      - github.com/wojas/genericr: "Use klog, zap, or logr for logging."
-      - logfmt: "Use klog, zap, or logr for logging."
-  dupl:
-    threshold: 200
   errorlint:
     # Use '%w' to format errors.
     errorf: true
@@ -54,12 +32,9 @@ linters-settings:
   gocyclo:
     min-complexity: 20
   goimports:
-    local-prefixes: golang.cisco.com/cloudstack
+    local-prefixes: github.com/projectsveltos
   gomnd:
-    settings:
-      mnd:
-        # don't include the "operation" and "assign"
-        checks: argument,case,condition,return
+    checks: argument,case,condition,return
   gomodguard:
     # Although this is almost empty, we will evolve the list below with the
     # modules we shouldn't use for technical and/or security reasons.
@@ -71,7 +46,7 @@ linters-settings:
       # Don't merge replace directives using local path.
       local_replace_directives: true
   govet:
-    check-shadowing: true
+    shadow: true
     settings:
       printf:
         funcs:
@@ -116,9 +91,7 @@ linters:
     - bidichk
     - containedctx
     - bodyclose
-    - depguard
     - dogsled
-    - dupl
     - durationcheck
     - errcheck
     - errname
@@ -198,6 +171,4 @@ run:
   allow-parallel-runners: true
   # Timeout for analysis
   timeout: 5m
-  # files to skip: they will be analyzed, but issues from them won't be reported.
-  skip-dirs:
-    - cmd/example/gen
+

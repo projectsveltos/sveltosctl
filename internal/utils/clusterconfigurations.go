@@ -18,13 +18,14 @@ package utils
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 )
 
 func (a *k8sAccess) GetClusterNameFromClusterConfiguration(clusterConfiguration *configv1alpha1.ClusterConfiguration) string {
@@ -75,7 +76,11 @@ func (a *k8sAccess) GetHelmReleases(clusterConfiguration *configv1alpha1.Cluster
 	logger.V(logs.LogDebug).Info("Get Helm Releases deployed in the cluster")
 	for i := range clusterConfiguration.Status.ClusterProfileResources {
 		r := clusterConfiguration.Status.ClusterProfileResources[i]
-		a.addDeployedCharts(r.ClusterProfileName, r.Features, results)
+		a.addDeployedCharts(configv1alpha1.ClusterProfileKind, r.ClusterProfileName, r.Features, results)
+	}
+	for i := range clusterConfiguration.Status.ProfileResources {
+		r := clusterConfiguration.Status.ProfileResources[i]
+		a.addDeployedCharts(configv1alpha1.ProfileKind, r.ProfileName, r.Features, results)
 	}
 
 	return results
@@ -93,17 +98,23 @@ func (a *k8sAccess) GetResources(clusterConfiguration *configv1alpha1.ClusterCon
 	logger.V(logs.LogDebug).Info("Get resources deployed in the cluster")
 	for i := range clusterConfiguration.Status.ClusterProfileResources {
 		r := clusterConfiguration.Status.ClusterProfileResources[i]
-		a.addDeployedResources(r.ClusterProfileName, r.Features, results)
+		a.addDeployedResources(configv1alpha1.ClusterProfileKind, r.ClusterProfileName, r.Features, results)
+	}
+	for i := range clusterConfiguration.Status.ProfileResources {
+		r := clusterConfiguration.Status.ProfileResources[i]
+		a.addDeployedResources(configv1alpha1.ProfileKind, r.ProfileName, r.Features, results)
 	}
 
 	return results
 }
 
-func (a *k8sAccess) addDeployedCharts(clusterProfilesName string,
+func (a *k8sAccess) addDeployedCharts(profileKind, profileName string,
 	features []configv1alpha1.Feature, results map[configv1alpha1.Chart][]string) {
 
 	for i := range features {
-		a.addDeployedChartsForFeature(clusterProfilesName, features[i].Charts, results)
+		a.addDeployedChartsForFeature(
+			fmt.Sprintf("%s/%s", profileKind, profileName),
+			features[i].Charts, results)
 	}
 }
 
@@ -121,24 +132,26 @@ func (a *k8sAccess) addDeployedChartsForFeature(clusterProfilesName string,
 	}
 }
 
-func (a *k8sAccess) addDeployedResources(clusterProfilesName string,
+func (a *k8sAccess) addDeployedResources(profilesKind, profileName string,
 	features []configv1alpha1.Feature, results map[configv1alpha1.Resource][]string) {
 
 	for i := range features {
-		a.addDeployedResourcesForFeature(clusterProfilesName, features[i].Resources, results)
+		a.addDeployedResourcesForFeature(
+			fmt.Sprintf("%s/%s", profilesKind, profileName),
+			features[i].Resources, results)
 	}
 }
 
-func (a *k8sAccess) addDeployedResourcesForFeature(clusterProfilesName string,
+func (a *k8sAccess) addDeployedResourcesForFeature(profileName string,
 	resources []configv1alpha1.Resource, results map[configv1alpha1.Resource][]string) {
 
 	for i := range resources {
 		resource := &resources[i]
 		if v, ok := results[*resource]; ok {
-			v = append(v, clusterProfilesName)
+			v = append(v, profileName)
 			results[*resource] = v
 		} else {
-			results[*resource] = []string{clusterProfilesName}
+			results[*resource] = []string{profileName}
 		}
 	}
 }
