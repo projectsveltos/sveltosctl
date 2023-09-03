@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	utilsv1beta1 "github.com/projectsveltos/sveltosctl/api/v1beta1"
+	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/commands/snapshot"
 	"github.com/projectsveltos/sveltosctl/internal/utils"

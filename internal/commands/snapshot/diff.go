@@ -38,10 +38,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2/textlogger"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
-	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
+	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	utilsv1beta1 "github.com/projectsveltos/sveltosctl/api/v1beta1"
+	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )

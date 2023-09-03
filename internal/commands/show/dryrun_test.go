@@ -33,7 +33,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
+	"github.com/projectsveltos/addon-controller/controllers"
 	"github.com/projectsveltos/sveltosctl/internal/commands/show"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -113,7 +114,7 @@ var _ = Describe("DryRun", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
-		err = show.DisplayDryRun(context.TODO(), "", "", "", false,
+		err = show.DisplayDryRun(context.TODO(), "", "", "",
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 
@@ -209,7 +210,7 @@ var _ = Describe("DryRun", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
-		err = show.DisplayDryRun(context.TODO(), "", "", "", false,
+		err = show.DisplayDryRun(context.TODO(), "", "", "",
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 

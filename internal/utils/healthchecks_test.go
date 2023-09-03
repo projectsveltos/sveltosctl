@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -37,12 +37,12 @@ var _ = Describe("HealthCheck", func() {
 		initObjects := []client.Object{}
 
 		for i := 0; i < 10; i++ {
-			hc := &libsveltosv1beta1.HealthCheck{
+			hc := &libsveltosv1alpha1.HealthCheck{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: randomString(),
 				},
-				Spec: libsveltosv1beta1.HealthCheckSpec{
-					ResourceSelectors: []libsveltosv1beta1.ResourceSelector{
+				Spec: libsveltosv1alpha1.HealthCheckSpec{
+					ResourceSelectors: []libsveltosv1alpha1.ResourceSelector{
 						{
 							Group:   randomString(),
 							Version: randomString(),

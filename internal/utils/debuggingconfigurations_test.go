@@ -33,6 +33,7 @@ import (
 )
 
 var _ = Describe("DebuggingConfigurations", func() {
+
 	It("GetDebuggingConfiguration returns the default instance", func() {
 		dc := &libsveltosv1beta1.DebuggingConfiguration{
 			ObjectMeta: metav1.ObjectMeta{
@@ -46,7 +47,7 @@ var _ = Describe("DebuggingConfigurations", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		k8sAccess := utils.GetK8sAccess(scheme, c)
-		currentDC, err := k8sAccess.GetDebuggingConfiguration(context.TODO())
+		currentDC, err := k8sAccess.GetDebuggingConfiguration(context.TODO(), "", "", "")
 		Expect(err).To(BeNil())
 		Expect(currentDC).ToNot(BeNil())
 		Expect(currentDC.Name).To(Equal(dc.Name))
@@ -64,7 +65,7 @@ var _ = Describe("DebuggingConfigurations", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 		k8sAccess := utils.GetK8sAccess(scheme, c)
-		Expect(k8sAccess.UpdateDebuggingConfiguration(context.TODO(), dc)).To(Succeed())
+		Expect(k8sAccess.UpdateDebuggingConfiguration(context.TODO(), dc, "", "", "")).To(Succeed())
 
 		currentDC := &libsveltosv1beta1.DebuggingConfiguration{}
 		Expect(c.Get(context.TODO(), types.NamespacedName{Name: utils.DefaultInstanceName}, currentDC)).To(Succeed())
@@ -72,8 +73,9 @@ var _ = Describe("DebuggingConfigurations", func() {
 			{Component: libsveltosv1beta1.ComponentClassifier, LogLevel: libsveltosv1beta1.LogLevelDebug},
 		}
 
-		Expect(k8sAccess.UpdateDebuggingConfiguration(context.TODO(), currentDC)).To(Succeed())
+		Expect(k8sAccess.UpdateDebuggingConfiguration(context.TODO(), currentDC, "", "", "")).To(Succeed())
 		Expect(c.Get(context.TODO(), types.NamespacedName{Name: utils.DefaultInstanceName}, currentDC)).To(Succeed())
 		Expect(len(currentDC.Spec.Configuration)).To(Equal(1))
 	})
 })
+

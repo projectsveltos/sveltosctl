@@ -26,7 +26,7 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 
-	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/commands"
 )
 
@@ -36,11 +36,11 @@ const (
 
 var _ = Describe("ClusterProfile Predicates: SvelotsClusterPredicates", func() {
 	var logger logr.Logger
-	var cluster *libsveltosv1beta1.SveltosCluster
+	var cluster *libsveltosv1alpha1.SveltosCluster
 
 	BeforeEach(func() {
 		logger = textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1)))
-		cluster = &libsveltosv1beta1.SveltosCluster{
+		cluster = &libsveltosv1alpha1.SveltosCluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      upstreamClusterNamePrefix + randomString(),
 				Namespace: "scpredicates" + randomString(),
@@ -53,7 +53,7 @@ var _ = Describe("ClusterProfile Predicates: SvelotsClusterPredicates", func() {
 
 		cluster.Spec.Paused = false
 
-		result := clusterPredicate.Create(event.TypedCreateEvent[*libsveltosv1beta1.SveltosCluster]{Object: cluster})
+		result := clusterPredicate.Create(event.TypedCreateEvent[*libsveltosv1alpha1.SveltosCluster]{Object: cluster})
 		Expect(result).To(BeTrue())
 	})
 	It("Create does not reprocess when sveltos Cluster is paused", func() {
@@ -62,13 +62,13 @@ var _ = Describe("ClusterProfile Predicates: SvelotsClusterPredicates", func() {
 		cluster.Spec.Paused = true
 		cluster.Annotations = map[string]string{clusterv1.PausedAnnotation: "true"}
 
-		result := clusterPredicate.Create(event.TypedCreateEvent[*libsveltosv1beta1.SveltosCluster]{Object: cluster})
+		result := clusterPredicate.Create(event.TypedCreateEvent[*libsveltosv1alpha1.SveltosCluster]{Object: cluster})
 		Expect(result).To(BeFalse())
 	})
 	It("Delete does reprocess ", func() {
 		clusterPredicate := commands.SveltosClusterPredicate{Logger: logger}
 
-		result := clusterPredicate.Delete(event.TypedDeleteEvent[*libsveltosv1beta1.SveltosCluster]{Object: cluster})
+		result := clusterPredicate.Delete(event.TypedDeleteEvent[*libsveltosv1alpha1.SveltosCluster]{Object: cluster})
 		Expect(result).To(BeTrue())
 	})
 	It("Update reprocesses when sveltos Cluster paused changes from true to false", func() {
@@ -76,7 +76,7 @@ var _ = Describe("ClusterProfile Predicates: SvelotsClusterPredicates", func() {
 
 		cluster.Spec.Paused = false
 
-		oldCluster := &libsveltosv1beta1.SveltosCluster{
+		oldCluster := &libsveltosv1alpha1.SveltosCluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      cluster.Name,
 				Namespace: cluster.Namespace,
@@ -85,7 +85,7 @@ var _ = Describe("ClusterProfile Predicates: SvelotsClusterPredicates", func() {
 		oldCluster.Spec.Paused = true
 		oldCluster.Annotations = map[string]string{clusterv1.PausedAnnotation: "true"}
 
-		result := clusterPredicate.Update(event.TypedUpdateEvent[*libsveltosv1beta1.SveltosCluster]{
+		result := clusterPredicate.Update(event.TypedUpdateEvent[*libsveltosv1alpha1.SveltosCluster]{
 			ObjectNew: cluster, ObjectOld: oldCluster})
 		Expect(result).To(BeTrue())
 	})
@@ -94,7 +94,7 @@ var _ = Describe("ClusterProfile Predicates: SvelotsClusterPredicates", func() {
 
 		cluster.Spec.Paused = true
 		cluster.Annotations = map[string]string{clusterv1.PausedAnnotation: "true"}
-		oldCluster := &libsveltosv1beta1.SveltosCluster{
+		oldCluster := &libsveltosv1alpha1.SveltosCluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      cluster.Name,
 				Namespace: cluster.Namespace,
@@ -102,7 +102,7 @@ var _ = Describe("ClusterProfile Predicates: SvelotsClusterPredicates", func() {
 		}
 		oldCluster.Spec.Paused = false
 
-		result := clusterPredicate.Update(event.TypedUpdateEvent[*libsveltosv1beta1.SveltosCluster]{
+		result := clusterPredicate.Update(event.TypedUpdateEvent[*libsveltosv1alpha1.SveltosCluster]{
 			ObjectNew: cluster, ObjectOld: oldCluster})
 		Expect(result).To(BeFalse())
 	})
@@ -110,7 +110,7 @@ var _ = Describe("ClusterProfile Predicates: SvelotsClusterPredicates", func() {
 		clusterPredicate := commands.SveltosClusterPredicate{Logger: logger}
 
 		cluster.Spec.Paused = false
-		oldCluster := &libsveltosv1beta1.SveltosCluster{
+		oldCluster := &libsveltosv1alpha1.SveltosCluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      cluster.Name,
 				Namespace: cluster.Namespace,
@@ -118,7 +118,7 @@ var _ = Describe("ClusterProfile Predicates: SvelotsClusterPredicates", func() {
 		}
 		oldCluster.Spec.Paused = false
 
-		result := clusterPredicate.Update(event.TypedUpdateEvent[*libsveltosv1beta1.SveltosCluster]{
+		result := clusterPredicate.Update(event.TypedUpdateEvent[*libsveltosv1alpha1.SveltosCluster]{
 			ObjectNew: cluster, ObjectOld: oldCluster})
 		Expect(result).To(BeFalse())
 	})
@@ -127,7 +127,7 @@ var _ = Describe("ClusterProfile Predicates: SvelotsClusterPredicates", func() {
 
 		cluster.Labels = map[string]string{"department": "eng"}
 
-		oldCluster := &libsveltosv1beta1.SveltosCluster{
+		oldCluster := &libsveltosv1alpha1.SveltosCluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      cluster.Name,
 				Namespace: cluster.Namespace,
@@ -135,7 +135,7 @@ var _ = Describe("ClusterProfile Predicates: SvelotsClusterPredicates", func() {
 			},
 		}
 
-		result := clusterPredicate.Update(event.TypedUpdateEvent[*libsveltosv1beta1.SveltosCluster]{
+		result := clusterPredicate.Update(event.TypedUpdateEvent[*libsveltosv1alpha1.SveltosCluster]{
 			ObjectNew: cluster, ObjectOld: oldCluster})
 		Expect(result).To(BeTrue())
 	})
@@ -144,17 +144,17 @@ var _ = Describe("ClusterProfile Predicates: SvelotsClusterPredicates", func() {
 
 		cluster.Status.Ready = true
 
-		oldCluster := &libsveltosv1beta1.SveltosCluster{
+		oldCluster := &libsveltosv1alpha1.SveltosCluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      cluster.Name,
 				Namespace: cluster.Namespace,
 				Labels:    map[string]string{},
 			},
-			Status: libsveltosv1beta1.SveltosClusterStatus{
+			Status: libsveltosv1alpha1.SveltosClusterStatus{
 				Ready: false,
 			},
 		}
-		result := clusterPredicate.Update(event.TypedUpdateEvent[*libsveltosv1beta1.SveltosCluster]{
+		result := clusterPredicate.Update(event.TypedUpdateEvent[*libsveltosv1alpha1.SveltosCluster]{
 			ObjectNew: cluster, ObjectOld: oldCluster})
 		Expect(result).To(BeTrue())
 	})

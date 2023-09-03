@@ -33,7 +33,7 @@ linters-settings:
     min-complexity: 20
   goimports:
     local-prefixes: github.com/projectsveltos
-  mnd:
+  gomnd:
     checks: argument,case,condition,return
   gomodguard:
     # Although this is almost empty, we will evolve the list below with the

@@ -22,12 +22,11 @@ import (
 	"strings"
 
 	docopt "github.com/docopt/docopt-go"
-
-	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 )
 
-func unsetDebuggingConfiguration(ctx context.Context, component string) error {
-	cc, err := collectLogLevelConfiguration(ctx)
+func unsetDebuggingConfiguration(ctx context.Context, component, namespace, clusterName, clusterType string) error {
+	cc, err := collectLogLevelConfiguration(ctx, namespace, clusterName, clusterType)
 	if err != nil {
 		return nil
 	}
@@ -50,7 +49,7 @@ func unsetDebuggingConfiguration(ctx context.Context, component string) error {
 	}
 
 	if found {
-		return updateLogLevelConfiguration(ctx, spec)
+		return updateLogLevelConfiguration(ctx, spec, namespace, clusterName, clusterType)
 	}
 	return nil
 }
@@ -58,13 +57,16 @@ func unsetDebuggingConfiguration(ctx context.Context, component string) error {
 // Unset resets log verbosity for a given component
 func Unset(ctx context.Context, args []string) error {
 	doc := `Usage:
-  sveltosctl log-level unset --component=<name>
+  sveltosctl log-level unset --component=<name> [--namespace=<namespace>] [--cluster=<cluster-name>] [--cluster-type=<cluster-type>]
 Options:
-  -h --help             Show this screen.
-     --component=<name> Name of the component for which log severity is being set.
+  -h --help                		   Show this screen.
+     --component=<name>    		   Name of the component for which log severity is being unset.
+     --namespace=<namespace> 	   Namespace of the cluster.
+     --cluster=<cluster-name> 	   Name of the cluster.
+     --cluster-type=<cluster-type> Type of the cluster (Capi or Sveltos).
 	 
 Description:
-  The log-level set command set log severity for the specified component.
+  The log-level unset command unset log severity for the specified component in the specified cluster.
 `
 	parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
 	if err != nil {
@@ -81,6 +83,18 @@ Description:
 	if passedComponent := parsedArgs["--component"]; passedComponent != nil {
 		component = passedComponent.(string)
 	}
+	namespace := ""
+    if passedNamespace := parsedArgs["--namespace"]; passedNamespace != nil {
+        namespace = passedNamespace.(string)
+    }
+	clusterName := ""
+	if passedClusterName := parsedArgs["--cluster"]; passedClusterName != nil {
+        clusterName = passedClusterName.(string)
+    }
+	clusterType := ""
+	if passedClusterType := parsedArgs["--cluster-type"]; passedClusterType != nil {
+        clusterType = passedClusterType.(string)
+    }
 
-	return unsetDebuggingConfiguration(ctx, component)
+	return unsetDebuggingConfiguration(ctx, component, namespace, clusterName, clusterType)
 }

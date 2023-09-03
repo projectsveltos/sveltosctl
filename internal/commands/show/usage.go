@@ -28,8 +28,8 @@ import (
 	"github.com/olekukonko/tablewriter"
 	corev1 "k8s.io/api/core/v1"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
-	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
+	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -63,7 +63,7 @@ func showUsage(ctx context.Context, kind, passedNamespace, passedName string, lo
 			return err
 		}
 	}
-	if kind == "" || kind == string(libsveltosv1beta1.ConfigMapReferencedResourceKind) {
+	if kind == "" || kind == string(libsveltosv1alpha1.ConfigMapReferencedResourceKind) {
 		if err := showUsageForConfigMaps(ctx, passedNamespace, passedName, table, logger); err != nil {
 			return err
 		}
@@ -226,7 +226,7 @@ func getConfigMaps(passedNamespace, passedName string, policyRefs []configv1alph
 	configMaps := make([]configv1alpha1.PolicyRef, 0)
 	for i := range policyRefs {
 		pr := &policyRefs[i]
-		if pr.Kind == string(libsveltosv1beta1.ConfigMapReferencedResourceKind) {
+		if pr.Kind == string(libsveltosv1alpha1.ConfigMapReferencedResourceKind) {
 			if shouldAddPolicyRef(passedNamespace, passedName, pr) {
 				logger.V(logs.LogDebug).Info(fmt.Sprintf("considering reference configMap %s/%s",
 					pr.Namespace, pr.Name))
@@ -252,7 +252,7 @@ func getSecrets(passedNamespace, passedName string, policyRefs []configv1alpha1.
 	secrets := make([]configv1alpha1.PolicyRef, 0)
 	for i := range policyRefs {
 		pr := &policyRefs[i]
-		if pr.Kind == string(libsveltosv1beta1.SecretReferencedResourceKind) {
+		if pr.Kind == string(libsveltosv1alpha1.SecretReferencedResourceKind) {
 			if shouldAddPolicyRef(passedNamespace, passedName, pr) {
 				logger.V(logs.LogDebug).Info(fmt.Sprintf("considering reference secret %s/%s",
 					pr.Namespace, pr.Name))
@@ -346,13 +346,13 @@ Description:
 		kind = passedKind.(string)
 		if kind != configv1alpha1.ClusterProfileKind &&
 			kind != configv1alpha1.ProfileKind &&
-			kind != string(libsveltosv1beta1.ConfigMapReferencedResourceKind) &&
-			kind != string(libsveltosv1beta1.SecretReferencedResourceKind) {
+			kind != string(libsveltosv1alpha1.ConfigMapReferencedResourceKind) &&
+			kind != string(libsveltosv1alpha1.SecretReferencedResourceKind) {
 
 			return fmt.Errorf("possible values for kind are: %s, %s, %s, %s",
 				configv1alpha1.ClusterProfileKind, configv1alpha1.ProfileKind,
-				string(libsveltosv1beta1.ConfigMapReferencedResourceKind),
-				string(libsveltosv1beta1.SecretReferencedResourceKind),
+				string(libsveltosv1alpha1.ConfigMapReferencedResourceKind),
+				string(libsveltosv1alpha1.SecretReferencedResourceKind),
 			)
 		}
 	}

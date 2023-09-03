@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -37,15 +37,15 @@ var _ = Describe("HealthCheckReports", func() {
 		initObjects := []client.Object{}
 
 		for i := 0; i < 10; i++ {
-			hcr := &libsveltosv1beta1.HealthCheckReport{
+			hcr := &libsveltosv1alpha1.HealthCheckReport{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      randomString(),
 					Namespace: randomString(),
 				},
-				Spec: libsveltosv1beta1.HealthCheckReportSpec{
+				Spec: libsveltosv1alpha1.HealthCheckReportSpec{
 					ClusterNamespace: randomString(),
 					ClusterName:      randomString(),
-					ClusterType:      libsveltosv1beta1.ClusterTypeSveltos,
+					ClusterType:      libsveltosv1alpha1.ClusterTypeSveltos,
 					HealthCheckName:  randomString(),
 				},
 			}
@@ -67,30 +67,30 @@ var _ = Describe("HealthCheckReports", func() {
 		initObjects := []client.Object{}
 
 		for i := 0; i < 10; i++ {
-			hcr := &libsveltosv1beta1.HealthCheckReport{
+			hcr := &libsveltosv1alpha1.HealthCheckReport{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      randomString(),
 					Namespace: randomString(),
 				},
-				Spec: libsveltosv1beta1.HealthCheckReportSpec{
+				Spec: libsveltosv1alpha1.HealthCheckReportSpec{
 					ClusterNamespace: randomString(),
 					ClusterName:      randomString(),
-					ClusterType:      libsveltosv1beta1.ClusterTypeSveltos,
+					ClusterType:      libsveltosv1alpha1.ClusterTypeSveltos,
 					HealthCheckName:  randomString(),
 				},
 			}
 			initObjects = append(initObjects, hcr)
 		}
 
-		hcr := &libsveltosv1beta1.HealthCheckReport{
+		hcr := &libsveltosv1alpha1.HealthCheckReport{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      randomString(),
 				Namespace: randomString(),
 			},
-			Spec: libsveltosv1beta1.HealthCheckReportSpec{
+			Spec: libsveltosv1alpha1.HealthCheckReportSpec{
 				ClusterNamespace: randomString(),
 				ClusterName:      randomString(),
-				ClusterType:      libsveltosv1beta1.ClusterTypeSveltos,
+				ClusterType:      libsveltosv1alpha1.ClusterTypeSveltos,
 				HealthCheckName:  randomString(),
 			},
 		}

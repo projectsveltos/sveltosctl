@@ -44,12 +44,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	"github.com/projectsveltos/libsveltos/lib/crd"
 	"github.com/projectsveltos/libsveltos/lib/logsettings"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	libsveltosset "github.com/projectsveltos/libsveltos/lib/set"
-	utilsv1beta1 "github.com/projectsveltos/sveltosctl/api/v1beta1"
+	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -69,7 +69,7 @@ type collection interface {
 
 	getStartingDeadlineSeconds() *int64
 
-	setLastRunStatus(utilsv1beta1.CollectionStatus)
+	setLastRunStatus(utilsv1alpha1.CollectionStatus)
 
 	setFailureMessage(string)
 }
@@ -89,14 +89,14 @@ var (
 	techsupportMap map[corev1.ObjectReference]*libsveltosset.Set
 
 	// key: techsupport; value techsupport's Selector
-	techsupports map[corev1.ObjectReference]libsveltosv1beta1.Selector
+	techsupports map[corev1.ObjectReference]libsveltosv1alpha1.Selector
 )
 
 func watchResources(ctx context.Context, logger logr.Logger) error {
 	mux = sync.Mutex{}
 	clusterMap = make(map[corev1.ObjectReference]*libsveltosset.Set)
 	techsupportMap = make(map[corev1.ObjectReference]*libsveltosset.Set)
-	techsupports = make(map[corev1.ObjectReference]libsveltosv1beta1.Selector)
+	techsupports = make(map[corev1.ObjectReference]libsveltosv1alpha1.Selector)
 
 	scheme, _ := utils.GetScheme()
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
@@ -145,9 +145,9 @@ func startSnapshotReconciler(ctx context.Context, mgr manager.Manager, logger lo
 		return err
 	}
 
-	sourceSnapshot := source.Kind[*utilsv1beta1.Snapshot](
+	sourceSnapshot := source.Kind[*utilsv1alpha1.Snapshot](
 		mgr.GetCache(),
-		&utilsv1beta1.Snapshot{},
+		&utilsv1alpha1.Snapshot{},
 		handler.TypedEnqueueRequestsFromMapFunc(handlerSnapshotMapFun),
 		SnapshotPredicate{Logger: mgr.GetLogger().WithValues("predicate", "clusterpredicate")},
 	)
@@ -182,9 +182,9 @@ func startTechsupportReconciler(ctx context.Context, mgr manager.Manager, logger
 		return nil, err
 	}
 
-	sourceTechsupport := source.Kind[*utilsv1beta1.Techsupport](
+	sourceTechsupport := source.Kind[*utilsv1alpha1.Techsupport](
 		mgr.GetCache(),
-		&utilsv1beta1.Techsupport{},
+		&utilsv1alpha1.Techsupport{},
 		handler.TypedEnqueueRequestsFromMapFunc(handlerTechsupportMapFun),
 		TechsupportPredicate{Logger: mgr.GetLogger().WithValues("predicate", "techsupportpredicate")},
 	)
@@ -193,9 +193,9 @@ func startTechsupportReconciler(ctx context.Context, mgr manager.Manager, logger
 		return nil, err
 	}
 
-	sourceSveltosCluster := source.Kind[*libsveltosv1beta1.SveltosCluster](
+	sourceSveltosCluster := source.Kind[*libsveltosv1alpha1.SveltosCluster](
 		mgr.GetCache(),
-		&libsveltosv1beta1.SveltosCluster{},
+		&libsveltosv1alpha1.SveltosCluster{},
 		handler.TypedEnqueueRequestsFromMapFunc(requeueTechsupportForSveltosCluster),
 		SveltosClusterPredicate{Logger: mgr.GetLogger().WithValues("predicate", "sveltosclusterpredicate")},
 	)
@@ -312,11 +312,11 @@ func addFinalizer(ctx context.Context, instance client.Object, finalizer string)
 		types.NamespacedName{Name: instance.GetName()}, instance)
 }
 
-func handlerSnapshotMapFun(ctx context.Context, snapshot *utilsv1beta1.Snapshot) []reconcile.Request {
+func handlerSnapshotMapFun(ctx context.Context, snapshot *utilsv1alpha1.Snapshot) []reconcile.Request {
 	return handlerMapFun(snapshot)
 }
 
-func handlerTechsupportMapFun(ctx context.Context, techsupport *utilsv1beta1.Techsupport) []reconcile.Request {
+func handlerTechsupportMapFun(ctx context.Context, techsupport *utilsv1alpha1.Techsupport) []reconcile.Request {
 	return handlerMapFun(techsupport)
 }
 
@@ -340,16 +340,16 @@ func handlerMapFun(o client.Object) []reconcile.Request {
 }
 
 func updateStatus(result collector.Result, collectionInstance collection) {
-	var status utilsv1beta1.CollectionStatus
+	var status utilsv1alpha1.CollectionStatus
 	var message string
 
 	switch result.ResultStatus {
 	case collector.Collected:
-		status = utilsv1beta1.CollectionStatusCollected
+		status = utilsv1alpha1.CollectionStatusCollected
 	case collector.InProgress:
-		status = utilsv1beta1.CollectionStatusInProgress
+		status = utilsv1alpha1.CollectionStatusInProgress
 	case collector.Failed:
-		status = utilsv1beta1.CollectionStatusFailed
+		status = utilsv1alpha1.CollectionStatusFailed
 		message = result.Err.Error()
 	case collector.Unavailable:
 		return
@@ -359,9 +359,9 @@ func updateStatus(result collector.Result, collectionInstance collection) {
 	collectionInstance.setFailureMessage(message)
 }
 
-func isCollectionInProgress(lastRunStatus *utilsv1beta1.CollectionStatus) bool {
+func isCollectionInProgress(lastRunStatus *utilsv1alpha1.CollectionStatus) bool {
 	return lastRunStatus != nil &&
-		*lastRunStatus == utilsv1beta1.CollectionStatusInProgress
+		*lastRunStatus == utilsv1alpha1.CollectionStatusInProgress
 }
 
 func removeQueuedJobsAndFinalizer(c *collector.Collector, instance client.Object, collectionType collector.CollectionType,
@@ -404,7 +404,7 @@ type SnapshotPredicate struct {
 	Logger logr.Logger
 }
 
-func (p SnapshotPredicate) Create(obj event.TypedCreateEvent[*utilsv1beta1.Snapshot]) bool {
+func (p SnapshotPredicate) Create(obj event.TypedCreateEvent[*utilsv1alpha1.Snapshot]) bool {
 	o := obj.Object
 	p.Logger.Info(fmt.Sprintf("Create kind: %s Info: %s/%s",
 		o.GetObjectKind().GroupVersionKind().Kind,
@@ -412,11 +412,11 @@ func (p SnapshotPredicate) Create(obj event.TypedCreateEvent[*utilsv1beta1.Snaps
 	return true
 }
 
-func (p SnapshotPredicate) Update(obj event.TypedUpdateEvent[*utilsv1beta1.Snapshot]) bool {
+func (p SnapshotPredicate) Update(obj event.TypedUpdateEvent[*utilsv1alpha1.Snapshot]) bool {
 	return updateSnaphotPredicate(obj.ObjectNew, obj.ObjectOld)
 }
 
-func (p SnapshotPredicate) Delete(obj event.TypedDeleteEvent[*utilsv1beta1.Snapshot]) bool {
+func (p SnapshotPredicate) Delete(obj event.TypedDeleteEvent[*utilsv1alpha1.Snapshot]) bool {
 	o := obj.Object
 	p.Logger.Info(fmt.Sprintf("Delete kind: %s Info: %s/%s",
 		o.GetObjectKind().GroupVersionKind().Kind,
@@ -424,7 +424,7 @@ func (p SnapshotPredicate) Delete(obj event.TypedDeleteEvent[*utilsv1beta1.Snaps
 	return true
 }
 
-func (p SnapshotPredicate) Generic(obj event.TypedGenericEvent[*utilsv1beta1.Snapshot]) bool {
+func (p SnapshotPredicate) Generic(obj event.TypedGenericEvent[*utilsv1alpha1.Snapshot]) bool {
 	return false
 }
 
@@ -432,7 +432,7 @@ type TechsupportPredicate struct {
 	Logger logr.Logger
 }
 
-func (p TechsupportPredicate) Create(obj event.TypedCreateEvent[*utilsv1beta1.Techsupport]) bool {
+func (p TechsupportPredicate) Create(obj event.TypedCreateEvent[*utilsv1alpha1.Techsupport]) bool {
 	o := obj.Object
 	p.Logger.Info(fmt.Sprintf("Create kind: %s Info: %s/%s",
 		o.GetObjectKind().GroupVersionKind().Kind,
@@ -440,11 +440,11 @@ func (p TechsupportPredicate) Create(obj event.TypedCreateEvent[*utilsv1beta1.Te
 	return true
 }
 
-func (p TechsupportPredicate) Update(obj event.TypedUpdateEvent[*utilsv1beta1.Techsupport]) bool {
+func (p TechsupportPredicate) Update(obj event.TypedUpdateEvent[*utilsv1alpha1.Techsupport]) bool {
 	return updateTechsupportPredicate(obj.ObjectNew, obj.ObjectOld)
 }
 
-func (p TechsupportPredicate) Delete(obj event.TypedDeleteEvent[*utilsv1beta1.Techsupport]) bool {
+func (p TechsupportPredicate) Delete(obj event.TypedDeleteEvent[*utilsv1alpha1.Techsupport]) bool {
 	o := obj.Object
 	p.Logger.Info(fmt.Sprintf("Delete kind: %s Info: %s/%s",
 		o.GetObjectKind().GroupVersionKind().Kind,
@@ -452,7 +452,7 @@ func (p TechsupportPredicate) Delete(obj event.TypedDeleteEvent[*utilsv1beta1.Te
 	return true
 }
 
-func (p TechsupportPredicate) Generic(obj event.TypedGenericEvent[*utilsv1beta1.Techsupport]) bool {
+func (p TechsupportPredicate) Generic(obj event.TypedGenericEvent[*utilsv1alpha1.Techsupport]) bool {
 	return false
 }
 

@@ -42,16 +42,16 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	"github.com/projectsveltos/libsveltos/lib/clusterproxy"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	utilsv1beta1 "github.com/projectsveltos/sveltosctl/api/v1beta1"
+	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
 type collectionTechsupport struct {
-	techsupportInstance *utilsv1beta1.Techsupport
+	techsupportInstance *utilsv1alpha1.Techsupport
 }
 
 func (c *collectionTechsupport) getCreationTimestamp() *metav1.Time {
@@ -82,7 +82,7 @@ func (c *collectionTechsupport) getStartingDeadlineSeconds() *int64 {
 	return c.techsupportInstance.Spec.StartingDeadlineSeconds
 }
 
-func (c *collectionTechsupport) setLastRunStatus(s utilsv1beta1.CollectionStatus) {
+func (c *collectionTechsupport) setLastRunStatus(s utilsv1alpha1.CollectionStatus) {
 	c.techsupportInstance.Status.LastRunStatus = &s
 }
 
@@ -96,7 +96,7 @@ func collectTechsupport(ctx context.Context, c client.Client, techsupportName st
 	logger = logger.WithValues("techsupport", techsupportName)
 	logger.V(logs.LogInfo).Info("collect techsupport")
 
-	techsupportInstance := &utilsv1beta1.Techsupport{}
+	techsupportInstance := &utilsv1alpha1.Techsupport{}
 	err := c.Get(ctx, types.NamespacedName{Name: techsupportName}, techsupportInstance)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -156,7 +156,7 @@ func collectTechsupport(ctx context.Context, c client.Client, techsupportName st
 	return err
 }
 
-func collectTechsupportForCluster(ctx context.Context, c client.Client, techsupportInstance *utilsv1beta1.Techsupport,
+func collectTechsupportForCluster(ctx context.Context, c client.Client, techsupportInstance *utilsv1alpha1.Techsupport,
 	cluster *corev1.ObjectReference, folder string, logger logr.Logger) error {
 
 	ready, err := clusterproxy.IsClusterReadyToBeConfigured(ctx, c, cluster, logger)
@@ -217,7 +217,7 @@ func collectTechsupportForCluster(ctx context.Context, c client.Client, techsupp
 	return err
 }
 
-func dumpResources(ctx context.Context, remoteRestConfig *rest.Config, resource *utilsv1beta1.Resource,
+func dumpResources(ctx context.Context, remoteRestConfig *rest.Config, resource *utilsv1alpha1.Resource,
 	folder string, logger logr.Logger) error {
 
 	logger = logger.WithValues("gvk", fmt.Sprintf("%s:%s:%s", resource.Group, resource.Version, resource.Kind))
@@ -261,7 +261,7 @@ func dumpResources(ctx context.Context, remoteRestConfig *rest.Config, resource 
 				labelFilter += ","
 			}
 			f := resource.LabelFilters[i]
-			if f.Operation == libsveltosv1beta1.OperationEqual {
+			if f.Operation == libsveltosv1alpha1.OperationEqual {
 				labelFilter += fmt.Sprintf("%s=%s", f.Key, f.Value)
 			} else {
 				labelFilter += fmt.Sprintf("%s!=%s", f.Key, f.Value)
@@ -295,7 +295,7 @@ func dumpResources(ctx context.Context, remoteRestConfig *rest.Config, resource 
 }
 
 func collectLogs(ctx context.Context, remoteClientSet *kubernetes.Clientset, remoteClient client.Client,
-	log *utilsv1beta1.Log, folder string, logger logr.Logger) error {
+	log *utilsv1alpha1.Log, folder string, logger logr.Logger) error {
 
 	logger.V(logs.LogInfo).Info("collecting logs")
 	options := client.ListOptions{}
@@ -307,7 +307,7 @@ func collectLogs(ctx context.Context, remoteClientSet *kubernetes.Clientset, rem
 				labelFilter += ","
 			}
 			f := log.LabelFilters[i]
-			if f.Operation == libsveltosv1beta1.OperationEqual {
+			if f.Operation == libsveltosv1alpha1.OperationEqual {
 				labelFilter += fmt.Sprintf("%s=%s", f.Key, f.Value)
 			} else {
 				labelFilter += fmt.Sprintf("%s!=%s", f.Key, f.Value)
@@ -341,7 +341,7 @@ func collectLogs(ctx context.Context, remoteClientSet *kubernetes.Clientset, rem
 	return nil
 }
 
-func updateTechsupportPredicate(newObject, oldObject *utilsv1beta1.Techsupport) bool {
+func updateTechsupportPredicate(newObject, oldObject *utilsv1alpha1.Techsupport) bool {
 	if oldObject == nil ||
 		!reflect.DeepEqual(newObject.Spec, oldObject.Spec) {
 
@@ -352,7 +352,7 @@ func updateTechsupportPredicate(newObject, oldObject *utilsv1beta1.Techsupport) 
 }
 
 func requeueTechsupportForSveltosCluster(
-	ctx context.Context, sveltosCluster *libsveltosv1beta1.SveltosCluster,
+	ctx context.Context, sveltosCluster *libsveltosv1alpha1.SveltosCluster,
 ) []reconcile.Request {
 
 	return requeueTechsupportForACluster(sveltosCluster)
@@ -396,11 +396,12 @@ func requeueTechsupportForACluster(
 	// matching the Cluster
 	for k := range techsupports {
 		techsupportSelector := techsupports[k]
-		clusterSelector, err := metav1.LabelSelectorAsSelector(&techsupportSelector.LabelSelector)
+		parsedSelector, err := labels.Parse(string(techsupportSelector))
 		if err != nil {
+			// When clusterSelector is fixed, Techsupport will be reconciled
 			return requests
 		}
-		if clusterSelector.Matches(labels.Set(cluster.GetLabels())) {
+		if parsedSelector.Matches(labels.Set(cluster.GetLabels())) {
 			requests = append(requests, ctrl.Request{
 				NamespacedName: client.ObjectKey{
 					Name: k.Name,
@@ -415,11 +416,11 @@ func requeueTechsupportForACluster(
 // getClusterSummaryServiceAccountInfo returns the name of the ServiceAccount
 // (presenting a tenant admin) that created the ClusterProfile instance owing this
 // ClusterProfile instance
-func getClusterSummaryServiceAccountInfo(techsupport *utilsv1beta1.Techsupport) (namespace, name string) {
+func getClusterSummaryServiceAccountInfo(techsupport *utilsv1alpha1.Techsupport) (namespace, name string) {
 	if techsupport.Labels == nil {
 		return "", ""
 	}
 
-	return techsupport.Labels[libsveltosv1beta1.ServiceAccountNamespaceLabel],
-		techsupport.Labels[libsveltosv1beta1.ServiceAccountNameLabel]
+	return techsupport.Labels[libsveltosv1alpha1.ServiceAccountNamespaceLabel],
+		techsupport.Labels[libsveltosv1alpha1.ServiceAccountNameLabel]
 }

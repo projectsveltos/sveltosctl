@@ -72,7 +72,7 @@ func patchSveltosCluster(ctx context.Context, clusterNamespace, clusterName stri
 
 	instance := utils.GetAccessInstance()
 
-	currentSveltosCluster := &libsveltosv1beta1.SveltosCluster{}
+	currentSveltosCluster := &libsveltosv1alpha1.SveltosCluster{}
 	err := instance.GetResource(ctx, types.NamespacedName{Namespace: clusterNamespace, Name: clusterName},
 		currentSveltosCluster)
 	if err != nil {
@@ -82,7 +82,7 @@ func patchSveltosCluster(ctx context.Context, clusterNamespace, clusterName stri
 			currentSveltosCluster.Name = clusterName
 			currentSveltosCluster.Labels = labels
 			if renew {
-				currentSveltosCluster.Spec.TokenRequestRenewalOption = &libsveltosv1beta1.TokenRequestRenewalOption{
+				currentSveltosCluster.Spec.TokenRequestRenewalOption = &libsveltosv1alpha1.TokenRequestRenewalOption{
 					RenewTokenRequestInterval: metav1.Duration{Duration: 24 * time.Hour},
 				}
 			}

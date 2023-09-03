@@ -39,9 +39,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
-	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
-	utilsv1beta1 "github.com/projectsveltos/sveltosctl/api/v1beta1"
+	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/commands/snapshot"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
@@ -179,14 +179,10 @@ var _ = Describe("Snapshot Diff", func() {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: classifierName,
 			},
-			Spec: libsveltosv1beta1.RoleRequestSpec{
+			Spec: libsveltosv1alpha1.RoleRequestSpec{
 				ServiceAccountNamespace: randomString(),
 				ServiceAccountName:      randomString(),
-				ClusterSelector: libsveltosv1beta1.Selector{
-					LabelSelector: metav1.LabelSelector{
-						MatchLabels: map[string]string{"zone": "west"},
-					},
-				},
+				ClusterSelector:         libsveltosv1alpha1.Selector("zone:west"),
 			},
 		}
 		Expect(addTypeInformationToObject(roleRequest)).To(Succeed())
@@ -246,7 +242,7 @@ var _ = Describe("Snapshot Diff", func() {
 		fromFolder := filepath.Join(*artifactFolder, timeOne)
 		toFolder := filepath.Join(*artifactFolder, timeTwo)
 
-		err = snapshot.ListDiff(fromFolder, toFolder, libsveltosv1beta1.ClassifierKind, false,
+		err = snapshot.ListDiff(fromFolder, toFolder, libsveltosv1alpha1.ClassifierKind, false,
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 
@@ -290,7 +286,7 @@ var _ = Describe("Snapshot Diff", func() {
 		r, w, _ = os.Pipe()
 		os.Stdout = w
 
-		err = snapshot.ListDiff(fromFolder, toFolder, libsveltosv1beta1.RoleRequestKind, false,
+		err = snapshot.ListDiff(fromFolder, toFolder, libsveltosv1alpha1.RoleRequestKind, false,
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 

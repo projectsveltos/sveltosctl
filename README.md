@@ -260,14 +260,12 @@ Define a Techsupport instance, following for instance will collect a techsupport
 from all managed clusters matching cluster selectors __env=fv__
 
 ```
-apiVersion: utils.projectsveltos.io/v1beta1
+apiVersion: utils.projectsveltos.io/v1alpha1
 kind: Techsupport
 metadata:
  name: hourly
 spec:
- clusterSelector:
-   matchLabels:
-     env: fv
+ clusterSelector: env=fv
  schedule: “00 * * * *”
  storage: /techsupport
  logs:
