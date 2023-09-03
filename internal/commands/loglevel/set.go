@@ -131,16 +131,16 @@ Description:
 				Namespace:   namespace,
 			},
 		}
-	} else{
-		instance := utils.GetAccessInstance()
+		return updateDebuggingConfiguration(ctx, logSeverity, component, dc)
+	} 
+	instance := utils.GetAccessInstance()
 
-		dc, err := instance.GetDebuggingConfiguration(ctx)
-		if err != nil {
-			if apierrors.IsNotFound(err) {
-				return make([]*componentConfiguration, 0), nil
-			}
-			return nil, err
+	dc, err := instance.GetDebuggingConfiguration(ctx)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return make([]*componentConfiguration, 0), nil
 		}
+		return nil, err
 	}
 
 	return updateDebuggingConfiguration(ctx, logSeverity, component, dc)
