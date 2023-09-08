@@ -6,7 +6,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.11.0
 	golang.org/x/oauth2 v0.9.0
 	k8s.io/client-go v0.27.2
-	sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20230808055612-5bf44d2ffd62
+	sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20230905084151-2a553d6f910d
 	sigs.k8s.io/controller-tools v0.12.0
 	sigs.k8s.io/kind v0.20.0
 )
