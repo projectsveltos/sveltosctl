@@ -25,6 +25,8 @@ LDFLAGS := $(shell source ./hack/version.sh; version::ldflags)
 
 GOBUILD=go build
 
+GENERATED_FILES:=./manifest/manifest.yaml
+
 ## Tool Binaries
 GOLANGCI_LINT := $(TOOLS_BIN_DIR)/golangci-lint
 GOIMPORTS := $(TOOLS_BIN_DIR)/goimports
@@ -86,6 +88,7 @@ generate: ## Run all generate-manifests-*, generate-go-deepcopy-*
 	cat config/crd/bases/utils.projectsveltos.io_snapshots.yaml >> manifest/manifest.yaml
 	cat config/crd/bases/utils.projectsveltos.io_techsupports.yaml >> manifest/manifest.yaml
 	MANIFEST_IMG=$(SVELTOSCTL_IMG)-$(ARCH) MANIFEST_TAG=$(TAG) $(MAKE) set-manifest-image
+	$(MAKE) fmt
 
 set-manifest-image:
 	sed -i'' -e 's@image: .*@image: '"${MANIFEST_IMG}:$(MANIFEST_TAG)"'@' ./manifest/manifest.yaml
@@ -129,6 +132,10 @@ fmt goimports: $(GOIMPORTS) ## Format and adjust import modules.
 lint: $(GOLANGCI_LINT) ## Lint codebase
 	$(GOLANGCI_LINT) run -v --fast=false --max-issues-per-linter 0 --max-same-issues 0 --timeout 5m	
 
+.PHONY: check-manifests
+check-manifests: generate ## Verify manifests file is up to date
+	test `git status --porcelain $(GENERATED_FILES) | grep -cE '(^\?)|(^ M)'` -eq 0 || (echo "The manifest file changed, please 'make generate' and commit the results"; exit 1)
+
 .PHONY: build
 build: fmt vet ## Build manager binary.
 	 go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/sveltosctl cmd/sveltosctl/main.go
@@ -147,5 +154,5 @@ endif
 
 
 .PHONY: test
-test: fmt vet $(SETUP_ENVTEST) ## Run uts.
+test: | check-manifests fmt vet $(SETUP_ENVTEST) ## Run uts.
 	KUBEBUILDER_ASSETS="$(KUBEBUILDER_ASSETS)" go test $(shell go list ./... |grep -v test/fv |grep -v pkg/deployer/fake |grep -v test/helpers) $(TEST_ARGS) -coverprofile cover.out 
