@@ -81,7 +81,12 @@ func createSveltosCluster(ctx context.Context, clusterNamespace, clusterName str
 			Name:      clusterName,
 		},
 	}
-	return instance.CreateResource(ctx, sveltosCluster)
+	err := instance.CreateResource(ctx, sveltosCluster)
+	if err != nil && apierrors.IsAlreadyExists(err) {
+		return nil
+	}
+
+	return err
 }
 
 func createSecret(ctx context.Context, clusterNamespace, secretName, kubeconfigPath string, logger logr.Logger) error {
@@ -111,16 +116,16 @@ func RegisterCluster(ctx context.Context, args []string, logger logr.Logger) err
 	doc := `Usage:
   sveltosctl register cluster [options] --namespace=<name> --cluster=<name> --kubeconfig=<file> [--verbose]
 
-     --namespace=<name>      Cluster namespace
-     --cluster=<name>        Cluster name
-     --kubeconfig=<file>     Path of the file containing the cluster kubeconfig
+     --namespace=<name>      The namespace where SveltosCluster will be created.
+     --cluster=<name>        The name of the SveltosCluster.
+     --kubeconfig=<file>     Path of the file containing the cluster kubeconfig.
 
 Options:
   -h --help                  Show this screen.
      --verbose               Verbose mode. Print each step.  
 
 Description:
-  The show dryrun command shows information about which features would change in a cluster due to ClusterProfiles in DryRun mode.
+  The register cluster command registers a cluster to be managed by Sveltos.
 `
 	parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
 	if err != nil {

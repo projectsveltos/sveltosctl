@@ -78,8 +78,8 @@ clean: ## Remove all built tools
 
 .PHONY: generate-modules
 generate-modules: ## Run go mod tidy to ensure modules are up to date
-	GOPRIVATE=github.com/projectsveltos go mod tidy
-	cd $(TOOLS_DIR); GOPRIVATE=github.com/projectsveltos go mod tidy
+	go mod tidy
+	cd $(TOOLS_DIR); go mod tidy
 
 .PHONY: generate
 generate: ## Run all generate-manifests-*, generate-go-deepcopy-*
@@ -144,7 +144,7 @@ build: fmt vet ## Build manager binary.
 ##@ Testing
 
 # KUBEBUILDER_ENVTEST_KUBERNETES_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-KUBEBUILDER_ENVTEST_KUBERNETES_VERSION = 1.27.1
+KUBEBUILDER_ENVTEST_KUBERNETES_VERSION = 1.28.0
 
 ifeq ($(shell go env GOOS),darwin) # Use the darwin/amd64 binary until an arm64 version is available
 KUBEBUILDER_ASSETS ?= $(shell $(SETUP_ENVTEST) use --use-env -p path --arch amd64 $(KUBEBUILDER_ENVTEST_KUBERNETES_VERSION))
