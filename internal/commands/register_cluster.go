@@ -35,7 +35,8 @@ func RegisterCluster(ctx context.Context, args []string, logger logr.Logger) err
 	doc := `Usage:
 	sveltosctl register <command> [<args>...]
 
-	cluster       Imports a non CAPI cluster.
+	cluster       Imports a non CAPI cluster to be managed by Sveltos.
+	mgmt-cluster  Registers management cluster to be managed by Sveltos.
 
 Options:
 	-h --help      Show this screen.
@@ -68,6 +69,8 @@ Description:
 	switch command {
 	case "cluster":
 		return onboard.RegisterCluster(ctx, arguments, logger)
+	case "mgmt-cluster":
+		return onboard.RegisterManagementCluster(ctx, arguments, logger)
 	default:
 		//nolint: forbidigo // print doc
 		fmt.Println(doc)
