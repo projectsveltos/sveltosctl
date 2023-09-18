@@ -23,3 +23,18 @@ var (
 const (
 	SveltosKubeconfigSecretNamePostfix = sveltosKubeconfigSecretNamePostfix
 )
+
+var (
+	CreateSveltosCluster     = createSveltosCluster
+	CreateNamespace          = createNamespace
+	CreateClusterRole        = createClusterRole
+	CreateClusterRoleBinding = createClusterRoleBinding
+)
+
+const (
+	ClusterRoleName        = clusterRoleName
+	ClusterRoleBindingName = clusterRoleBindingName
+	SaName                 = saName
+	SaNamespace            = saNamespace
+	DefaultNamespace       = defaultNamespace
+)
