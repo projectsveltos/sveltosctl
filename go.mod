@@ -12,9 +12,9 @@ require (
 	github.com/onsi/ginkgo/v2 v2.11.0
 	github.com/onsi/gomega v1.27.8
 	github.com/pkg/errors v0.9.1
-	github.com/projectsveltos/addon-controller v0.17.1-0.20231005072051-80c1966f6509
-	github.com/projectsveltos/event-manager v0.17.1-0.20231005075029-b8059a79bc80
-	github.com/projectsveltos/libsveltos v0.17.1-0.20231004092040-d72a191c9f18
+	github.com/projectsveltos/addon-controller v0.18.0
+	github.com/projectsveltos/event-manager v0.18.0
+	github.com/projectsveltos/libsveltos v0.18.0
 	github.com/robfig/cron v1.2.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.27.3
@@ -40,7 +40,6 @@ require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
-	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
