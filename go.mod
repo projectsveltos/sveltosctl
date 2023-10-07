@@ -12,9 +12,9 @@ require (
 	github.com/onsi/ginkgo/v2 v2.11.0
 	github.com/onsi/gomega v1.27.8
 	github.com/pkg/errors v0.9.1
-	github.com/projectsveltos/addon-controller v0.17.1-0.20230926115409-5181bce17c5d
-	github.com/projectsveltos/event-manager v0.17.1-0.20230926124840-e5dcf69d0f00
-	github.com/projectsveltos/libsveltos v0.17.1-0.20230926100809-8226974e7fde
+	github.com/projectsveltos/addon-controller v0.18.1-0.20231007170146-547a43fd6a10
+	github.com/projectsveltos/event-manager v0.18.1-0.20231007173208-8aadc06fcb4e
+	github.com/projectsveltos/libsveltos v0.18.1-0.20231007130619-4f3be4950c13
 	github.com/robfig/cron v1.2.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.27.3
@@ -23,7 +23,7 @@ require (
 	k8s.io/client-go v0.27.3
 	k8s.io/klog/v2 v2.100.1
 	k8s.io/kubectl v0.27.3
-	sigs.k8s.io/cluster-api v1.5.1
+	sigs.k8s.io/cluster-api v1.5.2
 	sigs.k8s.io/controller-runtime v0.15.1
 	sigs.k8s.io/yaml v1.3.0
 )
@@ -40,7 +40,6 @@ require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
-	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
 	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
