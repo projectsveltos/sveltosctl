@@ -140,6 +140,11 @@ check-manifests: generate ## Verify manifests file is up to date
 build: fmt vet ## Build manager binary.
 	 go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/sveltosctl cmd/sveltosctl/main.go
 
+build-all:
+	GOOS=linux GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/sveltosctl-linux-arm64 cmd/sveltosctl/main.go
+	GOOS=linux GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/sveltosctl-linux-amd64 cmd/sveltosctl/main.go
+	GOOS=darwin GOARCH=arm64 go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/sveltosctl-darwin-arm64 cmd/sveltosctl/main.go
+	GOOS=darwin GOARCH=amd64 go build -ldflags "$(LDFLAGS)" -o $(BIN_DIR)/sveltosctl-darwin-amd64 cmd/sveltosctl/main.go
 
 ##@ Testing
 
