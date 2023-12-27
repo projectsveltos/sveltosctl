@@ -54,14 +54,14 @@ var (
 	}
 )
 
-func displayAddOns(ctx context.Context, passedNamespace, passedCluster, passedClusterProfile string,
+func displayAddOns(ctx context.Context, passedNamespace, passedCluster, passedProfile string,
 	logger logr.Logger) error {
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"CLUSTER", "RESOURCE TYPE", "NAMESPACE", "NAME", "VERSION", "TIME", "CLUSTER PROFILES"})
+	table.SetHeader([]string{"CLUSTER", "RESOURCE TYPE", "NAMESPACE", "NAME", "VERSION", "TIME", "PROFILES"})
 
 	if err := displayAddOnsInNamespaces(ctx, passedNamespace, passedCluster,
-		passedClusterProfile, table, logger); err != nil {
+		passedProfile, table, logger); err != nil {
 		return err
 	}
 
@@ -70,7 +70,7 @@ func displayAddOns(ctx context.Context, passedNamespace, passedCluster, passedCl
 	return nil
 }
 
-func displayAddOnsInNamespaces(ctx context.Context, passedNamespace, passedCluster, passedClusterProfile string,
+func displayAddOnsInNamespaces(ctx context.Context, passedNamespace, passedCluster, passedProfile string,
 	table *tablewriter.Table, logger logr.Logger) error {
 
 	instance := utils.GetAccessInstance()
@@ -84,7 +84,7 @@ func displayAddOnsInNamespaces(ctx context.Context, passedNamespace, passedClust
 		ns := &namespaces.Items[i]
 		if doConsiderNamespace(ns, passedNamespace) {
 			logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering namespace: %s", ns.Name))
-			err = displayAddOnsInNamespace(ctx, ns.Name, passedCluster, passedClusterProfile,
+			err = displayAddOnsInNamespace(ctx, ns.Name, passedCluster, passedProfile,
 				table, logger)
 			if err != nil {
 				return err
@@ -95,7 +95,7 @@ func displayAddOnsInNamespaces(ctx context.Context, passedNamespace, passedClust
 	return nil
 }
 
-func displayAddOnsInNamespace(ctx context.Context, namespace, passedCluster, passedClusterProfile string,
+func displayAddOnsInNamespace(ctx context.Context, namespace, passedCluster, passedProfile string,
 	table *tablewriter.Table, logger logr.Logger) error {
 
 	instance := utils.GetAccessInstance()
@@ -111,14 +111,14 @@ func displayAddOnsInNamespace(ctx context.Context, namespace, passedCluster, pas
 		cc := &clusterConfigurations.Items[i]
 		if doConsiderClusterConfiguration(cc, passedCluster) {
 			logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering ClusterConfiguration: %s", cc.Name))
-			displayAddOnsForCluster(cc, passedClusterProfile, table, logger)
+			displayAddOnsForCluster(cc, passedProfile, table, logger)
 		}
 	}
 
 	return nil
 }
 
-func displayAddOnsForCluster(clusterConfiguration *configv1alpha1.ClusterConfiguration, passedClusterProfile string,
+func displayAddOnsForCluster(clusterConfiguration *configv1alpha1.ClusterConfiguration, passedProfile string,
 	table *tablewriter.Table, logger logr.Logger) {
 
 	instance := utils.GetAccessInstance()
@@ -131,7 +131,7 @@ func displayAddOnsForCluster(clusterConfiguration *configv1alpha1.ClusterConfigu
 
 	clusterInfo := fmt.Sprintf("%s/%s", clusterConfiguration.Namespace, clusterName)
 	for chart := range helmCharts {
-		if doConsiderClusterProfile(helmCharts[chart], passedClusterProfile) {
+		if doConsiderProfile(helmCharts[chart], passedProfile) {
 			table.Append(genAddOnsRow(clusterInfo, "helm chart", chart.Namespace, chart.ReleaseName, chart.ChartVersion,
 				chart.LastAppliedTime.String(), helmCharts[chart]))
 		}
@@ -139,7 +139,7 @@ func displayAddOnsForCluster(clusterConfiguration *configv1alpha1.ClusterConfigu
 
 	resources := instance.GetResources(clusterConfiguration, logger)
 	for resource := range resources {
-		if doConsiderClusterProfile(resources[resource], passedClusterProfile) {
+		if doConsiderProfile(resources[resource], passedProfile) {
 			table.Append(genAddOnsRow(clusterInfo, fmt.Sprintf("%s:%s", resource.Group, resource.Kind),
 				resource.Namespace, resource.Name, "N/A",
 				resource.LastAppliedTime.String(), resources[resource]))
@@ -150,14 +150,14 @@ func displayAddOnsForCluster(clusterConfiguration *configv1alpha1.ClusterConfigu
 // AddOns displays information about Kubernetes AddOns deployed in clusters
 func AddOns(ctx context.Context, args []string, logger logr.Logger) error {
 	doc := `Usage:
-  sveltosctl show addons [options] [--namespace=<name>] [--cluster=<name>] [--clusterprofile=<name>] [--verbose]
+  sveltosctl show addons [options] [--namespace=<name>] [--cluster=<name>] [--profile=<name>] [--verbose]
 
      --namespace=<name>      Show Kubernetes addons deployed in clusters in this namespace.
                              If not specified all namespaces are considered.
      --cluster=<name>        Show Kubernetes addons deployed in cluster with name.
                              If not specified all cluster names are considered.
-     --clusterprofile=<name> Show Kubernetes addons deployed because of this clusterprofile.
-                             If not specified all clusterprofile names are considered.
+     --profile=<kind/name>   Show Kubernetes addons deployed because of this clusterprofile/profile.
+                             If not specified all clusterprofiles/profiles are considered.
 
 Options:
   -h --help                  Show this screen.
@@ -198,10 +198,10 @@ Description:
 		cluster = passedCluster.(string)
 	}
 
-	clusterProfile := ""
-	if passedClusterProfile := parsedArgs["--clusterprofile"]; passedClusterProfile != nil {
-		clusterProfile = passedClusterProfile.(string)
+	profile := ""
+	if passedProfile := parsedArgs["--profile"]; passedProfile != nil {
+		profile = passedProfile.(string)
 	}
 
-	return displayAddOns(ctx, namespace, cluster, clusterProfile, logger)
+	return displayAddOns(ctx, namespace, cluster, profile, logger)
 }

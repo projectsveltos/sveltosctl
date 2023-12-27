@@ -28,7 +28,7 @@ import (
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/klog/v2/klogr"
+	"k8s.io/klog/v2/textlogger"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -79,7 +79,8 @@ func createSnapshotDirectoryWithObjects(snapshotName, snapshotStorage string, ob
 	for i := range objects {
 		By(fmt.Sprintf("Dumping object %s %s/%s in folder %s", objects[i].GetObjectKind().GroupVersionKind().Kind,
 			objects[i].GetNamespace(), objects[i].GetName(), snapshotDir))
-		Expect(collectorClient.DumpObject(objects[i], snapshotDir, klogr.New())).To(Succeed())
+		Expect(collectorClient.DumpObject(objects[i], snapshotDir,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 	}
 	return timeFolder
 }

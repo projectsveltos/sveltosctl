@@ -25,7 +25,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/klog/v2/klogr"
+	"k8s.io/klog/v2/textlogger"
 
 	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
@@ -55,7 +55,8 @@ status:
 
 var _ = Describe("Client", func() {
 	BeforeEach(func() {
-		collector.InitializeClient(context.TODO(), klogr.New(), nil, 10)
+		collector.InitializeClient(context.TODO(),
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))), nil, 10)
 	})
 
 	It("GetResult returns result when available", func() {
@@ -257,7 +258,8 @@ var _ = Describe("Client", func() {
 			namespaceFolder := filepath.Join(snapshotFolder, files[i].Name())
 			By(fmt.Sprintf("finding resources in folder %s", namespaceFolder))
 			instance := collector.GetClient()
-			list, err := collector.GetResourcesForKind(instance, namespaceFolder, configv1alpha1.ClusterConfigurationKind, klogr.New())
+			list, err := collector.GetResourcesForKind(instance, namespaceFolder, configv1alpha1.ClusterConfigurationKind,
+				textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 			Expect(err).To(BeNil())
 			Expect(list).ToNot(BeNil())
 			Expect(len(list)).ToNot(BeZero())
@@ -275,7 +277,8 @@ var _ = Describe("Client", func() {
 
 		By(fmt.Sprintf("finding resources in folder %s", snapshotFolder))
 		instance := collector.GetClient()
-		list, err := collector.GetResourcesForKind(instance, snapshotFolder, configv1alpha1.ClusterProfileKind, klogr.New())
+		list, err := collector.GetResourcesForKind(instance, snapshotFolder, configv1alpha1.ClusterProfileKind,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 		Expect(list).ToNot(BeNil())
 		Expect(len(list)).ToNot(BeZero())
@@ -287,7 +290,7 @@ var _ = Describe("Client", func() {
 
 		d := collector.GetClient()
 		resourceMap, err := d.GetNamespacedResources(snapshotFolder, configv1alpha1.ClusterConfigurationKind,
-			klogr.New())
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 		Expect(resourceMap).ToNot(BeNil())
 		Expect(len(resourceMap)).ToNot(BeZero())
@@ -329,11 +332,13 @@ var _ = Describe("Client", func() {
 		By(fmt.Sprintf("Adding ClusterConfiguration %s/%s to directory %s",
 			cc.Namespace, cc.Name, secondSnapshotFolder))
 		Expect(collector.AddTypeInformationToObject(cc)).To(Succeed())
-		Expect(d.DumpObject(cc, secondSnapshotFolder, klogr.New())).To(Succeed())
+		Expect(d.DumpObject(cc, secondSnapshotFolder,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		// Set storage properly for ListCollection
 		storage := filepath.Dir(filepath.Dir(filepath.Dir(snapshotFolder)))
-		results, err := d.ListCollections(storage, snapshotName, collector.Snapshot, klogr.New())
+		results, err := d.ListCollections(storage, snapshotName, collector.Snapshot,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 		Expect(len(results)).To(Equal(2))
 	})
@@ -358,7 +363,8 @@ var _ = Describe("Client", func() {
 		storage = parentUp3
 
 		d := collector.GetClient()
-		_, err := d.GetFolder(storage, snapshotName, collector.Snapshot, klogr.New())
+		_, err := d.GetFolder(storage, snapshotName, collector.Snapshot,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 	})
 })
@@ -374,7 +380,8 @@ func createDirectoryWithClusterConfigurations(storage, requestorName string, col
 		By(fmt.Sprintf("Adding ClusterConfiguration %s/%s to directory %s",
 			cc.Namespace, cc.Name, snapshotDir))
 		Expect(collector.AddTypeInformationToObject(cc)).To(Succeed())
-		Expect(d.DumpObject(cc, snapshotDir, klogr.New())).To(Succeed())
+		Expect(d.DumpObject(cc, snapshotDir,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 	}
 
 	return snapshotDir
@@ -390,7 +397,8 @@ func createDirectoryWithClusterProfiles(storage, requestorName string, collectio
 		By(fmt.Sprintf("Adding ClusterProfile %s to directory %s",
 			cp.Name, snapshotDir))
 		Expect(collector.AddTypeInformationToObject(cp)).To(Succeed())
-		Expect(d.DumpObject(cp, snapshotDir, klogr.New())).To(Succeed())
+		Expect(d.DumpObject(cp, snapshotDir,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 	}
 
 	return snapshotDir

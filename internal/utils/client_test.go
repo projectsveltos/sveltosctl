@@ -25,7 +25,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/klog/v2/klogr"
+	"k8s.io/klog/v2/textlogger"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -51,7 +51,8 @@ var _ = Describe("Client", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		k8sAccess := utils.GetK8sAccess(scheme, c)
-		namespaces, err := k8sAccess.ListNamespaces(context.TODO(), klogr.New())
+		namespaces, err := k8sAccess.ListNamespaces(context.TODO(),
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 		Expect(len(namespaces.Items)).To(Equal(len(initObjects)))
 	})

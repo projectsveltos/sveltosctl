@@ -36,7 +36,7 @@ import (
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/klog/v2/klogr"
+	"k8s.io/klog/v2/textlogger"
 	"k8s.io/kubectl/pkg/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
@@ -84,7 +84,7 @@ func InitializeClient(ctx context.Context, l logr.Logger, c client.Client, numOf
 		if collectorInstance == nil {
 			l.V(logs.LogInfo).Info(fmt.Sprintf("Creating instance now. Number of workers: %d", numOfWorker))
 			collectorInstance = &Collector{log: l, Client: c}
-			collectorInstance.log = klogr.New()
+			collectorInstance.log = textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1)))
 			collectorInstance.startWorkloadWorkers(ctx, numOfWorker, l)
 		}
 	}

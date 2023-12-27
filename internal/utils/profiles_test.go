@@ -28,26 +28,26 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	eventv1alpha1 "github.com/projectsveltos/event-manager/api/v1alpha1"
+	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
-var _ = Describe("EventBasedAddOn", func() {
-	It("ListEventSources returns list of all EventSource", func() {
+var _ = Describe("Profile", func() {
+	It("ListProfiles returns list of all profiles", func() {
 		initObjects := []client.Object{}
 
-		for i := 0; i < 10; i++ {
-			resource := &eventv1alpha1.EventBasedAddOn{
+		for i := 0; i < 15; i++ {
+			profile := &configv1alpha1.Profile{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: randomString(),
 				},
-				Spec: eventv1alpha1.EventBasedAddOnSpec{
-					EventSourceName:       randomString(),
-					SourceClusterSelector: libsveltosv1alpha1.Selector(randomString()),
+				Spec: configv1alpha1.Spec{
+					ClusterSelector: libsveltosv1alpha1.Selector("zone:west"),
+					SyncMode:        configv1alpha1.SyncModeContinuous,
 				},
 			}
-			initObjects = append(initObjects, resource)
+			initObjects = append(initObjects, profile)
 		}
 
 		scheme := runtime.NewScheme()
@@ -55,9 +55,9 @@ var _ = Describe("EventBasedAddOn", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		k8sAccess := utils.GetK8sAccess(scheme, c)
-		eventBasedAddOns, err := k8sAccess.ListEventBasedAddOns(context.TODO(),
+		profiles, err := k8sAccess.ListProfiles(context.TODO(),
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
-		Expect(len(eventBasedAddOns.Items)).To(Equal(len(initObjects)))
+		Expect(len(profiles.Items)).To(Equal(len(initObjects)))
 	})
 })

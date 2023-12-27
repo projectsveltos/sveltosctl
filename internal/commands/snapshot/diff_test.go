@@ -35,7 +35,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog/v2/klogr"
+	"k8s.io/klog/v2/textlogger"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -81,6 +81,8 @@ var _ = Describe("Snapshot Diff", func() {
 
 		clusterConfigurations.Status.ClusterProfileResources =
 			append(clusterConfigurations.Status.ClusterProfileResources, *generateClusterProfileResource())
+		clusterConfigurations.Status.ProfileResources =
+			append(clusterConfigurations.Status.ProfileResources, *generateProfileResource())
 		timeTwo := createSnapshotDirectoryWithObjects(snapshotInstance.Name, snapshotInstance.Spec.Storage,
 			[]client.Object{clusterConfigurations})
 
@@ -95,9 +97,11 @@ var _ = Describe("Snapshot Diff", func() {
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
 
-		collector.InitializeClient(context.TODO(), klogr.New(), c, 10)
+		collector.InitializeClient(context.TODO(),
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))), c, 10)
 
-		err = snapshot.ListSnapshotDiffs(context.TODO(), snapshotInstance.Name, timeOne, timeTwo, "", "", false, klogr.New())
+		err = snapshot.ListSnapshotDiffs(context.TODO(), snapshotInstance.Name, timeOne, timeTwo, "", "", false,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 
 		w.Close()
@@ -132,8 +136,8 @@ var _ = Describe("Snapshot Diff", func() {
 			}
 		}
 
-		Expect(resourceAdded).To(Equal(2))
-		Expect(helmReleaseAdded).To(Equal(2))
+		Expect(resourceAdded).To(Equal(4))
+		Expect(helmReleaseAdded).To(Equal(4))
 
 		os.Stdout = old
 	})
@@ -228,15 +232,18 @@ var _ = Describe("Snapshot Diff", func() {
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
 
-		collector.InitializeClient(context.TODO(), klogr.New(), c, 10)
+		collector.InitializeClient(context.TODO(),
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))), c, 10)
 
 		snapshotClient := collector.GetClient()
-		artifactFolder, err := snapshotClient.GetFolder(snapshotInstance.Spec.Storage, snapshotInstance.Name, collector.Snapshot, klogr.New())
+		artifactFolder, err := snapshotClient.GetFolder(snapshotInstance.Spec.Storage, snapshotInstance.Name,
+			collector.Snapshot, textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 		fromFolder := filepath.Join(*artifactFolder, timeOne)
 		toFolder := filepath.Join(*artifactFolder, timeTwo)
 
-		err = snapshot.ListDiff(fromFolder, toFolder, libsveltosv1alpha1.ClassifierKind, false, klogr.New())
+		err = snapshot.ListDiff(fromFolder, toFolder, libsveltosv1alpha1.ClassifierKind, false,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 
 		w.Close()
@@ -279,7 +286,8 @@ var _ = Describe("Snapshot Diff", func() {
 		r, w, _ = os.Pipe()
 		os.Stdout = w
 
-		err = snapshot.ListDiff(fromFolder, toFolder, libsveltosv1alpha1.RoleRequestKind, false, klogr.New())
+		err = snapshot.ListDiff(fromFolder, toFolder, libsveltosv1alpha1.RoleRequestKind, false,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 
 		w.Close()
@@ -323,7 +331,7 @@ var _ = Describe("Snapshot Diff", func() {
 		Expect(snapshot.ListDiffInClusterConfigurations("", "",
 			[]*configv1alpha1.ClusterConfiguration{oldClusterConfiguration},
 			[]*configv1alpha1.ClusterConfiguration{newClusterConfiguration},
-			false, table, klogr.New())).To(Succeed())
+			false, table, textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		result := fmt.Sprintf("table: %v\n", table)
 		for i := range newClusterConfiguration.Status.ClusterProfileResources {
@@ -347,7 +355,8 @@ var _ = Describe("Snapshot Diff", func() {
 		}
 		table := tablewriter.NewWriter(os.Stdout)
 		Expect(snapshot.ListClusterConfigurationDiff("", "", oldClusterConfiguration,
-			newClusterConfiguration, false, table, klogr.New())).To(Succeed())
+			newClusterConfiguration, false, table,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		result := fmt.Sprintf("table: %v\n", table)
 		for i := range newClusterConfiguration.Status.ClusterProfileResources {
@@ -388,7 +397,8 @@ var _ = Describe("Snapshot Diff", func() {
 		newResources := []configv1alpha1.Resource{*generateResource(), *generateResource()}
 
 		added, modified, deleted, err :=
-			snapshot.ResourceDifference("", "", oldResources, newResources, false, klogr.New())
+			snapshot.ResourceDifference("", "", oldResources, newResources, false,
+				textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 		Expect(len(added)).To(Equal(2))
 		Expect(len(modified)).To(Equal(0))
@@ -402,7 +412,8 @@ var _ = Describe("Snapshot Diff", func() {
 		scheme, err := utils.GetScheme()
 		Expect(err).To(BeNil())
 		c := fake.NewClientBuilder().WithScheme(scheme).Build()
-		collector.InitializeClient(context.TODO(), klogr.New(), c, 10)
+		collector.InitializeClient(context.TODO(),
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))), c, 10)
 
 		collectorClient := collector.GetClient()
 
@@ -410,7 +421,8 @@ var _ = Describe("Snapshot Diff", func() {
 		Expect(err).To(BeNil())
 		clusterRole := getClusterRole()
 		oldConfigMap := createConfigMapWithPolicy(namespace, name, render.AsCode(clusterRole))
-		Expect(collectorClient.DumpObject(oldConfigMap, oldFolder, klogr.New())).To(Succeed())
+		Expect(collectorClient.DumpObject(oldConfigMap, oldFolder,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		newFolder, err := os.MkdirTemp("", randomString())
 		Expect(err).To(BeNil())
@@ -418,7 +430,8 @@ var _ = Describe("Snapshot Diff", func() {
 			{Verbs: []string{"create", "get"}, APIGroups: []string{"cert-manager.io"}, Resources: []string{"certificaterequests"}},
 		}
 		newConfigMap := createConfigMapWithPolicy(namespace, name, render.AsCode(clusterRole))
-		Expect(collectorClient.DumpObject(newConfigMap, newFolder, klogr.New())).To(Succeed())
+		Expect(collectorClient.DumpObject(newConfigMap, newFolder,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		oldResource := &configv1alpha1.Resource{
 			Kind:            "ClusterRole",
@@ -436,7 +449,8 @@ var _ = Describe("Snapshot Diff", func() {
 
 		added, modified, deleted, err :=
 			snapshot.ResourceDifference(oldFolder, newFolder, []configv1alpha1.Resource{*oldResource},
-				[]configv1alpha1.Resource{newResource}, false, klogr.New())
+				[]configv1alpha1.Resource{newResource}, false,
+				textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 		Expect(len(added)).To(Equal(0))
 		Expect(len(deleted)).To(Equal(0))
@@ -509,7 +523,7 @@ var _ = Describe("Snapshot Diff", func() {
 
 		charts := make([]configv1alpha1.Chart, 0)
 		resources := make([]configv1alpha1.Resource, 0)
-		charts, resources = snapshot.AppendChartsAndResources(cpr, charts, resources)
+		charts, resources = snapshot.AppendChartsAndResourcesForClusterProfiles(cpr, charts, resources)
 
 		Expect(len(charts)).To(Equal(chartNumber))
 		Expect(len(resources)).To(Equal(resourceNumber))
@@ -526,13 +540,15 @@ var _ = Describe("Snapshot Diff", func() {
 		scheme, err := utils.GetScheme()
 		Expect(err).To(BeNil())
 		c := fake.NewClientBuilder().WithScheme(scheme).Build()
-		collector.InitializeClient(context.TODO(), klogr.New(), c, 10)
+		collector.InitializeClient(context.TODO(),
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))), c, 10)
 		collectorClient := collector.GetClient()
 
 		name := randomString()
 		namespace := randomString()
 		configMap := createConfigMapWithPolicy(namespace, name, render.AsCode(clusterRole))
-		Expect(collectorClient.DumpObject(configMap, folder, klogr.New())).To(Succeed())
+		Expect(collectorClient.DumpObject(configMap, folder,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 		By(fmt.Sprintf("Dumped ConfigMap %s/%s", configMap.Namespace, configMap.Name))
 
 		clusterRoleGroup := "rbac.authorization.k8s.io/v1"
@@ -593,6 +609,9 @@ func generateClusterConfiguration() *configv1alpha1.ClusterConfiguration {
 			ClusterProfileResources: []configv1alpha1.ClusterProfileResource{
 				*generateClusterProfileResource(),
 			},
+			ProfileResources: []configv1alpha1.ProfileResource{
+				*generateProfileResource(),
+			},
 		},
 	}
 }
@@ -600,6 +619,26 @@ func generateClusterConfiguration() *configv1alpha1.ClusterConfiguration {
 func generateClusterProfileResource() *configv1alpha1.ClusterProfileResource {
 	return &configv1alpha1.ClusterProfileResource{
 		ClusterProfileName: randomString(),
+		Features: []configv1alpha1.Feature{
+			{
+				FeatureID: configv1alpha1.FeatureHelm,
+				Charts: []configv1alpha1.Chart{
+					*generateChart(), *generateChart(),
+				},
+			},
+			{
+				FeatureID: configv1alpha1.FeatureResources,
+				Resources: []configv1alpha1.Resource{
+					*generateResource(), *generateResource(),
+				},
+			},
+		},
+	}
+}
+
+func generateProfileResource() *configv1alpha1.ProfileResource {
+	return &configv1alpha1.ProfileResource{
+		ProfileName: randomString(),
 		Features: []configv1alpha1.Feature{
 			{
 				FeatureID: configv1alpha1.FeatureHelm,

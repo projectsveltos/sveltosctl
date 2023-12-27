@@ -24,7 +24,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/klog/v2/klogr"
+	"k8s.io/klog/v2/textlogger"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -42,7 +42,7 @@ var _ = Describe("ClusterProfile", func() {
 				ObjectMeta: metav1.ObjectMeta{
 					Name: randomString(),
 				},
-				Spec: configv1alpha1.ClusterProfileSpec{
+				Spec: configv1alpha1.Spec{
 					ClusterSelector: libsveltosv1alpha1.Selector("zone:west"),
 					SyncMode:        configv1alpha1.SyncModeContinuous,
 				},
@@ -55,7 +55,8 @@ var _ = Describe("ClusterProfile", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		k8sAccess := utils.GetK8sAccess(scheme, c)
-		clusterProfiles, err := k8sAccess.ListClusterProfiles(context.TODO(), klogr.New())
+		clusterProfiles, err := k8sAccess.ListClusterProfiles(context.TODO(),
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 		Expect(len(clusterProfiles.Items)).To(Equal(len(initObjects)))
 	})

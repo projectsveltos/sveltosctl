@@ -31,7 +31,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog/v2/klogr"
+	"k8s.io/klog/v2/textlogger"
 
 	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
@@ -79,7 +79,8 @@ var _ = Describe("Usage", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
-		err = show.ShowUsage(context.TODO(), "", "", "", klogr.New())
+		err = show.ShowUsage(context.TODO(), "", "", "",
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 
 		w.Close()
@@ -137,7 +138,7 @@ func generateClusterProfile() *configv1alpha1.ClusterProfile {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: randomString(),
 		},
-		Spec: configv1alpha1.ClusterProfileSpec{
+		Spec: configv1alpha1.Spec{
 			ClusterSelector: libsveltosv1alpha1.Selector("zone:west"),
 			SyncMode:        configv1alpha1.SyncModeContinuous,
 		},
