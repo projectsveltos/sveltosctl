@@ -21,6 +21,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/docopt/docopt-go"
@@ -53,14 +54,14 @@ var (
 	}
 )
 
-func displayDryRun(ctx context.Context, passedNamespace, passedCluster, passedClusterProfile string,
+func displayDryRun(ctx context.Context, passedNamespace, passedCluster, passedProfile string,
 	logger logr.Logger) error {
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"CLUSTER", "RESOURCE TYPE", "NAMESPACE", "NAME", "ACTION", "MESSAGE", "CLUSTER PROFILE"})
+	table.SetHeader([]string{"CLUSTER", "RESOURCE TYPE", "NAMESPACE", "NAME", "ACTION", "MESSAGE", "PROFILE"})
 
 	if err := displayDryRunInNamespaces(ctx, passedNamespace, passedCluster,
-		passedClusterProfile, table, logger); err != nil {
+		passedProfile, table, logger); err != nil {
 		return err
 	}
 
@@ -69,7 +70,7 @@ func displayDryRun(ctx context.Context, passedNamespace, passedCluster, passedCl
 	return nil
 }
 
-func displayDryRunInNamespaces(ctx context.Context, passedNamespace, passedCluster, passedClusterProfile string,
+func displayDryRunInNamespaces(ctx context.Context, passedNamespace, passedCluster, passedProfile string,
 	table *tablewriter.Table, logger logr.Logger) error {
 
 	instance := utils.GetAccessInstance()
@@ -83,7 +84,7 @@ func displayDryRunInNamespaces(ctx context.Context, passedNamespace, passedClust
 		ns := &namespaces.Items[i]
 		if doConsiderNamespace(ns, passedNamespace) {
 			logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering namespace: %s", ns.Name))
-			err = displayDryRunInNamespace(ctx, ns.Name, passedCluster, passedClusterProfile,
+			err = displayDryRunInNamespace(ctx, ns.Name, passedCluster, passedProfile,
 				table, logger)
 			if err != nil {
 				return err
@@ -94,7 +95,7 @@ func displayDryRunInNamespaces(ctx context.Context, passedNamespace, passedClust
 	return nil
 }
 
-func displayDryRunInNamespace(ctx context.Context, namespace, passedCluster, passedClusterProfile string,
+func displayDryRunInNamespace(ctx context.Context, namespace, passedCluster, passedProfile string,
 	table *tablewriter.Table, logger logr.Logger) error {
 
 	instance := utils.GetAccessInstance()
@@ -108,42 +109,55 @@ func displayDryRunInNamespace(ctx context.Context, namespace, passedCluster, pas
 
 	instance.SortClusterReports(clusterReports.Items)
 
-	for i := range clusterReports.Items {
-		cc := &clusterReports.Items[i]
-		clusterProfileLabel := cc.Labels[controllers.ClusterProfileLabelName]
-		if doConsiderClusterReport(cc, passedCluster) &&
-			doConsiderClusterProfile([]string{clusterProfileLabel}, passedClusterProfile) {
+	pattern := regexp.MustCompile("p--(.*)")
 
-			logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering ClusterReport: %s", cc.Name))
-			displayDryRunForCluster(cc, table)
+	for i := range clusterReports.Items {
+		cr := &clusterReports.Items[i]
+		profileLabel := cr.Labels[controllers.ClusterProfileLabelName]
+
+		// TODO: find a better way to identify clusterreports created by ClusterProfile
+		// vs clusterreports created by Profile
+		var profileName string
+		// Create a regular expression pattern to match strings that start with "p--"
+		match := pattern.MatchString(cr.Name)
+		if match {
+			profileName = fmt.Sprintf("Profile/%s", profileLabel)
+		} else {
+			profileName = fmt.Sprintf("ClusterProfile/%s", profileLabel)
+		}
+
+		if doConsiderClusterReport(cr, passedCluster) &&
+			doConsiderProfile([]string{profileName}, passedProfile) {
+
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering ClusterReport: %s", cr.Name))
+			displayDryRunForCluster(cr, profileName, table)
 		}
 	}
 
 	return nil
 }
 
-func displayDryRunForCluster(clusterReport *configv1alpha1.ClusterReport, table *tablewriter.Table) {
-	clusterProfileName := clusterReport.Labels[controllers.ClusterProfileLabelName]
+func displayDryRunForCluster(clusterReport *configv1alpha1.ClusterReport, profileName string, table *tablewriter.Table) {
 	clusterInfo := fmt.Sprintf("%s/%s", clusterReport.Spec.ClusterNamespace, clusterReport.Spec.ClusterName)
 
 	for i := range clusterReport.Status.ReleaseReports {
 		report := &clusterReport.Status.ReleaseReports[i]
 		table.Append(genDryRunRow(clusterInfo, "helm release", report.ReleaseNamespace, report.ReleaseName,
-			report.Action, report.Message, clusterProfileName))
+			report.Action, report.Message, profileName))
 	}
 
 	for i := range clusterReport.Status.ResourceReports {
 		report := &clusterReport.Status.ResourceReports[i]
 		groupKind := fmt.Sprintf("%s:%s", report.Resource.Group, report.Resource.Kind)
 		table.Append(genDryRunRow(clusterInfo, groupKind, report.Resource.Namespace, report.Resource.Name,
-			report.Action, report.Message, clusterProfileName))
+			report.Action, report.Message, profileName))
 	}
 
 	for i := range clusterReport.Status.KustomizeResourceReports {
 		report := &clusterReport.Status.KustomizeResourceReports[i]
 		groupKind := fmt.Sprintf("%s:%s", report.Resource.Group, report.Resource.Kind)
 		table.Append(genDryRunRow(clusterInfo, groupKind, report.Resource.Namespace, report.Resource.Name,
-			report.Action, report.Message, clusterProfileName))
+			report.Action, report.Message, profileName))
 	}
 }
 
@@ -151,14 +165,14 @@ func displayDryRunForCluster(clusterReport *configv1alpha1.ClusterReport, table 
 // to a ClusterProfile currently in DryRun mode,
 func DryRun(ctx context.Context, args []string, logger logr.Logger) error {
 	doc := `Usage:
-  sveltosctl show dryrun [options] [--namespace=<name>] [--cluster=<name>] [--clusterprofile=<name>] [--verbose]
+  sveltosctl show dryrun [options] [--namespace=<name>] [--cluster=<name>] [--profile=<name>] [--verbose]
 
      --namespace=<name>      Show which Kubernetes addons would change in clusters in this namespace.
                              If not specified all namespaces are considered.
      --cluster=<name>        Show which Kubernetes addons would change in cluster with name.
                              If not specified all cluster names are considered.
-     --clusterprofile=<name> Show which Kubernetes addons would change because of this clusterprofile.
-                             If not specified all clusterprofile names are considered.
+     --profile=<kind/name>   Show which Kubernetes addons would change because of this clusterprofile/profile.
+                             If not specified all clusterprofiles/profiles are considered.
 
 Options:
   -h --help                  Show this screen.
@@ -199,10 +213,10 @@ Description:
 		cluster = passedCluster.(string)
 	}
 
-	clusterProfile := ""
-	if passedClusterProfile := parsedArgs["--clusterprofile"]; passedClusterProfile != nil {
-		clusterProfile = passedClusterProfile.(string)
+	profile := ""
+	if passedProfile := parsedArgs["--profile"]; passedProfile != nil {
+		profile = passedProfile.(string)
 	}
 
-	return displayDryRun(ctx, namespace, cluster, clusterProfile, logger)
+	return displayDryRun(ctx, namespace, cluster, profile, logger)
 }

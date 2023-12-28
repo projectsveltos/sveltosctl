@@ -114,6 +114,10 @@ func collectSnapshot(ctx context.Context, c client.Client, snapshotName string, 
 	if err != nil {
 		return err
 	}
+	err = dumpProfiles(collectorClient, ctx, folder, logger)
+	if err != nil {
+		return err
+	}
 	err = dumpClusterConfigurations(collectorClient, ctx, folder, logger)
 	if err != nil {
 		return err
@@ -294,6 +298,33 @@ func dumpClusterProfiles(collectorClient *collector.Collector, ctx context.Conte
 	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d ClusterProfiles", len(clusterProfiles.Items)))
 	for i := range clusterProfiles.Items {
 		cc := &clusterProfiles.Items[i]
+		err = collectorClient.DumpObject(cc, folder, logger)
+		if err != nil {
+			return err
+		}
+
+		policyRefs := convertConfigPolicyRefsToLibsveltosPolicyRefs(cc.Spec.PolicyRefs)
+
+		err = dumpReferencedObjects(collectorClient, ctx, policyRefs, folder, logger)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func dumpProfiles(collectorClient *collector.Collector, ctx context.Context, folder string,
+	logger logr.Logger) error {
+
+	logger.V(logs.LogDebug).Info("storing Profiles")
+	profiles, err := utils.GetAccessInstance().ListProfiles(ctx, logger)
+	if err != nil {
+		return err
+	}
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d Profiles", len(profiles.Items)))
+	for i := range profiles.Items {
+		cc := &profiles.Items[i]
 		err = collectorClient.DumpObject(cc, folder, logger)
 		if err != nil {
 			return err

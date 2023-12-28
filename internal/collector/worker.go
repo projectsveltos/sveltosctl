@@ -146,9 +146,9 @@ func storeResult(collector *Collector, requestorName string, collectionType Coll
 	l := logger.WithValues("requestor", requestorName)
 
 	if err != nil {
-		l.V(logs.LogDebug).Info(fmt.Sprintf("added to result with err %s", err.Error()))
+		l.V(logs.LogInfo).Info(fmt.Sprintf("added to result with err %s", err.Error()))
 	} else {
-		l.V(logs.LogDebug).Info("added to result")
+		l.V(logs.LogInfo).Info("added to result")
 	}
 	collector.results[requestorName] = err
 

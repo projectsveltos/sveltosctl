@@ -29,7 +29,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
-	"k8s.io/klog/v2/klogr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -77,7 +76,9 @@ Description:
 		SkipHelpFlags: false,
 	}
 
-	logger := klogr.New()
+	ctrl.SetLogger(klog.Background())
+
+	logger := klog.FromContext(ctx)
 	opts, err := parser.ParseArgs(doc, nil, "")
 	if err != nil {
 		var userError docopt.UserError

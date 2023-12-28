@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"k8s.io/klog/v2/klogr"
+	"k8s.io/klog/v2/textlogger"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -34,7 +34,7 @@ import (
 )
 
 func SnapshotReconciler(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	logger := klogr.New()
+	logger := textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1)))
 	logger.V(logs.LogInfo).Info("Reconciling")
 
 	accessInstance := utils.GetAccessInstance()

@@ -31,7 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
-	"k8s.io/klog/v2/klogr"
+	"k8s.io/klog/v2/textlogger"
 	kubectlscheme "k8s.io/kubectl/pkg/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -210,7 +210,8 @@ var _ = Describe("CRUD", func() {
 
 		dr, err := k8sAccess.GetDynamicResourceInterface(request)
 		Expect(err).To(BeNil())
-		Expect(k8sAccess.UpdateResourceWithDynamicResourceInterface(context.TODO(), dr, request, klogr.New())).To(Succeed())
+		Expect(k8sAccess.UpdateResourceWithDynamicResourceInterface(context.TODO(), dr, request,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		currentNs := &corev1.Namespace{}
 		Expect(k8sAccess.GetResource(context.TODO(), types.NamespacedName{Name: nsName}, currentNs)).To(Succeed())
@@ -218,7 +219,8 @@ var _ = Describe("CRUD", func() {
 
 		_, _, err = universalDeserializer.Decode([]byte(fmt.Sprintf(nsInstanceTemplateWithLabels, nsName)), nil, request)
 		Expect(err).To(BeNil())
-		Expect(k8sAccess.UpdateResourceWithDynamicResourceInterface(context.TODO(), dr, request, klogr.New())).To(Succeed())
+		Expect(k8sAccess.UpdateResourceWithDynamicResourceInterface(context.TODO(), dr, request,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		Expect(k8sAccess.GetResource(context.TODO(), types.NamespacedName{Name: nsName}, currentNs)).To(Succeed())
 		Expect(len(currentNs.Labels)).To(Equal(currentLabelLength + 1))

@@ -44,7 +44,7 @@ func generateClusterProfile() *configv1alpha1.ClusterProfile {
 		ObjectMeta: metav1.ObjectMeta{
 			Name: randomString(),
 		},
-		Spec: configv1alpha1.ClusterProfileSpec{
+		Spec: configv1alpha1.Spec{
 			ClusterSelector: libsveltosv1alpha1.Selector("zone:west"),
 			SyncMode:        configv1alpha1.SyncModeContinuous,
 		},

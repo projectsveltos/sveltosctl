@@ -24,7 +24,7 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/klog/v2/klogr"
+	"k8s.io/klog/v2/textlogger"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -59,7 +59,7 @@ var _ = Describe("OnboardCluster", func() {
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
 
 		Expect(onboard.OnboardSveltosCluster(context.TODO(), clusterNamespace, clusterName,
-			kubeconfigFile.Name(), klogr.New())).To(Succeed())
+			kubeconfigFile.Name(), textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		instance := utils.GetAccessInstance()
 

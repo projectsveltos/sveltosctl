@@ -32,7 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/klog/v2/klogr"
+	"k8s.io/klog/v2/textlogger"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -304,7 +304,7 @@ func addFinalizer(ctx context.Context, instance client.Object, finalizer string)
 }
 
 func handlerMapFun(ctx context.Context, o client.Object) []reconcile.Request {
-	logger := klogr.New().WithValues(
+	logger := textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))).WithValues(
 		"objectMapper",
 		"handler",
 		"instance",
@@ -384,7 +384,7 @@ func reconcileDelete(ctx context.Context, instance client.Object, collectionType
 }
 
 func addModifyDeletePredicates() predicate.Funcs {
-	logger := klogr.New()
+	logger := textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1)))
 	return predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			switch e.ObjectNew.(type) {
