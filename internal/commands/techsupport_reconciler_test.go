@@ -43,7 +43,7 @@ var _ = Describe("ClusterProfile Predicates: SvelotsClusterPredicates", func() {
 		cluster = &libsveltosv1alpha1.SveltosCluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      upstreamClusterNamePrefix + randomString(),
-				Namespace: "predicates" + randomString(),
+				Namespace: "scpredicates" + randomString(),
 			},
 		}
 	})
@@ -202,7 +202,7 @@ var _ = Describe("ClusterProfile Predicates: ClusterPredicates", func() {
 		cluster = &clusterv1.Cluster{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      upstreamClusterNamePrefix + randomString(),
-				Namespace: "predicates" + randomString(),
+				Namespace: "cpredicates" + randomString(),
 			},
 		}
 	})

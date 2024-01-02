@@ -42,10 +42,14 @@ var _ = Describe("EventSource", func() {
 					Name: randomString(),
 				},
 				Spec: libsveltosv1alpha1.EventSourceSpec{
-					Group:   randomString(),
-					Version: randomString(),
-					Kind:    randomString(),
-					Script:  randomString(),
+					ResourceSelectors: []libsveltosv1alpha1.ResourceSelector{
+						{
+							Group:    randomString(),
+							Version:  randomString(),
+							Kind:     randomString(),
+							Evaluate: randomString(),
+						},
+					},
 				},
 			}
 			initObjects = append(initObjects, es)

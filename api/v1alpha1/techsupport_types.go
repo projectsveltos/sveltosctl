@@ -48,12 +48,6 @@ type Resource struct {
 
 	// LabelFilters allows to filter resources based on current labels.
 	LabelFilters []libsveltosv1alpha1.LabelFilter `json:"labelFilters,omitempty"`
-
-	// FieldFilters allows to filter resources based on current field values.
-	// Internally uses FieldSelector so only fields supported by FieldSelector can
-	// be used.
-	// Current list: https://github.com/kubernetes/kubernetes/blob/9d577d8a29893062dfbd669997396dbd01ab0e47/pkg/apis/core/v1/conversion.go#L33
-	FieldFilters []libsveltosv1alpha1.FieldFilter `json:"fieldFilters,omitempty"`
 }
 
 // LogFilter allows to select which logs to collect

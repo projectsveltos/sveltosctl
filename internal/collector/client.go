@@ -489,7 +489,7 @@ func collectLogs(ctx context.Context, clientset *kubernetes.Clientset,
 	var fo *os.File
 	fo, err = os.Create(filename)
 	if err != nil {
-		return
+		return err
 	}
 	// close fo on exit and check for its returned error
 	defer func() {
@@ -517,7 +517,7 @@ func collectLogs(ctx context.Context, clientset *kubernetes.Clientset,
 	var podLogs io.ReadCloser
 	podLogs, err = req.Stream(ctx)
 	if err != nil {
-		return
+		return err
 	}
 	defer podLogs.Close()
 
