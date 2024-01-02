@@ -48,11 +48,13 @@ var _ = Describe("Classifier", func() {
 					KubernetesVersionConstraints: []libsveltosv1alpha1.KubernetesVersionConstraint{
 						{Version: randomString(), Comparison: string(libsveltosv1alpha1.ComparisonEqual)},
 					},
-					DeployedResourceConstraints: []libsveltosv1alpha1.DeployedResourceConstraint{
-						{
-							Group:   randomString(),
-							Version: randomString(),
-							Kind:    randomString(),
+					DeployedResourceConstraint: &libsveltosv1alpha1.DeployedResourceConstraint{
+						ResourceSelectors: []libsveltosv1alpha1.ResourceSelector{
+							{
+								Group:   randomString(),
+								Version: randomString(),
+								Kind:    randomString(),
+							},
 						},
 					},
 				},
