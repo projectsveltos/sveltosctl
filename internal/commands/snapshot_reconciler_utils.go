@@ -224,7 +224,7 @@ func dumpEventTriggers(collectorClient *collector.Collector, ctx context.Context
 	if err != nil {
 		return err
 	}
-	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d EventBasedAddOns", len(eventTriggers.Items)))
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d EventTriggers", len(eventTriggers.Items)))
 	for i := range eventTriggers.Items {
 		r := &eventTriggers.Items[i]
 		err = collectorClient.DumpObject(r, folder, logger)

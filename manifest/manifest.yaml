@@ -118,7 +118,7 @@ rules:
       - eventsources
       - healthchecks
       - healthcheckreports
-      - eventbasedaddons
+      - eventtriggers
       - addoncompliances
     verbs:
       - get
