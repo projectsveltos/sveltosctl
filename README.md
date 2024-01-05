@@ -10,10 +10,10 @@
 
 Please refere to sveltos [documentation](https://projectsveltos.github.io/sveltos/).
 
-**sveltosctl** is the command line client for Sveltos. **sveltosctl** nicely displays resources and helm charts info in custer deployed using [ClusterProfile](https://github.com/projectsveltos/addon-controller). It also provides the ability to generate configuration snapshots and rollback system to a previously taken configuration snapshot.
+**sveltosctl** is the command line client for Sveltos. **sveltosctl** nicely displays resources and helm charts info in custer deployed using [ClusterProfile/Profile](https://github.com/projectsveltos/addon-controller). It also provides the ability to generate configuration snapshots and rollback system to a previously taken configuration snapshot.
 
 It assumes:
-1. [ClusterProfile](https://github.com/projectsveltos/addon-controller) is used to programmatically define which resources/helm charts need to be deployed in which CAPI Clusters;
+1. [ClusterProfile/Profile](https://github.com/projectsveltos/addon-controller) is used to programmatically define which resources/helm charts need to be deployed in which CAPI Clusters;
 2. management cluster can be accessed 
  
 > Note: sveltosctl can run as binary though it is advised to run it as pod in a management cluster to get access to all of its features.
@@ -72,7 +72,7 @@ You might also want to change the timezone of sveltosctl pod by using specific t
   - [Display usage](#display-usage)
   - [Multi-tenancy: display admin permissions](#multi-tenancy-display-admin-permissions)
   - [Log severity settings](#log-severity-settings)
-  - [Display outcome of ClusterProfile in DryRun mode](#display-outcome-of-clusterprofile-in-dryrun-mode)
+  - [Display outcome of ClusterProfile/Profile in DryRun mode](#display-outcome-of-clusterprofile-in-dryrun-mode)
   - [Techsupport](#techsupport)
     - [list](#list)
   - [Snapshot](#snapshot)
@@ -89,7 +89,7 @@ You might also want to change the timezone of sveltosctl pod by using specific t
 Displayed information contains:
 1. the CAPI Cluster in the form <namespace>/<name>
 2. resource/helm chart information
-3. list of ClusterProfiles currently (at the time the command is run) having resource/helm release deployed in the CAPI cluster.
+3. list of ClusterProfiles/Profiles currently (at the time the command is run) having resource/helm release deployed in the CAPI cluster.
 
 ```
 ./bin/sveltosctl show addons
@@ -104,16 +104,16 @@ Displayed information contains:
 **show addons** command has some argurments which allow filtering by:
 1. clusters' namespace
 2. clusters' name
-3. ClusterProfile 
+3. ClusterProfile/Profile
 
 ```
 ./bin/sveltosctl show addons --help
 Usage:
-  sveltosctl show addons [options] [--namespace=<name>] [--cluster=<name>] [--clusterprofile=<name>] [--verbose]
+  sveltosctl show addons [options] [--namespace=<name>] [--cluster=<name>] [--profile=<name>] [--verbose]
 
-     --namespace=<name>      Show addons deployed in clusters in this namespace. If not specified all namespaces are considered.
-     --cluster=<name>        Show addons deployed in cluster with name. If not specified all cluster names are considered.
-     --clusterprofile=<name> Show addons deployed because of this clusterprofile. If not specified all clusterprofile names are considered.
+     --namespace=<name>     Show addons deployed in clusters in this namespace. If not specified all namespaces are considered.
+     --cluster=<name>       Show addons deployed in cluster with name. If not specified all cluster names are considered.
+     --profile=<kind/name>  Show addons deployed because of this clusterprofile/profile. If not specified all clusterprofiles/profiles are considered.
 ```
 
 ## Display information about resources in managed cluster
@@ -225,11 +225,11 @@ Here is an example of outcome
 ```
 ./bin/sveltosctl show dryrun --help  
 Usage:
-  sveltosctl show dryrun [options] [--namespace=<name>] [--cluster=<name>] [--clusterprofile=<name>] [--verbose]
+  sveltosctl show dryrun [options] [--namespace=<name>] [--cluster=<name>] [--profile=<name>] [--verbose]
 
-     --namespace=<name>      Show which Kubernetes addons would change in clusters in this namespace. If not specified all namespaces are considered.
-     --cluster=<name>        Show which Kubernetes addons would change in cluster with name. If not specified all cluster names are considered.
-     --clusterprofile=<name> Show which Kubernetes addons would change because of this clusterprofile. If not specified all clusterprofile names are considered.
+     --namespace=<name> Show which Kubernetes addons would change in clusters in this namespace. If not specified all namespaces are considered.
+     --cluster=<name>   Show which Kubernetes addons would change in cluster with name. If not specified all cluster names are considered.
+     --profile=<name>   Show which Kubernetes addons would change because of this clusterprofile/profile. If not specified all clusterprofiles/profiles are considered.
 ```
 
 ## Techsupport

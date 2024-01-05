@@ -24,7 +24,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/klog/v2/klogr"
+	"k8s.io/klog/v2/textlogger"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -42,10 +42,14 @@ var _ = Describe("EventSource", func() {
 					Name: randomString(),
 				},
 				Spec: libsveltosv1alpha1.EventSourceSpec{
-					Group:   randomString(),
-					Version: randomString(),
-					Kind:    randomString(),
-					Script:  randomString(),
+					ResourceSelectors: []libsveltosv1alpha1.ResourceSelector{
+						{
+							Group:    randomString(),
+							Version:  randomString(),
+							Kind:     randomString(),
+							Evaluate: randomString(),
+						},
+					},
 				},
 			}
 			initObjects = append(initObjects, es)
@@ -56,7 +60,8 @@ var _ = Describe("EventSource", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		k8sAccess := utils.GetK8sAccess(scheme, c)
-		eventSources, err := k8sAccess.ListEventSources(context.TODO(), klogr.New())
+		eventSources, err := k8sAccess.ListEventSources(context.TODO(),
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 		Expect(len(eventSources.Items)).To(Equal(len(initObjects)))
 	})

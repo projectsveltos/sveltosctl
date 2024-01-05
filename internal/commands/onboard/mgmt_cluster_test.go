@@ -27,7 +27,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/klog/v2/klogr"
+	"k8s.io/klog/v2/textlogger"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -54,16 +54,16 @@ var _ = Describe("Register Mgmt Cluster", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
 
-		Expect(onboard.CreateSveltosCluster(context.TODO(),
-			clusterNamespace, clusterName, klogr.New())).To(Succeed())
+		Expect(onboard.CreateSveltosCluster(context.TODO(), clusterNamespace, clusterName,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		currentSveltosCluster := &libsveltosv1alpha1.SveltosCluster{}
 		Expect(c.Get(context.TODO(),
 			types.NamespacedName{Namespace: clusterNamespace, Name: clusterName},
 			currentSveltosCluster)).To(Succeed())
 
-		Expect(onboard.CreateSveltosCluster(context.TODO(),
-			clusterNamespace, clusterName, klogr.New())).To(Succeed())
+		Expect(onboard.CreateSveltosCluster(context.TODO(), clusterNamespace, clusterName,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 	})
 
 	It("createNamespace creates namespace", func() {
@@ -73,7 +73,8 @@ var _ = Describe("Register Mgmt Cluster", func() {
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
 
 		ns := randomString()
-		Expect(onboard.CreateNamespace(context.TODO(), ns, klogr.New())).To(Succeed())
+		Expect(onboard.CreateNamespace(context.TODO(), ns,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		currentNs := &corev1.Namespace{}
 		err = c.Get(context.TODO(), types.NamespacedName{Name: ns}, currentNs)
@@ -81,11 +82,13 @@ var _ = Describe("Register Mgmt Cluster", func() {
 		// by admin as per any other cluster registration
 		Expect(apierrors.IsNotFound(err)).To(BeTrue())
 
-		Expect(onboard.CreateNamespace(context.TODO(), onboard.DefaultNamespace, klogr.New())).To(Succeed())
+		Expect(onboard.CreateNamespace(context.TODO(), onboard.DefaultNamespace,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 		Expect(c.Get(context.TODO(),
 			types.NamespacedName{Name: onboard.DefaultNamespace}, currentNs)).To(Succeed())
 
-		Expect(onboard.CreateNamespace(context.TODO(), onboard.DefaultNamespace, klogr.New())).To(Succeed())
+		Expect(onboard.CreateNamespace(context.TODO(), onboard.DefaultNamespace,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 	})
 
 	It("createClusterRole creates ClusterRole", func() {
@@ -94,13 +97,15 @@ var _ = Describe("Register Mgmt Cluster", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).Build()
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
 
-		Expect(onboard.CreateClusterRole(context.TODO(), klogr.New())).To(Succeed())
+		Expect(onboard.CreateClusterRole(context.TODO(),
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		currentClusterRole := &rbacv1.ClusterRole{}
 		Expect(c.Get(context.TODO(), types.NamespacedName{Name: onboard.ClusterRoleName},
 			currentClusterRole)).To(Succeed())
 
-		Expect(onboard.CreateClusterRole(context.TODO(), klogr.New())).To(Succeed())
+		Expect(onboard.CreateClusterRole(context.TODO(),
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 	})
 
 	It("createClusterRoleBinding creates ClusterRoleBinding", func() {
@@ -109,7 +114,8 @@ var _ = Describe("Register Mgmt Cluster", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).Build()
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
 
-		Expect(onboard.CreateClusterRoleBinding(context.TODO(), klogr.New())).To(Succeed())
+		Expect(onboard.CreateClusterRoleBinding(context.TODO(),
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		currentClusterRoleBinding := &rbacv1.ClusterRoleBinding{}
 		Expect(c.Get(context.TODO(), types.NamespacedName{Name: onboard.ClusterRoleBindingName},
@@ -123,6 +129,7 @@ var _ = Describe("Register Mgmt Cluster", func() {
 		Expect(currentClusterRoleBinding.Subjects[0].Namespace).To(Equal(onboard.SaNamespace))
 		Expect(currentClusterRoleBinding.Subjects[0].Kind).To(Equal("ServiceAccount"))
 
-		Expect(onboard.CreateClusterRoleBinding(context.TODO(), klogr.New())).To(Succeed())
+		Expect(onboard.CreateClusterRoleBinding(context.TODO(),
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 	})
 })

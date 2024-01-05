@@ -26,7 +26,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/klog/v2/klogr"
+	"k8s.io/klog/v2/textlogger"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -62,12 +62,13 @@ var _ = Describe("ClusterConfiguration", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		k8sAccess := utils.GetK8sAccess(scheme, c)
-		clusterConfigurations, err := k8sAccess.ListClusterConfigurations(context.TODO(), "", klogr.New())
+		clusterConfigurations, err := k8sAccess.ListClusterConfigurations(context.TODO(), "",
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 		Expect(len(clusterConfigurations.Items)).To(Equal(len(initObjects)))
 
-		clusterConfigurations, err = k8sAccess.ListClusterConfigurations(context.TODO(),
-			clusterConfiguration.Namespace, klogr.New())
+		clusterConfigurations, err = k8sAccess.ListClusterConfigurations(context.TODO(), clusterConfiguration.Namespace,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 		Expect(len(clusterConfigurations.Items)).To(Equal(1))
 	})
@@ -86,12 +87,14 @@ var _ = Describe("ClusterConfiguration", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 		k8sAccess := utils.GetK8sAccess(scheme, c)
 
-		_, err := k8sAccess.GetClusterConfiguration(context.TODO(), randomString(), randomString(), klogr.New())
+		_, err := k8sAccess.GetClusterConfiguration(context.TODO(), randomString(), randomString(),
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).ToNot(BeNil())
 		Expect(apierrors.IsNotFound(err)).To(BeTrue())
 
 		cc, err := k8sAccess.GetClusterConfiguration(context.TODO(),
-			clusterConfiguration.Namespace, clusterConfiguration.Name, klogr.New())
+			clusterConfiguration.Namespace, clusterConfiguration.Name,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 		Expect(cc).ToNot(BeNil())
 		Expect(cc.Namespace).To(Equal(clusterConfiguration.Namespace))
@@ -124,7 +127,8 @@ var _ = Describe("ClusterConfiguration", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		k8sAccess := utils.GetK8sAccess(scheme, c)
-		chartMap := k8sAccess.GetHelmReleases(clusterConfiguration, klogr.New())
+		chartMap := k8sAccess.GetHelmReleases(clusterConfiguration,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(chartMap).ToNot(BeNil())
 		Expect(len(chartMap)).To(Equal(2))
 		Expect(len(chartMap[*chart1])).To(Equal(2))
@@ -158,7 +162,8 @@ var _ = Describe("ClusterConfiguration", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		k8sAccess := utils.GetK8sAccess(scheme, c)
-		resourceMap := k8sAccess.GetResources(clusterConfiguration, klogr.New())
+		resourceMap := k8sAccess.GetResources(clusterConfiguration,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(resourceMap).ToNot(BeNil())
 		Expect(len(resourceMap)).To(Equal(2))
 		Expect(len(resourceMap[*resource1])).To(Equal(2))

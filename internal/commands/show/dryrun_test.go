@@ -29,7 +29,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog/v2/klogr"
+	"k8s.io/klog/v2/textlogger"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -114,7 +114,8 @@ var _ = Describe("DryRun", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
-		err = show.DisplayDryRun(context.TODO(), "", "", "", klogr.New())
+		err = show.DisplayDryRun(context.TODO(), "", "", "",
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 
 		w.Close()
@@ -209,7 +210,8 @@ var _ = Describe("DryRun", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
-		err = show.DisplayDryRun(context.TODO(), "", "", "", klogr.New())
+		err = show.DisplayDryRun(context.TODO(), "", "", "",
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 
 		w.Close()

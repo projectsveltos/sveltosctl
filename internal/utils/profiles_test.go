@@ -28,26 +28,26 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
-var _ = Describe("RoleRequest", func() {
-	It("ListRoleRequests returns list of all RoleRequests", func() {
+var _ = Describe("Profile", func() {
+	It("ListProfiles returns list of all profiles", func() {
 		initObjects := []client.Object{}
 
-		for i := 0; i < 10; i++ {
-			rr := &libsveltosv1alpha1.RoleRequest{
+		for i := 0; i < 15; i++ {
+			profile := &configv1alpha1.Profile{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: randomString(),
 				},
-				Spec: libsveltosv1alpha1.RoleRequestSpec{
-					ServiceAccountNamespace: randomString(),
-					ServiceAccountName:      randomString(),
-					ClusterSelector:         libsveltosv1alpha1.Selector("zone:east"),
+				Spec: configv1alpha1.Spec{
+					ClusterSelector: libsveltosv1alpha1.Selector("zone:west"),
+					SyncMode:        configv1alpha1.SyncModeContinuous,
 				},
 			}
-			initObjects = append(initObjects, rr)
+			initObjects = append(initObjects, profile)
 		}
 
 		scheme := runtime.NewScheme()
@@ -55,9 +55,9 @@ var _ = Describe("RoleRequest", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		k8sAccess := utils.GetK8sAccess(scheme, c)
-		roleRequests, err := k8sAccess.ListRoleRequests(context.TODO(),
+		profiles, err := k8sAccess.ListProfiles(context.TODO(),
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
-		Expect(len(roleRequests.Items)).To(Equal(len(initObjects)))
+		Expect(len(profiles.Items)).To(Equal(len(initObjects)))
 	})
 })

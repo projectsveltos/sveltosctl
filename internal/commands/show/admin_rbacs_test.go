@@ -31,7 +31,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog/v2/klogr"
+	"k8s.io/klog/v2/textlogger"
 
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/commands/show"
@@ -105,7 +105,8 @@ var _ = Describe("Admin RBACs", func() {
 		os.Stdout = w
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
-		err = show.DisplayAdminRbacs(context.TODO(), "", "", "", "", klogr.New())
+		err = show.DisplayAdminRbacs(context.TODO(), "", "", "", "",
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 
 		w.Close()

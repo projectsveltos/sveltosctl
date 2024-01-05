@@ -36,7 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/klog/v2/klogr"
+	"k8s.io/klog/v2/textlogger"
 
 	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
@@ -405,7 +405,11 @@ func listClusterConfigurationDiff(fromFolder, toFolder string, fromClusterConfig
 	if toClusterConfiguration != nil {
 		for i := range toClusterConfiguration.Status.ClusterProfileResources {
 			cpr := &toClusterConfiguration.Status.ClusterProfileResources[i]
-			toCharts, toResources = appendChartsAndResources(cpr, toCharts, toResources)
+			toCharts, toResources = appendChartsAndResourcesForClusterProfiles(cpr, toCharts, toResources)
+		}
+		for i := range toClusterConfiguration.Status.ProfileResources {
+			pr := &toClusterConfiguration.Status.ProfileResources[i]
+			toCharts, toResources = appendChartsAndResourcesForProfiles(pr, toCharts, toResources)
 		}
 	}
 
@@ -414,7 +418,11 @@ func listClusterConfigurationDiff(fromFolder, toFolder string, fromClusterConfig
 	if fromClusterConfiguration != nil {
 		for i := range fromClusterConfiguration.Status.ClusterProfileResources {
 			cpr := &fromClusterConfiguration.Status.ClusterProfileResources[i]
-			fromCharts, fromResources = appendChartsAndResources(cpr, fromCharts, fromResources)
+			fromCharts, fromResources = appendChartsAndResourcesForClusterProfiles(cpr, fromCharts, fromResources)
+		}
+		for i := range fromClusterConfiguration.Status.ProfileResources {
+			pr := &fromClusterConfiguration.Status.ProfileResources[i]
+			fromCharts, fromResources = appendChartsAndResourcesForProfiles(pr, fromCharts, fromResources)
 		}
 	}
 
@@ -583,7 +591,7 @@ func resourceDifference(fromFolder, toFolder string, from, to []configv1alpha1.R
 	return addedResources, modifiedResources, deletedResources, nil
 }
 
-func appendChartsAndResources(cpr *configv1alpha1.ClusterProfileResource, charts []configv1alpha1.Chart,
+func appendChartsAndResourcesForClusterProfiles(cpr *configv1alpha1.ClusterProfileResource, charts []configv1alpha1.Chart,
 	resources []configv1alpha1.Resource) ([]configv1alpha1.Chart, []configv1alpha1.Resource) {
 
 	for i := range cpr.Features {
@@ -593,6 +601,21 @@ func appendChartsAndResources(cpr *configv1alpha1.ClusterProfileResource, charts
 			charts = append(charts, c)
 		}
 		resources = append(resources, cpr.Features[i].Resources...)
+	}
+
+	return charts, resources
+}
+
+func appendChartsAndResourcesForProfiles(pr *configv1alpha1.ProfileResource, charts []configv1alpha1.Chart,
+	resources []configv1alpha1.Resource) ([]configv1alpha1.Chart, []configv1alpha1.Resource) {
+
+	for i := range pr.Features {
+		for j := range pr.Features[i].Charts {
+			c := pr.Features[i].Charts[j]
+			c.LastAppliedTime = nil
+			charts = append(charts, c)
+		}
+		resources = append(resources, pr.Features[i].Resources...)
 	}
 
 	return charts, resources
@@ -787,7 +810,7 @@ Description:
 		}
 	}
 
-	logger = klogr.New()
+	logger = textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1)))
 
 	snapshostName := parsedArgs["--snapshot"].(string)
 	toSample := parsedArgs["--to-sample"].(string)

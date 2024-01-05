@@ -106,6 +106,7 @@ rules:
   - apiGroups: ["config.projectsveltos.io"]
     resources:
       - clusterprofiles
+      - profiles
     verbs:
       - get
       - list
@@ -117,7 +118,7 @@ rules:
       - eventsources
       - healthchecks
       - healthcheckreports
-      - eventbasedaddons
+      - eventtriggers
       - addoncompliances
     verbs:
       - get

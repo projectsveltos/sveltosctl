@@ -25,12 +25,12 @@ import (
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 )
 
-// ListEventBasedAddOns returns all current EventBasedAddOns
-func (a *k8sAccess) ListEventBasedAddOns(ctx context.Context,
-	logger logr.Logger) (*eventv1alpha1.EventBasedAddOnList, error) {
+// ListEventTriggers returns all current EventTriggers
+func (a *k8sAccess) ListEventTriggers(ctx context.Context,
+	logger logr.Logger) (*eventv1alpha1.EventTriggerList, error) {
 
-	logger.V(logs.LogDebug).Info("Get all EventBasedAddOns")
-	eventBasedAddOns := &eventv1alpha1.EventBasedAddOnList{}
-	err := a.client.List(ctx, eventBasedAddOns)
-	return eventBasedAddOns, err
+	logger.V(logs.LogDebug).Info("Get all EventTriggers")
+	eventTriggers := &eventv1alpha1.EventTriggerList{}
+	err := a.client.List(ctx, eventTriggers)
+	return eventTriggers, err
 }

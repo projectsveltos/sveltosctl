@@ -50,13 +50,13 @@ func doConsiderClusterReport(clusterReport *configv1alpha1.ClusterReport,
 	return clusterReport.Spec.ClusterName == passedCluster
 }
 
-func doConsiderClusterProfile(clusterProfileNames []string, passedClusterProfile string) bool {
-	if passedClusterProfile == "" {
+func doConsiderProfile(profileNames []string, passedProfile string) bool {
+	if passedProfile == "" {
 		return true
 	}
 
-	for i := range clusterProfileNames {
-		if clusterProfileNames[i] == passedClusterProfile {
+	for i := range profileNames {
+		if profileNames[i] == passedProfile {
 			return true
 		}
 	}

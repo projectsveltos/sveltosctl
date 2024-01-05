@@ -35,7 +35,7 @@ KUBECTL := $(TOOLS_BIN_DIR)/kubectl
 SETUP_ENVTEST := $(TOOLS_BIN_DIR)/setup_envs
 CONTROLLER_GEN := $(TOOLS_BIN_DIR)/controller-gen
 
-GOLANGCI_LINT_VERSION := "v1.52.2"
+GOLANGCI_LINT_VERSION := "v1.55.2"
 
 
 $(CONTROLLER_GEN): $(TOOLS_DIR)/go.mod # Build controller-gen from tools folder.

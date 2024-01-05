@@ -271,23 +271,6 @@ func dumpResources(ctx context.Context, remoteRestConfig *rest.Config, resource 
 		options.LabelSelector = labelFilter
 	}
 
-	if len(resource.FieldFilters) > 0 {
-		fieldFilter := ""
-		for i := range resource.FieldFilters {
-			if fieldFilter != "" {
-				fieldFilter += ","
-			}
-			f := resource.FieldFilters[i]
-			if f.Operation == libsveltosv1alpha1.OperationEqual {
-				fieldFilter += fmt.Sprintf("%s=%s", f.Field, f.Value)
-			} else {
-				fieldFilter += fmt.Sprintf("%s!=%s", f.Field, f.Value)
-			}
-		}
-
-		options.FieldSelector = fieldFilter
-	}
-
 	if resource.Namespace != "" {
 		if options.FieldSelector != "" {
 			options.FieldSelector += ","
