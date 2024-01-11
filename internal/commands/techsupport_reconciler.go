@@ -371,7 +371,10 @@ func getMatchingClusters(ctx context.Context, techsupport *utilsv1alpha1.Techsup
 
 	matching := make([]corev1.ObjectReference, 0)
 
-	parsedSelector, _ := labels.Parse(string(techsupport.Spec.ClusterSelector))
+	parsedSelector, err := labels.Parse(string(techsupport.Spec.ClusterSelector))
+	if err != nil {
+		return nil, err
+	}
 
 	tmpMatching, err := getMatchingCAPIClusters(ctx, parsedSelector)
 	if err != nil {
