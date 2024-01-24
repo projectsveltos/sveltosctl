@@ -343,7 +343,7 @@ var _ = Describe("Snapshot Rollback", func() {
 		updateClusterLabels(currentCluster)
 		updateClusterProfileSpec(currentClusterProfile)
 
-		Expect(snapshot.RollbackConfigurationToSnapshot(context.TODO(), folder, "", "", "", "", "", "",
+		Expect(snapshot.RollbackConfigurationToSnapshot(context.TODO(), folder, "", "", "", "", "",
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		Expect(instance.GetResource(context.TODO(),

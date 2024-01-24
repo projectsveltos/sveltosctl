@@ -146,32 +146,8 @@ func collectSnapshot(ctx context.Context, c client.Client, snapshotName string, 
 	if err != nil {
 		return err
 	}
-	err = dumpAddonCompliances(collectorClient, ctx, folder, logger)
-	if err != nil {
-		return err
-	}
 
 	logger.V(logs.LogInfo).Info("done collecting snapshot")
-
-	return nil
-}
-
-func dumpAddonCompliances(collectorClient *collector.Collector, ctx context.Context, folder string,
-	logger logr.Logger) error {
-
-	logger.V(logs.LogDebug).Info("storing AddonCompliances")
-	addonCompliances, err := utils.GetAccessInstance().ListAddonCompliances(ctx, logger)
-	if err != nil {
-		return err
-	}
-	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d AddonCompliances", len(addonCompliances.Items)))
-	for i := range addonCompliances.Items {
-		rr := &addonCompliances.Items[i]
-		err = collectorClient.DumpObject(rr, folder, logger)
-		if err != nil {
-			return err
-		}
-	}
 
 	return nil
 }
