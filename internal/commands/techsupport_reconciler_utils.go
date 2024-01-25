@@ -387,7 +387,11 @@ func requeueTechsupportForCluster(
 	// matching the Cluster
 	for k := range techsupports {
 		techsupportSelector := techsupports[k]
-		parsedSelector, _ := labels.Parse(string(techsupportSelector))
+		parsedSelector, err := labels.Parse(string(techsupportSelector))
+		if err != nil {
+			// When clusterSelector is fixed, Techsupport will be reconciled
+			return requests
+		}
 		if parsedSelector.Matches(labels.Set(cluster.GetLabels())) {
 			requests = append(requests, ctrl.Request{
 				NamespacedName: client.ObjectKey{

@@ -42,9 +42,13 @@ var _ = Describe("HealthCheck", func() {
 					Name: randomString(),
 				},
 				Spec: libsveltosv1alpha1.HealthCheckSpec{
-					Group:   randomString(),
-					Version: randomString(),
-					Kind:    randomString(),
+					ResourceSelectors: []libsveltosv1alpha1.ResourceSelector{
+						{
+							Group:   randomString(),
+							Version: randomString(),
+							Kind:    randomString(),
+						},
+					},
 				},
 			}
 			initObjects = append(initObjects, hc)
