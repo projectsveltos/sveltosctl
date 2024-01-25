@@ -41,17 +41,7 @@ func (c byComponent) Less(i, j int) bool {
 	return c[i].component < c[j].component
 }
 
-func collectLogLevelConfiguration(ctx context.Context) ([]*componentConfiguration, error) {
-	instance := utils.GetAccessInstance()
-
-	dc, err := instance.GetDebuggingConfiguration(ctx)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return make([]*componentConfiguration, 0), nil
-		}
-		return nil, err
-	}
-
+func collectLogLevelConfiguration(ctx context.Context, dc *libsveltosv1alpha1.DebuggingConfiguration) ([]*componentConfiguration, error) {
 	configurationSettings := make([]*componentConfiguration, len(dc.Spec.Configuration))
 
 	for i, c := range dc.Spec.Configuration {
@@ -70,22 +60,8 @@ func collectLogLevelConfiguration(ctx context.Context) ([]*componentConfiguratio
 func updateLogLevelConfiguration(
 	ctx context.Context,
 	spec []libsveltosv1alpha1.ComponentConfiguration,
+	dc *libsveltosv1alpha1.DebuggingConfiguration,
 ) error {
-
-	instance := utils.GetAccessInstance()
-
-	dc, err := instance.GetDebuggingConfiguration(ctx)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			dc = &libsveltosv1alpha1.DebuggingConfiguration{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "default",
-				},
-			}
-		} else {
-			return err
-		}
-	}
 
 	dc.Spec = libsveltosv1alpha1.DebuggingConfigurationSpec{
 		Configuration: spec,
