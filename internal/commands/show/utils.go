@@ -37,7 +37,12 @@ func doConsiderClusterConfiguration(clusterConfiguration *configv1alpha1.Cluster
 		return true
 	}
 
-	return clusterConfiguration.Name == passedCluster
+	if clusterConfiguration.Labels == nil {
+		return false
+	}
+
+	clusterName := clusterConfiguration.Labels[configv1alpha1.ClusterNameLabel]
+	return clusterName == passedCluster
 }
 
 func doConsiderClusterReport(clusterReport *configv1alpha1.ClusterReport,
