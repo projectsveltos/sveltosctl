@@ -597,7 +597,7 @@ func rollbackClassifier(ctx context.Context, resource *unstructured.Unstructured
 func Rollback(ctx context.Context, args []string, logger logr.Logger) error {
 	//nolint: lll // command syntax
 	doc := `Usage:
-	sveltosctl snapshot rollback [options] --snapshot=<name> --sample=<name> [--namespace=<name>] [--profile=<name>] [--cluster=<name>] [--classifier=<name>] [--rolerequest=<name>] [--addoncompliance=<name>] [--verbose]
+	sveltosctl snapshot rollback [options] --snapshot=<name> --sample=<name> [--namespace=<name>] [--profile=<name>] [--cluster=<name>] [--classifier=<name>] [--rolerequest=<name>] [--verbose]
 
      --snapshot=<name>       Name of the Snapshot instance
      --sample=<name>         Name of the directory containing this sample.
