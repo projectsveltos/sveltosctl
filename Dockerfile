@@ -4,7 +4,8 @@ FROM golang:1.21 as builder
 ARG ARCH
 ARG GIT_VERSION=unknown
 ARG LDFLAGS
-
+ARG BUILDOS
+ARG TARGETARCH
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -20,7 +21,7 @@ COPY cmd/ cmd
 COPY internal/ internal/
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=$ARCH GO111MODULE=on go build -ldflags "$LDFLAGS" -a -o sveltosctl cmd/sveltosctl/main.go
+RUN CGO_ENABLED=0 GOOS=$BUILDOS GOARCH=$TARGETARCH GO111MODULE=on go build -ldflags "$LDFLAGS" -a -o sveltosctl cmd/sveltosctl/main.go
 
 LABEL name="Sveltos CLI tool" \
       vendor="Projectsveltos" \
