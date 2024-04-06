@@ -12,7 +12,7 @@ GO_INSTALL := ./scripts/go_install.sh
 REGISTRY ?= projectsveltos
 IMAGE_NAME ?= sveltosctl
 export SVELTOSCTL_IMG ?= $(REGISTRY)/$(IMAGE_NAME)
-TAG ?= v0.27.0
+TAG ?= main
 ARCH ?= amd64
 
 # Directories.
@@ -132,7 +132,7 @@ docker-build: ## Build the docker image for sveltosctl
 
 .PHONY: docker-buildx
 docker-buildx: ## docker build for multiple arch and push to docker hub
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t $(CONTROLLER_IMG):$(TAG) .
+	docker buildx build --push --platform linux/amd64,linux/arm64 -t $(SVELTOSCTL_IMG):$(TAG) .
 
 ##@ Build
 
