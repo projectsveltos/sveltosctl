@@ -48,6 +48,8 @@ func main() {
     snapshot       Displays collected snaphost. Visualize diffs between two collected snapshots.
     techsupport    Displays collected techsupport.
     register       Onboard an existing non CAPI cluster by creating all necessary internal resources.
+    generate       Generates a Kubeconfig that can later be used to register a cluster.
+                   Run this command with sveltosctl pointing to the cluster you want Sveltos to manage.
     log-level      Allows changing the log verbosity.
     version        Display the version of sveltosctl.
 
@@ -105,6 +107,8 @@ Description:
 			err = commands.Techsupport(ctx, args, logger)
 		case "register":
 			err = commands.RegisterCluster(ctx, args, logger)
+		case "generate":
+			err = commands.Generate(ctx, args, logger)
 		case "log-level":
 			err = commands.LogLevel(ctx, args, logger)
 		case "version":
