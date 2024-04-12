@@ -27,7 +27,6 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
@@ -38,22 +37,18 @@ import (
 const (
 	//nolint: gosec // Sveltos secret postfix
 	sveltosKubeconfigSecretNamePostfix = "-sveltos-kubeconfig"
+	kubeconfig                         = "kubeconfig"
 )
 
-func onboardSveltosCluster(ctx context.Context, clusterNamespace, clusterName, kubeconfigPath string, logger logr.Logger) error {
-	instance := utils.GetAccessInstance()
+func onboardSveltosCluster(ctx context.Context, clusterNamespace, clusterName, kubeconfigPath string,
+	labels map[string]string, logger logr.Logger) error {
 
-	logger.V(logs.LogDebug).Info(fmt.Sprintf("Verifying SveltosCluster %s/%s does not exist already", clusterNamespace, clusterName))
-	sveltosCluster := &libsveltosv1alpha1.SveltosCluster{}
-	err := instance.GetResource(ctx, types.NamespacedName{Namespace: clusterNamespace, Name: clusterName}, sveltosCluster)
-	if err != nil && !apierrors.IsNotFound(err) {
-		return err
-	}
+	instance := utils.GetAccessInstance()
 
 	secretName := clusterName + sveltosKubeconfigSecretNamePostfix
 	logger.V(logs.LogDebug).Info(fmt.Sprintf("Verifying Secret %s/%s does not exist already", clusterNamespace, secretName))
 	secret := &corev1.Secret{}
-	err = instance.GetResource(ctx, types.NamespacedName{Namespace: clusterNamespace, Name: secretName}, secret)
+	err := instance.GetResource(ctx, types.NamespacedName{Namespace: clusterNamespace, Name: secretName}, secret)
 	if err != nil && !apierrors.IsNotFound(err) {
 		return err
 	}
@@ -64,32 +59,39 @@ func onboardSveltosCluster(ctx context.Context, clusterNamespace, clusterName, k
 		return err
 	}
 
-	err = createSveltosCluster(ctx, clusterNamespace, clusterName, logger)
+	err = patchSveltosCluster(ctx, clusterNamespace, clusterName, labels, logger)
 	if err != nil {
 		return err
 	}
 
-	return createSecret(ctx, clusterNamespace, secretName, kubeconfigPath, logger)
+	return patchSecret(ctx, clusterNamespace, secretName, kubeconfigPath, logger)
 }
 
-func createSveltosCluster(ctx context.Context, clusterNamespace, clusterName string, logger logr.Logger) error {
+func patchSveltosCluster(ctx context.Context, clusterNamespace, clusterName string,
+	labels map[string]string, logger logr.Logger) error {
+
 	instance := utils.GetAccessInstance()
-	logger.V(logs.LogDebug).Info("Create SveltosCluster")
-	sveltosCluster := &libsveltosv1alpha1.SveltosCluster{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: clusterNamespace,
-			Name:      clusterName,
-		},
-	}
-	err := instance.CreateResource(ctx, sveltosCluster)
-	if err != nil && apierrors.IsAlreadyExists(err) {
-		return nil
+
+	currentSveltosCluster := &libsveltosv1alpha1.SveltosCluster{}
+	err := instance.GetResource(ctx, types.NamespacedName{Namespace: clusterNamespace, Name: clusterName},
+		currentSveltosCluster)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("Creating SveltosCluster %s/%s", clusterNamespace, clusterName))
+			currentSveltosCluster.Namespace = clusterNamespace
+			currentSveltosCluster.Name = clusterName
+			currentSveltosCluster.Labels = labels
+			return instance.CreateResource(ctx, currentSveltosCluster)
+		}
+		return err
 	}
 
-	return err
+	logger.V(logs.LogDebug).Info("Updating SveltosCluster")
+	currentSveltosCluster.Labels = labels
+	return instance.UpdateResource(ctx, currentSveltosCluster)
 }
 
-func createSecret(ctx context.Context, clusterNamespace, secretName, kubeconfigPath string, logger logr.Logger) error {
+func patchSecret(ctx context.Context, clusterNamespace, secretName, kubeconfigPath string, logger logr.Logger) error {
 	instance := utils.GetAccessInstance()
 
 	var data []byte
@@ -98,27 +100,43 @@ func createSecret(ctx context.Context, clusterNamespace, secretName, kubeconfigP
 		return err
 	}
 
-	logger.V(logs.LogDebug).Info("Create Secret")
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: clusterNamespace,
-			Name:      secretName,
-		},
-		Data: map[string][]byte{
-			"value": data,
-		},
+	currentSecret := &corev1.Secret{}
+	err = instance.GetResource(ctx, types.NamespacedName{Namespace: clusterNamespace, Name: secretName}, currentSecret)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("Creating Secret %s/%s", clusterNamespace, secretName))
+			currentSecret.Namespace = clusterNamespace
+			currentSecret.Name = secretName
+			currentSecret.Data = map[string][]byte{kubeconfig: data}
+			return instance.CreateResource(ctx, currentSecret)
+		}
+		return err
 	}
-	return instance.CreateResource(ctx, secret)
+
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("Updating Secret %s/%s", clusterNamespace, secretName))
+	currentSecret.Data = map[string][]byte{
+		kubeconfig: data,
+	}
+
+	return instance.UpdateResource(ctx, currentSecret)
 }
 
 // RegisterCluster takes care of creating all necessary internal resources to import a cluster
 func RegisterCluster(ctx context.Context, args []string, logger logr.Logger) error {
 	doc := `Usage:
-  sveltosctl register cluster [options] --namespace=<name> --cluster=<name> --kubeconfig=<file> [--verbose]
+  sveltosctl register cluster [options] --namespace=<name> --cluster=<name> --kubeconfig=<file> [--labels=<value>] [--verbose]
 
-     --namespace=<name>      The namespace where SveltosCluster will be created.
-     --cluster=<name>        The name of the SveltosCluster.
-     --kubeconfig=<file>     Path of the file containing the cluster kubeconfig.
+     --namespace=<name>                  Specifies the namespace where Sveltos will create a resource (SveltosCluster) to represent the registered cluster.
+     --cluster=<name>                    Defines a name for the registered cluster within Sveltos.
+     --kubeconfig=<file>                 Provides the path to a file containing the kubeconfig for the Kubernetes cluster you want to register.
+                                         If you don't have a kubeconfig file yet, you can use the "sveltosctl generate kubeconfig" command. Be sure 
+                                         to point that command to the specific cluster you want to manage. This will help you create the necessary 
+                                         kubeconfig file before registering the cluster with Sveltos.
+     --labels=<key1=value1,key2=value2>  (Optional) This option allows you to specify labels for the SveltosCluster resource being created.
+                                         The format for labels is <key1=value1,key2=value2>, where each key-value pair is separated by a comma (,) and 
+                                         the key and value are separated by an equal sign (=). You can define multiple labels by adding more key-value pairs
+                                         separated by commas.
+
 
 Options:
   -h --help                  Show this screen.
@@ -159,10 +177,33 @@ Description:
 		cluster = passedCluster.(string)
 	}
 
+	var labels map[string]string
+	if passedLabels := parsedArgs["--labels"]; passedLabels != nil {
+		labels, err = stringToMap(passedLabels.(string))
+		if err != nil {
+			return err
+		}
+	}
+
 	kubeconfig := ""
 	if passedKubeconfig := parsedArgs["--kubeconfig"]; passedKubeconfig != nil {
 		kubeconfig = passedKubeconfig.(string)
 	}
 
-	return onboardSveltosCluster(ctx, namespace, cluster, kubeconfig, logger)
+	return onboardSveltosCluster(ctx, namespace, cluster, kubeconfig, labels, logger)
+}
+
+func stringToMap(data string) (map[string]string, error) {
+	const keyValueLength = 2
+	result := make(map[string]string)
+	for _, pair := range strings.Split(data, ",") {
+		kv := strings.Split(pair, "=")
+		if len(kv) != keyValueLength {
+			return nil, fmt.Errorf("invalid key-value pair format: %s", pair)
+		}
+		key := strings.TrimSpace(kv[0])
+		value := strings.TrimSpace(kv[1])
+		result[key] = value
+	}
+	return result, nil
 }

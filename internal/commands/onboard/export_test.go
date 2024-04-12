@@ -22,8 +22,5 @@ var (
 
 const (
 	SveltosKubeconfigSecretNamePostfix = sveltosKubeconfigSecretNamePostfix
-)
-
-var (
-	CreateSveltosCluster = createSveltosCluster
+	Kubeconfig                         = kubeconfig
 )

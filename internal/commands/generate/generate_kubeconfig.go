@@ -269,24 +269,29 @@ func GenerateKubeconfig(ctx context.Context, args []string, logger logr.Logger) 
 	doc := `Usage:
   sveltosctl generate kubeconfig [options] [--namespace=<name>] [--serviceaccount=<name>] [--create] [--verbose]
 
-     --namespace=<name>      The namespace of the ServiceAccount. If not specified, projectsveltos namespace will be used.
-     --serviceaccount=<name> The name of the ServiceAccount. If not specified, projectsveltos will be used.
-     --create                If a ServiceAccount with enough permissions is already present, do not set this flag.
-                             Sveltos will generate a Kubeconfig associated to that ServiceAccount.
-                             If a ServiceAccount with cluster admin permissions needs to be created, use this option.
-                             When this option is set, this command will create necessary resources:
-                             1. namespace if not existing already
-                             2. serviceAccount if not existing already
-                             3. ClusterRole with cluster admin permission
-                             4. ClusterRoleBinding granting the serviceAccount cluster admin permissions
-                             5. TokenRequest for the ServiceAccount							 
+     --namespace=<name>      (Optional) Specifies the namespace of the ServiceAccount to use. If not provided, the "projectsveltos" namespace will be used.
+     --serviceaccount=<name> (Optional) Specifies the name of the ServiceAccount to use. If not provided, "projectsveltos" will be used.
+     --create                (Optional) If set, Sveltos will create the necessary resources if they don't already exist:
+                             - The specified namespace (if not already present)
+                             - The specified ServiceAccount (if not already present)
+                             - A ClusterRole with cluster-admin permissions
+                             - A ClusterRoleBinding granting the ServiceAccount cluster-admin permissions
+
+Process:
+
+Sveltos will either use an existing ServiceAccount with sufficient permissions (if --create is not set) or create a new one with 
+cluster-admin permissions (if --create is set).
+Sveltos will generate a TokenRequest for the chosen ServiceAccount. Based on the TokenRequest, Sveltos will generate a kubeconfig 
+file and output it.
+The Kubeconfig can then be used with "sveltosctl register cluster" command.
 
 Options:
   -h --help                  Show this screen.
      --verbose               Verbose mode. Print each step.  
 
 Description:
-  The generate kubeconfig command will generate a Kubeconfig that can later on be used to register the cluster.
+This command helps you set up credentials (kubeconfig) to access a Kubernetes cluster using Sveltos. It allows you to specify a ServiceAccount 
+or create a new one with the necessary permissions.
 `
 	parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
 	if err != nil {
