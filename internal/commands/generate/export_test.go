@@ -16,10 +16,6 @@ limitations under the License.
 
 package generate
 
-const (
-	Projectsveltos = projectsveltos
-)
-
 var (
 	CreateNamespace          = createNamespace
 	CreateClusterRole        = createClusterRole

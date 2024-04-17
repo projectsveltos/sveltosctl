@@ -22,15 +22,19 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/docopt/docopt-go"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/clientcmd"
 
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
+	"github.com/projectsveltos/sveltosctl/internal/commands/generate"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -40,8 +44,8 @@ const (
 	kubeconfig                         = "kubeconfig"
 )
 
-func onboardSveltosCluster(ctx context.Context, clusterNamespace, clusterName, kubeconfigPath string,
-	labels map[string]string, logger logr.Logger) error {
+func onboardSveltosCluster(ctx context.Context, clusterNamespace, clusterName string, kubeconfigData []byte,
+	labels map[string]string, renew bool, logger logr.Logger) error {
 
 	instance := utils.GetAccessInstance()
 
@@ -53,22 +57,16 @@ func onboardSveltosCluster(ctx context.Context, clusterNamespace, clusterName, k
 		return err
 	}
 
-	// Read file
-	_, err = os.ReadFile(kubeconfigPath)
+	err = patchSveltosCluster(ctx, clusterNamespace, clusterName, labels, renew, logger)
 	if err != nil {
 		return err
 	}
 
-	err = patchSveltosCluster(ctx, clusterNamespace, clusterName, labels, logger)
-	if err != nil {
-		return err
-	}
-
-	return patchSecret(ctx, clusterNamespace, secretName, kubeconfigPath, logger)
+	return patchSecret(ctx, clusterNamespace, secretName, kubeconfigData, logger)
 }
 
 func patchSveltosCluster(ctx context.Context, clusterNamespace, clusterName string,
-	labels map[string]string, logger logr.Logger) error {
+	labels map[string]string, renew bool, logger logr.Logger) error {
 
 	instance := utils.GetAccessInstance()
 
@@ -81,6 +79,12 @@ func patchSveltosCluster(ctx context.Context, clusterNamespace, clusterName stri
 			currentSveltosCluster.Namespace = clusterNamespace
 			currentSveltosCluster.Name = clusterName
 			currentSveltosCluster.Labels = labels
+			if renew {
+				currentSveltosCluster.Spec.TokenRequestRenewalOption = &libsveltosv1alpha1.TokenRequestRenewalOption{
+					RenewTokenRequestInterval: metav1.Duration{Duration: 24 * time.Hour},
+				}
+			}
+
 			return instance.CreateResource(ctx, currentSveltosCluster)
 		}
 		return err
@@ -91,23 +95,17 @@ func patchSveltosCluster(ctx context.Context, clusterNamespace, clusterName stri
 	return instance.UpdateResource(ctx, currentSveltosCluster)
 }
 
-func patchSecret(ctx context.Context, clusterNamespace, secretName, kubeconfigPath string, logger logr.Logger) error {
+func patchSecret(ctx context.Context, clusterNamespace, secretName string, kubeconfigData []byte, logger logr.Logger) error {
 	instance := utils.GetAccessInstance()
 
-	var data []byte
-	data, err := os.ReadFile(kubeconfigPath)
-	if err != nil {
-		return err
-	}
-
 	currentSecret := &corev1.Secret{}
-	err = instance.GetResource(ctx, types.NamespacedName{Namespace: clusterNamespace, Name: secretName}, currentSecret)
+	err := instance.GetResource(ctx, types.NamespacedName{Namespace: clusterNamespace, Name: secretName}, currentSecret)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.V(logs.LogDebug).Info(fmt.Sprintf("Creating Secret %s/%s", clusterNamespace, secretName))
 			currentSecret.Namespace = clusterNamespace
 			currentSecret.Name = secretName
-			currentSecret.Data = map[string][]byte{kubeconfig: data}
+			currentSecret.Data = map[string][]byte{kubeconfig: kubeconfigData}
 			return instance.CreateResource(ctx, currentSecret)
 		}
 		return err
@@ -115,7 +113,7 @@ func patchSecret(ctx context.Context, clusterNamespace, secretName, kubeconfigPa
 
 	logger.V(logs.LogDebug).Info(fmt.Sprintf("Updating Secret %s/%s", clusterNamespace, secretName))
 	currentSecret.Data = map[string][]byte{
-		kubeconfig: data,
+		kubeconfig: kubeconfigData,
 	}
 
 	return instance.UpdateResource(ctx, currentSecret)
@@ -124,14 +122,23 @@ func patchSecret(ctx context.Context, clusterNamespace, secretName, kubeconfigPa
 // RegisterCluster takes care of creating all necessary internal resources to import a cluster
 func RegisterCluster(ctx context.Context, args []string, logger logr.Logger) error {
 	doc := `Usage:
-  sveltosctl register cluster [options] --namespace=<name> --cluster=<name> --kubeconfig=<file> [--labels=<value>] [--verbose]
+  sveltosctl register cluster [options] --namespace=<name> --cluster=<name> [--kubeconfig=<file>] [--fleet-cluster-context=<value>] [--labels=<value>] 
+                              [--verbose]
 
      --namespace=<name>                  Specifies the namespace where Sveltos will create a resource (SveltosCluster) to represent the registered cluster.
      --cluster=<name>                    Defines a name for the registered cluster within Sveltos.
-     --kubeconfig=<file>                 Provides the path to a file containing the kubeconfig for the Kubernetes cluster you want to register.
+     --kubeconfig=<file>                 (Optional) Provides the path to a file containing the kubeconfig for the Kubernetes cluster you want to register.
                                          If you don't have a kubeconfig file yet, you can use the "sveltosctl generate kubeconfig" command. Be sure 
                                          to point that command to the specific cluster you want to manage. This will help you create the necessary 
                                          kubeconfig file before registering the cluster with Sveltos.
+                                         Either --kubeconfig or --fleet-cluster-context must be provided.
+     --fleet-cluster-context=<value>     (Optional) If your kubeconfig has multiple contexts:
+                                         - One context points to the management cluster (default one)
+                                         - Another context points to the cluster you actually want to manage;
+                                         In this case, you can specify the context name with the --fleet-cluster-context flag. This tells
+                                         the command to use the specific context to generate a Kubeconfig Sveltos can use and then create
+                                         a SveltosCluster with it so you don't have to provide kubeconfig
+                                         Either --kubeconfig or --fleet-cluster-context must be provided.
      --labels=<key1=value1,key2=value2>  (Optional) This option allows you to specify labels for the SveltosCluster resource being created.
                                          The format for labels is <key1=value1,key2=value2>, where each key-value pair is separated by a comma (,) and 
                                          the key and value are separated by an equal sign (=). You can define multiple labels by adding more key-value pairs
@@ -190,7 +197,42 @@ Description:
 		kubeconfig = passedKubeconfig.(string)
 	}
 
-	return onboardSveltosCluster(ctx, namespace, cluster, kubeconfig, labels, logger)
+	renew := false
+	fleetClusterContext := ""
+	if passedContext := parsedArgs["--fleet-cluster-context"]; passedContext != nil {
+		fleetClusterContext = passedContext.(string)
+		renew = true
+	}
+
+	if kubeconfig == "" && fleetClusterContext == "" {
+		return fmt.Errorf("either kubeconfig or fleet-cluster-context must be specified")
+	}
+
+	data, err := getKubeconfigData(ctx, kubeconfig, fleetClusterContext, logger)
+	if err != nil {
+		return err
+	}
+
+	return onboardSveltosCluster(ctx, namespace, cluster, data, labels, renew, logger)
+}
+
+func getKubeconfigData(ctx context.Context, kubeconfigFile, fleetClusterContext string, logger logr.Logger) ([]byte, error) {
+	var data []byte
+	if fleetClusterContext != "" {
+		kubeconfigData, err := createKubeconfig(ctx, fleetClusterContext, logger)
+		if err != nil {
+			return nil, err
+		}
+		data = []byte(kubeconfigData)
+	} else {
+		var err error
+		data, err = os.ReadFile(kubeconfigFile)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return data, nil
 }
 
 func stringToMap(data string) (map[string]string, error) {
@@ -206,4 +248,69 @@ func stringToMap(data string) (map[string]string, error) {
 		result[key] = value
 	}
 	return result, nil
+}
+
+func createKubeconfig(ctx context.Context, fleetClusterContext string, logger logr.Logger) (string, error) {
+	logger.V(logs.LogDebug).Info("Get current context")
+	currentContext, err := getCurrentContext()
+	if err != nil {
+		return "", err
+	}
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("current context %s", currentContext))
+
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("Switch context to %s", fleetClusterContext))
+	err = switchCurrentContext(fleetClusterContext)
+	if err != nil {
+		return "", err
+	}
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("switched to context %s", fleetClusterContext))
+
+	logger.V(logs.LogDebug).Info("Generate Kubeconfig")
+	var data string
+	data, err = generate.GenerateKubeconfigForServiceAccount(ctx, generate.Projectsveltos, generate.Projectsveltos, 0, true, false, logger)
+	if err != nil {
+		return "", err
+	}
+
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("Reset context to %s", currentContext))
+	err = switchCurrentContext(currentContext)
+	if err != nil {
+		return "", err
+	}
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("switched to context %s", currentContext))
+
+	return data, nil
+}
+
+func getCurrentContext() (string, error) {
+	kubeconfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(clientcmd.NewDefaultClientConfigLoadingRules(), &clientcmd.ConfigOverrides{})
+	config, err := kubeconfig.RawConfig()
+	if err != nil {
+		return "", err
+	}
+
+	return config.CurrentContext, nil
+}
+
+func switchCurrentContext(fleetClusterContext string) error {
+	kubeconfig := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(clientcmd.NewDefaultClientConfigLoadingRules(), &clientcmd.ConfigOverrides{})
+	config, err := kubeconfig.RawConfig()
+
+	if err != nil {
+		return err
+	}
+
+	for contextName := range config.Contexts {
+		if contextName == fleetClusterContext {
+			config.CurrentContext = fleetClusterContext
+			err = clientcmd.ModifyConfig(clientcmd.NewDefaultPathOptions(), config, true)
+			if err != nil {
+				return fmt.Errorf("error ModifyConfig: %w", err)
+			}
+
+			return nil
+		}
+	}
+
+	return fmt.Errorf("error context %s not found", fleetClusterContext)
 }

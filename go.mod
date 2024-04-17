@@ -1,6 +1,8 @@
 module github.com/projectsveltos/sveltosctl
 
-go 1.21
+go 1.22.0
+
+toolchain go1.22.2
 
 require (
 	github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815
@@ -14,7 +16,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/projectsveltos/addon-controller v0.27.1-0.20240405170833-7fa049caf6a3
 	github.com/projectsveltos/event-manager v0.26.1-0.20240315124018-bf7536defbe2
-	github.com/projectsveltos/libsveltos v0.27.1-0.20240405132615-9e1a36ca5c8f
+	github.com/projectsveltos/libsveltos v0.27.1-0.20240414121914-1eb0b89fc6c9
 	github.com/robfig/cron/v3 v3.0.1
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.29.3
@@ -24,7 +26,7 @@ require (
 	k8s.io/klog/v2 v2.120.1
 	k8s.io/kubectl v0.29.3
 	sigs.k8s.io/cluster-api v1.6.3
-	sigs.k8s.io/controller-runtime v0.17.2
+	sigs.k8s.io/controller-runtime v0.17.3
 	sigs.k8s.io/yaml v1.4.0
 )
 

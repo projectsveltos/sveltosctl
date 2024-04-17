@@ -18,7 +18,6 @@ package onboard_test
 
 import (
 	"context"
-	"os"
 	"reflect"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -40,14 +39,7 @@ var _ = Describe("OnboardCluster", func() {
 	It("onboardSveltosCluster creates SveltosCluster and Secret", func() {
 		data := randomString()
 
-		// Create temp file
-		kubeconfigFile, err := os.CreateTemp("", "kubeconfig")
-		Expect(err).To(BeNil())
-
-		defer os.Remove(kubeconfigFile.Name())
-
-		_, err = kubeconfigFile.WriteString(data)
-		Expect(err).To(BeNil())
+		kubeconfigData := []byte(data)
 
 		clusterNamespace := randomString()
 		clusterName := randomString()
@@ -64,8 +56,8 @@ var _ = Describe("OnboardCluster", func() {
 			randomString(): randomString(),
 		}
 
-		Expect(onboard.OnboardSveltosCluster(context.TODO(), clusterNamespace, clusterName, kubeconfigFile.Name(),
-			labels, textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
+		Expect(onboard.OnboardSveltosCluster(context.TODO(), clusterNamespace, clusterName, kubeconfigData,
+			labels, false, textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		instance := utils.GetAccessInstance()
 
@@ -89,7 +81,7 @@ var _ = Describe("OnboardCluster", func() {
 			randomString(): randomString(),
 		}
 
-		Expect(onboard.OnboardSveltosCluster(context.TODO(), clusterNamespace, clusterName, kubeconfigFile.Name(),
-			labels, textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
+		Expect(onboard.OnboardSveltosCluster(context.TODO(), clusterNamespace, clusterName, kubeconfigData,
+			labels, false, textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 	})
 })
