@@ -116,6 +116,22 @@ Usage:
      --profile=<kind/name>  Show addons deployed because of this clusterprofile/profile. If not specified all clusterprofiles/profiles are considered.
 ```
 
+## Register a cluster
+
+If there is kubeconfig with multiple contexts, the option __fleet-cluster-context__
+allows to specify the context for the cluster to be managed.
+
+So with default context pointing to the management cluster, following command will:
+1. create a ServiceAccount in the managed cluster (using cluster-1 context)
+2. grant this ServiceAccount cluster-admin permission
+3. create a TokenRequest for such account and a Kubeconfig with bearer token from the TokenRequest
+4. create a SveltosCluster in the management cluster (so using default context) and a Secret
+with kubeconfig generated in the step above
+
+```
+sveltosctl register cluster --namespace=gcp --cluster=cluster-1 --fleet-cluster-context=cluster-1 --labels=k1=v1,k2=v2
+```
+
 ## Display information about resources in managed cluster
 
 **show resources** looks at all the HealthCheckReport instances and display information about those.

@@ -39,45 +39,47 @@ import (
 )
 
 const (
-	projectsveltos = "projectsveltos"
+	Projectsveltos = "projectsveltos"
 )
 
-func generateKubeconfigForServiceAccount(ctx context.Context, namespace, serviceAccountName string,
-	expirationSeconds int, create bool, logger logr.Logger) error {
+func GenerateKubeconfigForServiceAccount(ctx context.Context, namespace, serviceAccountName string,
+	expirationSeconds int, create, display bool, logger logr.Logger) (string, error) {
 
 	if create {
 		if err := createNamespace(ctx, namespace, logger); err != nil {
-			return err
+			return "", err
 		}
 		if err := createServiceAccount(ctx, namespace, serviceAccountName, logger); err != nil {
-			return err
+			return "", err
 		}
-		if err := createClusterRole(ctx, projectsveltos, logger); err != nil {
-			return err
+		if err := createClusterRole(ctx, Projectsveltos, logger); err != nil {
+			return "", err
 		}
-		if err := createClusterRoleBinding(ctx, projectsveltos, projectsveltos, namespace, serviceAccountName, logger); err != nil {
-			return err
+		if err := createClusterRoleBinding(ctx, Projectsveltos, Projectsveltos, namespace, serviceAccountName, logger); err != nil {
+			return "", err
 		}
 	} else {
 		if err := getNamespace(ctx, namespace); err != nil {
-			return err
+			return "", err
 		}
 		if err := getServiceAccount(ctx, namespace, serviceAccountName); err != nil {
-			return err
+			return "", err
 		}
 	}
 
 	tokenRequest, err := getServiceAccountTokenRequest(ctx, namespace, serviceAccountName, expirationSeconds, logger)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	logger.V(logs.LogDebug).Info("Get Kubeconfig from TokenRequest")
 	data := getKubeconfigFromToken(namespace, serviceAccountName, tokenRequest.Token)
-	//nolint: forbidigo // print kubeconfig
-	fmt.Println(data)
+	if display {
+		//nolint: forbidigo // print kubeconfig
+		fmt.Println(data)
+	}
 
-	return nil
+	return data, nil
 }
 
 func getNamespace(ctx context.Context, name string) error {
@@ -325,12 +327,12 @@ or create a new one with the necessary permissions.
 		}
 	}
 
-	namespace := projectsveltos
+	namespace := Projectsveltos
 	if passedNamespace := parsedArgs["--namespace"]; passedNamespace != nil {
 		namespace = passedNamespace.(string)
 	}
 
-	serviceAccount := projectsveltos
+	serviceAccount := Projectsveltos
 	if passedServiceAccount := parsedArgs["--serviceaccount"]; passedServiceAccount != nil {
 		serviceAccount = passedServiceAccount.(string)
 	}
@@ -345,6 +347,7 @@ or create a new one with the necessary permissions.
 
 	create := parsedArgs["--create"].(bool)
 
-	return generateKubeconfigForServiceAccount(ctx, namespace, serviceAccount, expirationSeconds,
-		create, logger)
+	_, err = GenerateKubeconfigForServiceAccount(ctx, namespace, serviceAccount, expirationSeconds,
+		create, true, logger)
+	return err
 }
