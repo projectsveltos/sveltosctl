@@ -221,7 +221,15 @@ Description:
 func getKubeconfigData(ctx context.Context, kubeconfigFile, fleetClusterContext string, logger logr.Logger) ([]byte, error) {
 	var data []byte
 	if fleetClusterContext != "" {
+		currentContext, err := getCurrentContext()
+		if err != nil {
+			return nil, err
+		}
 		kubeconfigData, err := createKubeconfig(ctx, fleetClusterContext, logger)
+		if err != nil {
+			return nil, err
+		}
+		err = switchCurrentContext(currentContext)
 		if err != nil {
 			return nil, err
 		}
