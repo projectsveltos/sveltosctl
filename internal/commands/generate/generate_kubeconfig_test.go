@@ -40,7 +40,7 @@ var _ = Describe("Register Mgmt Cluster", func() {
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
 
 		ns := randomString()
-		Expect(generate.CreateNamespace(context.TODO(), ns,
+		Expect(generate.CreateNamespace(context.TODO(), c, ns,
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		currentNs := &corev1.Namespace{}
@@ -53,14 +53,14 @@ var _ = Describe("Register Mgmt Cluster", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).Build()
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
 
-		Expect(generate.CreateClusterRole(context.TODO(), generate.Projectsveltos,
+		Expect(generate.CreateClusterRole(context.TODO(), c, generate.Projectsveltos,
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		currentClusterRole := &rbacv1.ClusterRole{}
 		Expect(c.Get(context.TODO(), types.NamespacedName{Name: generate.Projectsveltos},
 			currentClusterRole)).To(Succeed())
 
-		Expect(generate.CreateClusterRole(context.TODO(), generate.Projectsveltos,
+		Expect(generate.CreateClusterRole(context.TODO(), c, generate.Projectsveltos,
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 	})
 
@@ -72,7 +72,7 @@ var _ = Describe("Register Mgmt Cluster", func() {
 
 		saNamespace := randomString()
 		saName := randomString()
-		Expect(generate.CreateClusterRoleBinding(context.TODO(), generate.Projectsveltos,
+		Expect(generate.CreateClusterRoleBinding(context.TODO(), c, generate.Projectsveltos,
 			generate.Projectsveltos, saNamespace, saName,
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
@@ -88,7 +88,7 @@ var _ = Describe("Register Mgmt Cluster", func() {
 		Expect(currentClusterRoleBinding.Subjects[0].Namespace).To(Equal(saNamespace))
 		Expect(currentClusterRoleBinding.Subjects[0].Kind).To(Equal("ServiceAccount"))
 
-		Expect(generate.CreateClusterRoleBinding(context.TODO(), generate.Projectsveltos,
+		Expect(generate.CreateClusterRoleBinding(context.TODO(), c, generate.Projectsveltos,
 			generate.Projectsveltos, saNamespace, saName,
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 	})

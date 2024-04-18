@@ -30,7 +30,9 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
@@ -265,9 +267,16 @@ func createKubeconfig(ctx context.Context, fleetClusterContext string, logger lo
 	}
 	logger.V(logs.LogDebug).Info(fmt.Sprintf("switched to context %s", fleetClusterContext))
 
+	var remoteRestConfig *rest.Config
+	remoteRestConfig, err = ctrl.GetConfig()
+	if err != nil {
+		return "", err
+	}
+
 	logger.V(logs.LogDebug).Info("Generate Kubeconfig")
 	var data string
-	data, err = generate.GenerateKubeconfigForServiceAccount(ctx, generate.Projectsveltos, generate.Projectsveltos, 0, true, false, logger)
+	data, err = generate.GenerateKubeconfigForServiceAccount(ctx, remoteRestConfig, generate.Projectsveltos, generate.Projectsveltos,
+		0, true, false, logger)
 	if err != nil {
 		return "", err
 	}
