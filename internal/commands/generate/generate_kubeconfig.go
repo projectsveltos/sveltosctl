@@ -31,8 +31,12 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/rest"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
@@ -42,38 +46,58 @@ const (
 	Projectsveltos = "projectsveltos"
 )
 
-func GenerateKubeconfigForServiceAccount(ctx context.Context, namespace, serviceAccountName string,
+func GenerateKubeconfigForServiceAccount(ctx context.Context, remoteRestConfig *rest.Config, namespace, serviceAccountName string,
 	expirationSeconds int, create, display bool, logger logr.Logger) (string, error) {
 
+	s := runtime.NewScheme()
+	err := clientgoscheme.AddToScheme(s)
+	if err != nil {
+		return "", err
+	}
+
+	var remoteClient client.Client
+	remoteClient, err = client.New(remoteRestConfig, client.Options{Scheme: s})
+	if err != nil {
+		return "", err
+	}
+
 	if create {
-		if err := createNamespace(ctx, namespace, logger); err != nil {
+		err = createNamespace(ctx, remoteClient, namespace, logger)
+		if err != nil {
 			return "", err
 		}
-		if err := createServiceAccount(ctx, namespace, serviceAccountName, logger); err != nil {
+		err = createServiceAccount(ctx, remoteClient, namespace, serviceAccountName, logger)
+		if err != nil {
 			return "", err
 		}
-		if err := createClusterRole(ctx, Projectsveltos, logger); err != nil {
+		err = createClusterRole(ctx, remoteClient, Projectsveltos, logger)
+		if err != nil {
 			return "", err
 		}
-		if err := createClusterRoleBinding(ctx, Projectsveltos, Projectsveltos, namespace, serviceAccountName, logger); err != nil {
+		err = createClusterRoleBinding(ctx, remoteClient, Projectsveltos, Projectsveltos, namespace,
+			serviceAccountName, logger)
+		if err != nil {
 			return "", err
 		}
 	} else {
-		if err := getNamespace(ctx, namespace); err != nil {
+		err = getNamespace(ctx, remoteClient, namespace)
+		if err != nil {
 			return "", err
 		}
-		if err := getServiceAccount(ctx, namespace, serviceAccountName); err != nil {
+		err = getServiceAccount(ctx, remoteClient, namespace, serviceAccountName)
+		if err != nil {
 			return "", err
 		}
 	}
 
-	tokenRequest, err := getServiceAccountTokenRequest(ctx, namespace, serviceAccountName, expirationSeconds, logger)
+	tokenRequest, err := getServiceAccountTokenRequest(ctx, remoteRestConfig, namespace, serviceAccountName,
+		expirationSeconds, logger)
 	if err != nil {
 		return "", err
 	}
 
 	logger.V(logs.LogDebug).Info("Get Kubeconfig from TokenRequest")
-	data := getKubeconfigFromToken(namespace, serviceAccountName, tokenRequest.Token)
+	data := getKubeconfigFromToken(remoteRestConfig, namespace, serviceAccountName, tokenRequest.Token)
 	if display {
 		//nolint: forbidigo // print kubeconfig
 		fmt.Println(data)
@@ -82,21 +106,20 @@ func GenerateKubeconfigForServiceAccount(ctx context.Context, namespace, service
 	return data, nil
 }
 
-func getNamespace(ctx context.Context, name string) error {
-	instance := utils.GetAccessInstance()
+func getNamespace(ctx context.Context, remoteClient client.Client, name string) error {
 	currentNs := &corev1.Namespace{}
-	return instance.GetClient().Get(ctx, types.NamespacedName{Name: name}, currentNs)
+	return remoteClient.Get(ctx, types.NamespacedName{Name: name}, currentNs)
 }
 
-func createNamespace(ctx context.Context, name string, logger logr.Logger) error {
+func createNamespace(ctx context.Context, remoteClient client.Client, name string, logger logr.Logger) error {
 	logger.V(logs.LogDebug).Info(fmt.Sprintf("Create namespace %s", name))
 	currentNs := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
 	}
-	instance := utils.GetAccessInstance()
-	err := instance.GetClient().Create(ctx, currentNs)
+
+	err := remoteClient.Create(ctx, currentNs)
 	if err != nil && !apierrors.IsAlreadyExists(err) {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("Failed to create Namespace %s: %v",
 			name, err))
@@ -106,15 +129,14 @@ func createNamespace(ctx context.Context, name string, logger logr.Logger) error
 	return nil
 }
 
-func getServiceAccount(ctx context.Context, namespace, name string) error {
-	instance := utils.GetAccessInstance()
+func getServiceAccount(ctx context.Context, remoteClient client.Client, namespace, name string) error {
 	currentSA := &corev1.ServiceAccount{}
-	return instance.GetClient().Get(ctx,
+	return remoteClient.Get(ctx,
 		types.NamespacedName{Namespace: namespace, Name: name},
 		currentSA)
 }
 
-func createServiceAccount(ctx context.Context, namespace, name string,
+func createServiceAccount(ctx context.Context, remoteClient client.Client, namespace, name string,
 	logger logr.Logger) error {
 
 	logger.V(logs.LogDebug).Info(fmt.Sprintf("Create serviceAccount %s/%s", namespace, name))
@@ -124,8 +146,8 @@ func createServiceAccount(ctx context.Context, namespace, name string,
 			Name:      name,
 		},
 	}
-	instance := utils.GetAccessInstance()
-	err := instance.GetClient().Create(ctx, currentSA)
+
+	err := remoteClient.Create(ctx, currentSA)
 	if err != nil && !apierrors.IsAlreadyExists(err) {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("Failed to create ServiceAccount %s/%s: %v",
 			namespace, name, err))
@@ -135,8 +157,8 @@ func createServiceAccount(ctx context.Context, namespace, name string,
 	return nil
 }
 
-func createClusterRole(ctx context.Context, clusterRoleName string, logger logr.Logger) error {
-	instance := utils.GetAccessInstance()
+func createClusterRole(ctx context.Context, remoteClient client.Client, clusterRoleName string,
+	logger logr.Logger) error {
 
 	logger.V(logs.LogDebug).Info(fmt.Sprintf("Create ClusterRole %s", clusterRoleName))
 	// Extends permission in addon-controller-role-extra
@@ -157,7 +179,7 @@ func createClusterRole(ctx context.Context, clusterRoleName string, logger logr.
 		},
 	}
 
-	err := instance.GetClient().Create(ctx, clusterrole)
+	err := remoteClient.Create(ctx, clusterrole)
 	if err != nil && !apierrors.IsAlreadyExists(err) {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("Failed to create ClusterRole %s: %v",
 			clusterRoleName, err))
@@ -167,10 +189,9 @@ func createClusterRole(ctx context.Context, clusterRoleName string, logger logr.
 	return nil
 }
 
-func createClusterRoleBinding(ctx context.Context, clusterRoleName, clusterRoleBindingName, serviceAccountNamespace, serviceAccountName string,
+func createClusterRoleBinding(ctx context.Context, remoteClient client.Client,
+	clusterRoleName, clusterRoleBindingName, serviceAccountNamespace, serviceAccountName string,
 	logger logr.Logger) error {
-
-	instance := utils.GetAccessInstance()
 
 	logger.V(logs.LogDebug).Info(fmt.Sprintf("Create ClusterRoleBinding %s", clusterRoleBindingName))
 	clusterrolebinding := &rbacv1.ClusterRoleBinding{
@@ -191,7 +212,7 @@ func createClusterRoleBinding(ctx context.Context, clusterRoleName, clusterRoleB
 			},
 		},
 	}
-	err := instance.GetClient().Create(ctx, clusterrolebinding)
+	err := remoteClient.Create(ctx, clusterrolebinding)
 	if err != nil && !apierrors.IsAlreadyExists(err) {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("Failed to create clusterrolebinding %s: %v",
 			clusterRoleBindingName, err))
@@ -202,10 +223,8 @@ func createClusterRoleBinding(ctx context.Context, clusterRoleName, clusterRoleB
 }
 
 // getServiceAccountTokenRequest returns token for a serviceaccount
-func getServiceAccountTokenRequest(ctx context.Context, serviceAccountNamespace, serviceAccountName string,
+func getServiceAccountTokenRequest(ctx context.Context, remoteRestConfig *rest.Config, serviceAccountNamespace, serviceAccountName string,
 	expirationSeconds int, logger logr.Logger) (*authenticationv1.TokenRequestStatus, error) {
-
-	instance := utils.GetAccessInstance()
 
 	expiration := int64(expirationSeconds)
 
@@ -217,7 +236,7 @@ func getServiceAccountTokenRequest(ctx context.Context, serviceAccountNamespace,
 		}
 	}
 
-	clientset, err := kubernetes.NewForConfig(instance.GetConfig())
+	clientset, err := kubernetes.NewForConfig(remoteRestConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -238,7 +257,7 @@ func getServiceAccountTokenRequest(ctx context.Context, serviceAccountNamespace,
 }
 
 // getKubeconfigFromToken returns Kubeconfig to access management cluster from token.
-func getKubeconfigFromToken(namespace, serviceAccountName, token string) string {
+func getKubeconfigFromToken(remoteRestConfig *rest.Config, namespace, serviceAccountName, token string) string {
 	template := `apiVersion: v1
 kind: Config
 clusters:
@@ -258,10 +277,8 @@ contexts:
     user: %s
 current-context: sveltos-context`
 
-	instance := utils.GetAccessInstance()
-
-	data := fmt.Sprintf(template, instance.GetConfig().Host,
-		base64.StdEncoding.EncodeToString(instance.GetConfig().CAData), serviceAccountName, token, namespace, serviceAccountName)
+	data := fmt.Sprintf(template, remoteRestConfig.Host,
+		base64.StdEncoding.EncodeToString(remoteRestConfig.CAData), serviceAccountName, token, namespace, serviceAccountName)
 
 	return data
 }
@@ -347,7 +364,7 @@ or create a new one with the necessary permissions.
 
 	create := parsedArgs["--create"].(bool)
 
-	_, err = GenerateKubeconfigForServiceAccount(ctx, namespace, serviceAccount, expirationSeconds,
-		create, true, logger)
+	_, err = GenerateKubeconfigForServiceAccount(ctx, utils.GetAccessInstance().GetConfig(),
+		namespace, serviceAccount, expirationSeconds, create, true, logger)
 	return err
 }
