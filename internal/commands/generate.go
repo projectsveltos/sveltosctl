@@ -1,5 +1,5 @@
 /*
-Copyright 2022. projectsveltos.io. All rights reserved.
+Copyright 2024. projectsveltos.io. All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -27,21 +27,22 @@ import (
 	"github.com/go-logr/logr"
 
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	"github.com/projectsveltos/sveltosctl/internal/commands/onboard"
+	"github.com/projectsveltos/sveltosctl/internal/commands/generate"
 )
 
-// RegisterCluster takes care of importing a non CAPI cluster.
-func RegisterCluster(ctx context.Context, args []string, logger logr.Logger) error {
+// Generate takes care generating a kubeconfig
+func Generate(ctx context.Context, args []string, logger logr.Logger) error {
 	doc := `Usage:
-	sveltosctl register <command> [<args>...]
+	sveltosctl generate <command> [<args>...]
 
-	cluster       Imports a non CAPI cluster to be managed by Sveltos.
+        kubeconfig    Generates a Kubeconfig. The generated Kubeconfig can then be used to register a cluster.
+                      Run this command while pointing to the managed cluster.
 
 Options:
 	-h --help      Show this screen.
 
 Description:
-	See 'sveltosctl register <command> --help' to read about a specific subcommand.
+	See 'sveltosctl generate kubeconfig --help' to read about a specific subcommand.
   `
 
 	parser := &docopt.Parser{
@@ -66,8 +67,8 @@ Description:
 	arguments := append([]string{"logLevel", command}, opts["<args>"].([]string)...)
 
 	switch command {
-	case "cluster":
-		return onboard.RegisterCluster(ctx, arguments, logger)
+	case "kubeconfig":
+		return generate.GenerateKubeconfig(ctx, arguments, logger)
 	default:
 		//nolint: forbidigo // print doc
 		fmt.Println(doc)

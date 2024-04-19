@@ -18,7 +18,7 @@ package onboard_test
 
 import (
 	"context"
-	"os"
+	"reflect"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -39,14 +39,7 @@ var _ = Describe("OnboardCluster", func() {
 	It("onboardSveltosCluster creates SveltosCluster and Secret", func() {
 		data := randomString()
 
-		// Create temp file
-		kubeconfigFile, err := os.CreateTemp("", "kubeconfig")
-		Expect(err).To(BeNil())
-
-		defer os.Remove(kubeconfigFile.Name())
-
-		_, err = kubeconfigFile.WriteString(data)
-		Expect(err).To(BeNil())
+		kubeconfigData := []byte(data)
 
 		clusterNamespace := randomString()
 		clusterName := randomString()
@@ -58,8 +51,13 @@ var _ = Describe("OnboardCluster", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
 
-		Expect(onboard.OnboardSveltosCluster(context.TODO(), clusterNamespace, clusterName,
-			kubeconfigFile.Name(), textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
+		labels := map[string]string{
+			randomString(): randomString(),
+			randomString(): randomString(),
+		}
+
+		Expect(onboard.OnboardSveltosCluster(context.TODO(), clusterNamespace, clusterName, kubeconfigData,
+			labels, false, textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		instance := utils.GetAccessInstance()
 
@@ -67,6 +65,7 @@ var _ = Describe("OnboardCluster", func() {
 		err = instance.GetResource(context.TODO(),
 			types.NamespacedName{Namespace: clusterNamespace, Name: clusterName}, sveltosCluster)
 		Expect(err).To(BeNil())
+		Expect(reflect.DeepEqual(sveltosCluster.Labels, labels)).To(BeTrue())
 
 		secret := &corev1.Secret{}
 		secretName := clusterName + onboard.SveltosKubeconfigSecretNamePostfix
@@ -74,6 +73,15 @@ var _ = Describe("OnboardCluster", func() {
 		Expect(err).To(BeNil())
 
 		Expect(secret.Data).ToNot(BeNil())
-		Expect(secret.Data["value"]).To(Equal([]byte(data)))
+		Expect(secret.Data[onboard.Kubeconfig]).To(Equal([]byte(data)))
+
+		// verify operation updates existing resources
+		labels = map[string]string{
+			randomString(): randomString(),
+			randomString(): randomString(),
+		}
+
+		Expect(onboard.OnboardSveltosCluster(context.TODO(), clusterNamespace, clusterName, kubeconfigData,
+			labels, false, textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 	})
 })
