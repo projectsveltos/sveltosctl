@@ -29,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 
 	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
@@ -427,10 +426,7 @@ func dumpClusters(collectorClient *collector.Collector, ctx context.Context, fol
 	return nil
 }
 
-func updateSnaphotPredicate(e event.UpdateEvent) bool {
-	newObject := e.ObjectNew.(*utilsv1alpha1.Snapshot)
-	oldObject := e.ObjectOld.(*utilsv1alpha1.Snapshot)
-
+func updateSnaphotPredicate(newObject, oldObject *utilsv1alpha1.Snapshot) bool {
 	if oldObject == nil ||
 		!reflect.DeepEqual(newObject.Spec, oldObject.Spec) {
 
