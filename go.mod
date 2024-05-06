@@ -9,22 +9,22 @@ require (
 	github.com/go-logr/logr v1.4.1
 	github.com/hexops/gotextdiff v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/onsi/ginkgo/v2 v2.17.1
-	github.com/onsi/gomega v1.32.0
+	github.com/onsi/ginkgo/v2 v2.17.2
+	github.com/onsi/gomega v1.33.1
 	github.com/pkg/errors v0.9.1
-	github.com/projectsveltos/addon-controller v0.28.1-0.20240419120740-c188b027ae90
-	github.com/projectsveltos/event-manager v0.28.1-0.20240419123229-c74fca15a9bd
-	github.com/projectsveltos/libsveltos v0.28.1-0.20240419092300-7e0826a881e6
+	github.com/projectsveltos/addon-controller v0.29.1-0.20240506153432-eaf7530a303f
+	github.com/projectsveltos/event-manager v0.29.1-0.20240506171853-b2bd905472bb
+	github.com/projectsveltos/libsveltos v0.29.1-0.20240506121921-5f0f0328e94b
 	github.com/robfig/cron/v3 v3.0.1
 	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.29.4
-	k8s.io/apiextensions-apiserver v0.29.4
-	k8s.io/apimachinery v0.29.4
-	k8s.io/client-go v0.29.4
+	k8s.io/api v0.30.0
+	k8s.io/apiextensions-apiserver v0.30.0
+	k8s.io/apimachinery v0.30.0
+	k8s.io/client-go v0.30.0
 	k8s.io/klog/v2 v2.120.1
-	k8s.io/kubectl v0.29.4
-	sigs.k8s.io/cluster-api v1.7.0
-	sigs.k8s.io/controller-runtime v0.17.3
+	k8s.io/kubectl v0.30.0
+	sigs.k8s.io/cluster-api v1.7.1
+	sigs.k8s.io/controller-runtime v0.18.1
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -60,11 +60,11 @@ require (
 	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/fluxcd/pkg/apis/acl v0.1.0 // indirect
-	github.com/fluxcd/pkg/apis/meta v1.3.0 // indirect
-	github.com/fluxcd/pkg/http/fetch v0.10.0 // indirect
-	github.com/fluxcd/pkg/tar v0.6.0 // indirect
-	github.com/fluxcd/source-controller/api v1.2.5 // indirect
+	github.com/fluxcd/pkg/apis/acl v0.3.0 // indirect
+	github.com/fluxcd/pkg/apis/meta v1.5.0 // indirect
+	github.com/fluxcd/pkg/http/fetch v0.11.0 // indirect
+	github.com/fluxcd/pkg/tar v0.7.0 // indirect
+	github.com/fluxcd/source-controller/api v1.3.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
@@ -72,7 +72,7 @@ require (
 	github.com/go-openapi/jsonpointer v0.19.6 // indirect
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-openapi/swag v0.22.4 // indirect
-	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
+	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/gobuffalo/flect v1.0.2 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
@@ -82,7 +82,7 @@ require (
 	github.com/google/gnostic-models v0.6.8 // indirect
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/google/pprof v0.0.0-20210720184732-4bb14d4b1be1 // indirect
+	github.com/google/pprof v0.0.0-20240424215950-a892ee059fd6 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.4.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
@@ -148,16 +148,16 @@ require (
 	go.opentelemetry.io/otel/metric v1.20.0 // indirect
 	go.opentelemetry.io/otel/trace v1.20.0 // indirect
 	go.starlark.net v0.0.0-20230525235612-a134d8f9ddca // indirect
-	golang.org/x/crypto v0.21.0 // indirect
+	golang.org/x/crypto v0.22.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
-	golang.org/x/net v0.23.0 // indirect
+	golang.org/x/net v0.24.0 // indirect
 	golang.org/x/oauth2 v0.18.0 // indirect
-	golang.org/x/sync v0.6.0 // indirect
-	golang.org/x/sys v0.18.0 // indirect
-	golang.org/x/term v0.18.0 // indirect
-	golang.org/x/text v0.14.0 // indirect
+	golang.org/x/sync v0.7.0 // indirect
+	golang.org/x/sys v0.19.0 // indirect
+	golang.org/x/term v0.19.0 // indirect
+	golang.org/x/text v0.15.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	golang.org/x/tools v0.17.0 // indirect
+	golang.org/x/tools v0.20.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20231120223509-83a465c0220f // indirect
@@ -167,11 +167,11 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	helm.sh/helm/v3 v3.14.4 // indirect
-	k8s.io/apiserver v0.29.4 // indirect
-	k8s.io/cli-runtime v0.29.4 // indirect
-	k8s.io/component-base v0.29.4 // indirect
-	k8s.io/kube-openapi v0.0.0-20231010175941-2dd684a91f00 // indirect
-	k8s.io/utils v0.0.0-20240310230437-4693a0247e57 // indirect
+	k8s.io/apiserver v0.30.0 // indirect
+	k8s.io/cli-runtime v0.30.0 // indirect
+	k8s.io/component-base v0.30.0 // indirect
+	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
+	k8s.io/utils v0.0.0-20240502163921-fe8a2dddb1d0 // indirect
 	oras.land/oras-go v1.2.4 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/kustomize/api v0.17.1 // indirect

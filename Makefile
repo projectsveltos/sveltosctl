@@ -165,7 +165,7 @@ build-all:
 ##@ Testing
 
 # KUBEBUILDER_ENVTEST_KUBERNETES_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-KUBEBUILDER_ENVTEST_KUBERNETES_VERSION = 1.28.0
+KUBEBUILDER_ENVTEST_KUBERNETES_VERSION = 1.30.0
 
 ifeq ($(shell go env GOOS),darwin) # Use the darwin/amd64 binary until an arm64 version is available
 KUBEBUILDER_ASSETS ?= $(shell $(SETUP_ENVTEST) use --use-env -p path --arch amd64 $(KUBEBUILDER_ENVTEST_KUBERNETES_VERSION))
