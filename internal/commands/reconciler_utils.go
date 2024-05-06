@@ -41,7 +41,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
@@ -146,11 +145,14 @@ func startSnapshotReconciler(ctx context.Context, mgr manager.Manager, logger lo
 		return err
 	}
 
-	if err := c.Watch(source.Kind(mgr.GetCache(), &utilsv1alpha1.Snapshot{}),
-		handler.EnqueueRequestsFromMapFunc(handlerMapFun),
-		addModifyDeletePredicates(),
-	); err != nil {
-		logger.Error(err, "unable to watch resource Snapshot")
+	sourceSnapshot := source.Kind[*utilsv1alpha1.Snapshot](
+		mgr.GetCache(),
+		&utilsv1alpha1.Snapshot{},
+		handler.TypedEnqueueRequestsFromMapFunc(handlerSnapshotMapFun),
+		SnapshotPredicate{Logger: mgr.GetLogger().WithValues("predicate", "clusterpredicate")},
+	)
+
+	if err := c.Watch(sourceSnapshot); err != nil {
 		return err
 	}
 
@@ -180,21 +182,25 @@ func startTechsupportReconciler(ctx context.Context, mgr manager.Manager, logger
 		return nil, err
 	}
 
-	err = c.Watch(source.Kind(mgr.GetCache(), &utilsv1alpha1.Techsupport{}),
-		handler.EnqueueRequestsFromMapFunc(handlerMapFun),
-		addModifyDeletePredicates(),
+	sourceTechsupport := source.Kind[*utilsv1alpha1.Techsupport](
+		mgr.GetCache(),
+		&utilsv1alpha1.Techsupport{},
+		handler.TypedEnqueueRequestsFromMapFunc(handlerTechsupportMapFun),
+		TechsupportPredicate{Logger: mgr.GetLogger().WithValues("predicate", "techsupportpredicate")},
 	)
-	if err != nil {
-		logger.Error(err, "unable to watch resource Techsupport")
+
+	if err := c.Watch(sourceTechsupport); err != nil {
 		return nil, err
 	}
 
-	err = c.Watch(source.Kind(mgr.GetCache(), &libsveltosv1alpha1.SveltosCluster{}),
-		handler.EnqueueRequestsFromMapFunc(requeueTechsupportForCluster),
-		SveltosClusterPredicates(mgr.GetLogger().WithValues("predicate", "sveltosclusterpredicate")),
+	sourceSveltosCluster := source.Kind[*libsveltosv1alpha1.SveltosCluster](
+		mgr.GetCache(),
+		&libsveltosv1alpha1.SveltosCluster{},
+		handler.TypedEnqueueRequestsFromMapFunc(requeueTechsupportForSveltosCluster),
+		SveltosClusterPredicate{Logger: mgr.GetLogger().WithValues("predicate", "sveltosclusterpredicate")},
 	)
-	if err != nil {
-		logger.Error(err, "unable to watch resource sveltoscluster")
+
+	if err := c.Watch(sourceSveltosCluster); err != nil {
 		return nil, err
 	}
 
@@ -213,13 +219,16 @@ func startTechsupportReconciler(ctx context.Context, mgr manager.Manager, logger
 }
 
 func watchForCAPI(mgr ctrl.Manager, c controller.Controller, logger logr.Logger) error {
+	sourceCluster := source.Kind[*clusterv1.Cluster](
+		mgr.GetCache(),
+		&clusterv1.Cluster{},
+		handler.TypedEnqueueRequestsFromMapFunc(requeueTechsupportForCluster),
+		ClusterPredicate{Logger: mgr.GetLogger().WithValues("predicate", "clusterpredicate")},
+	)
+
 	// When cluster-api cluster changes, according to ClusterPredicates,
 	// one or more ClusterProfiles need to be reconciled.
-	if err := c.Watch(source.Kind(mgr.GetCache(), &clusterv1.Cluster{}),
-		handler.EnqueueRequestsFromMapFunc(requeueTechsupportForCluster),
-		ClusterPredicates(mgr.GetLogger().WithValues("predicate", "clusterpredicate")),
-	); err != nil {
-		logger.Error(err, "unable to watch resource capi clusters")
+	if err := c.Watch(sourceCluster); err != nil {
 		return err
 	}
 
@@ -303,7 +312,15 @@ func addFinalizer(ctx context.Context, instance client.Object, finalizer string)
 		types.NamespacedName{Name: instance.GetName()}, instance)
 }
 
-func handlerMapFun(ctx context.Context, o client.Object) []reconcile.Request {
+func handlerSnapshotMapFun(ctx context.Context, snapshot *utilsv1alpha1.Snapshot) []reconcile.Request {
+	return handlerMapFun(snapshot)
+}
+
+func handlerTechsupportMapFun(ctx context.Context, techsupport *utilsv1alpha1.Techsupport) []reconcile.Request {
+	return handlerMapFun(techsupport)
+}
+
+func handlerMapFun(o client.Object) []reconcile.Request {
 	logger := textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))).WithValues(
 		"objectMapper",
 		"handler",
@@ -383,38 +400,60 @@ func reconcileDelete(ctx context.Context, instance client.Object, collectionType
 	return ctrl.Result{}, nil
 }
 
-func addModifyDeletePredicates() predicate.Funcs {
-	logger := textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1)))
-	return predicate.Funcs{
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			switch e.ObjectNew.(type) {
-			case *utilsv1alpha1.Snapshot:
-				return updateSnaphotPredicate(e)
-			case *utilsv1alpha1.Techsupport:
-				return updateTechsupportPredicate(e)
-			}
-			return false
-		},
-		DeleteFunc: func(e event.DeleteEvent) bool {
-			object := e.Object
-			o := e.Object
-			logger.Info(fmt.Sprintf("Delete kind: %s Info: %s/%s",
-				object.GetObjectKind().GroupVersionKind().Kind,
-				o.GetNamespace(), o.GetName()))
-			return true
-		},
-		CreateFunc: func(e event.CreateEvent) bool {
-			object := e.Object
-			o := e.Object
-			logger.Info(fmt.Sprintf("Create kind: %s Info: %s/%s",
-				object.GetObjectKind().GroupVersionKind().Kind,
-				o.GetNamespace(), o.GetName()))
-			return true
-		},
-		GenericFunc: func(e event.GenericEvent) bool {
-			return false
-		},
-	}
+type SnapshotPredicate struct {
+	Logger logr.Logger
+}
+
+func (p SnapshotPredicate) Create(obj event.TypedCreateEvent[*utilsv1alpha1.Snapshot]) bool {
+	o := obj.Object
+	p.Logger.Info(fmt.Sprintf("Create kind: %s Info: %s/%s",
+		o.GetObjectKind().GroupVersionKind().Kind,
+		o.GetNamespace(), o.GetName()))
+	return true
+}
+
+func (p SnapshotPredicate) Update(obj event.TypedUpdateEvent[*utilsv1alpha1.Snapshot]) bool {
+	return updateSnaphotPredicate(obj.ObjectNew, obj.ObjectOld)
+}
+
+func (p SnapshotPredicate) Delete(obj event.TypedDeleteEvent[*utilsv1alpha1.Snapshot]) bool {
+	o := obj.Object
+	p.Logger.Info(fmt.Sprintf("Delete kind: %s Info: %s/%s",
+		o.GetObjectKind().GroupVersionKind().Kind,
+		o.GetNamespace(), o.GetName()))
+	return true
+}
+
+func (p SnapshotPredicate) Generic(obj event.TypedGenericEvent[*utilsv1alpha1.Snapshot]) bool {
+	return false
+}
+
+type TechsupportPredicate struct {
+	Logger logr.Logger
+}
+
+func (p TechsupportPredicate) Create(obj event.TypedCreateEvent[*utilsv1alpha1.Techsupport]) bool {
+	o := obj.Object
+	p.Logger.Info(fmt.Sprintf("Create kind: %s Info: %s/%s",
+		o.GetObjectKind().GroupVersionKind().Kind,
+		o.GetNamespace(), o.GetName()))
+	return true
+}
+
+func (p TechsupportPredicate) Update(obj event.TypedUpdateEvent[*utilsv1alpha1.Techsupport]) bool {
+	return updateTechsupportPredicate(obj.ObjectNew, obj.ObjectOld)
+}
+
+func (p TechsupportPredicate) Delete(obj event.TypedDeleteEvent[*utilsv1alpha1.Techsupport]) bool {
+	o := obj.Object
+	p.Logger.Info(fmt.Sprintf("Delete kind: %s Info: %s/%s",
+		o.GetObjectKind().GroupVersionKind().Kind,
+		o.GetNamespace(), o.GetName()))
+	return true
+}
+
+func (p TechsupportPredicate) Generic(obj event.TypedGenericEvent[*utilsv1alpha1.Techsupport]) bool {
+	return false
 }
 
 func schedule(ctx context.Context, instance client.Object, collectionType collector.CollectionType, collectMethod collector.CollectMethod,

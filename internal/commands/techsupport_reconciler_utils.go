@@ -37,9 +37,9 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
@@ -341,10 +341,7 @@ func collectLogs(ctx context.Context, remoteClientSet *kubernetes.Clientset, rem
 	return nil
 }
 
-func updateTechsupportPredicate(e event.UpdateEvent) bool {
-	newObject := e.ObjectNew.(*utilsv1alpha1.Techsupport)
-	oldObject := e.ObjectOld.(*utilsv1alpha1.Techsupport)
-
+func updateTechsupportPredicate(newObject, oldObject *utilsv1alpha1.Techsupport) bool {
 	if oldObject == nil ||
 		!reflect.DeepEqual(newObject.Spec, oldObject.Spec) {
 
@@ -354,11 +351,23 @@ func updateTechsupportPredicate(e event.UpdateEvent) bool {
 	return false
 }
 
-func requeueTechsupportForCluster(
-	ctx context.Context, o client.Object,
+func requeueTechsupportForSveltosCluster(
+	ctx context.Context, sveltosCluster *libsveltosv1alpha1.SveltosCluster,
 ) []reconcile.Request {
 
-	cluster := o
+	return requeueTechsupportForACluster(sveltosCluster)
+}
+
+func requeueTechsupportForCluster(
+	ctx context.Context, cluster *clusterv1.Cluster,
+) []reconcile.Request {
+
+	return requeueTechsupportForACluster(cluster)
+}
+
+func requeueTechsupportForACluster(
+	cluster client.Object,
+) []reconcile.Request {
 
 	mux.Lock()
 	defer mux.Unlock()
