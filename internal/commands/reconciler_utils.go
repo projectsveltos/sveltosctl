@@ -218,7 +218,7 @@ func startTechsupportReconciler(ctx context.Context, mgr manager.Manager, logger
 	return c, nil
 }
 
-func watchForCAPI(mgr ctrl.Manager, c controller.Controller, logger logr.Logger) error {
+func watchForCAPI(mgr ctrl.Manager, c controller.Controller) error {
 	sourceCluster := source.Kind[*clusterv1.Cluster](
 		mgr.GetCache(),
 		&clusterv1.Cluster{},
@@ -526,7 +526,7 @@ func capiWatchers(ctx context.Context, mgr ctrl.Manager, techsupportController c
 				go crd.WatchCustomResourceDefinition(ctx, mgr.GetConfig(), capiCRDHandler, logger)
 			} else {
 				logger.V(logsettings.LogInfo).Info("CAPI present.")
-				err = watchForCAPI(mgr, techsupportController, logger)
+				err = watchForCAPI(mgr, techsupportController)
 				if err != nil {
 					continue
 				}
