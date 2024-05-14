@@ -31,10 +31,8 @@ const (
 
 // GetDebuggingConfiguration gets default DebuggingConfiguration in the specified namespace and cluster
 func (a *k8sAccess) GetDebuggingConfiguration(
-    ctx context.Context,
-    namespace string,
-    clusterName string,
-    clusterType string,
+	ctx context.Context,
+	clusterNamespace, clusterName string,
 ) (*libsveltosv1alpha1.DebuggingConfiguration, error) {
 
     req := &libsveltosv1alpha1.DebuggingConfiguration{}
@@ -42,14 +40,10 @@ func (a *k8sAccess) GetDebuggingConfiguration(
     var err error
     logger := klog.FromContext(ctx)
 
-    if namespace == "" && clusterName == "" && clusterType == "" {
-        c = a.client
-    } else {
-        c, err = clusterproxy.GetKubernetesClient(ctx, a.client, namespace, clusterName, "", "", libsveltosv1alpha1.ClusterType(clusterType), logger)
-        if err != nil {
-            return nil, err
-        }
-    }
+	reqName := client.ObjectKey{
+		Namespace: clusterNamespace,
+		Name:      clusterName,
+	}
 
     reqName := client.ObjectKey{
         Name:      defaultInstanceName,
@@ -66,16 +60,15 @@ func (a *k8sAccess) GetDebuggingConfiguration(
 // UpdateDebuggingConfiguration creates, if not existing already, default DebuggingConfiguration in the specified namespace and cluster. Otherwise
 // updates it.
 func (a *k8sAccess) UpdateDebuggingConfiguration(
-    ctx context.Context,
-    dc *libsveltosv1alpha1.DebuggingConfiguration,
-    namespace string,
-    clusterName string,
-    clusterType string,
+	ctx context.Context,
+	clusterNamespace, clusterName string,
+	dc *libsveltosv1alpha1.DebuggingConfiguration,
 ) error {
 
-    var c client.Client
-    var err error
-    logger := klog.FromContext(ctx)
+	reqName := client.ObjectKey{
+		Namespace: clusterNamespace,
+		Name:      clusterName,
+	}
 
     if namespace == "" && clusterName == "" && clusterType == "" {
         c = a.client
