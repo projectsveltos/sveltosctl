@@ -29,7 +29,7 @@ import (
 )
 
 func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1alpha1.LogLevel, component, namespace, clusterName string) error {
-    cc, err := collectLogLevelConfiguration(ctx, namespace, clusterName)
+    cc, err := collectLogLevelConfiguration(ctx, namespace, clusterName, nil)
     if err != nil {
         return err
     }
@@ -60,7 +60,7 @@ func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1a
         })
     }
 
-    return updateLogLevelConfiguration(ctx, spec, namespace, clusterName)
+    return updateLogLevelConfiguration(ctx, namespace, clusterName, spec)
 }
 
 // set changes log verbosity for a given component

@@ -31,7 +31,7 @@ func showLogSettings(ctx context.Context) error {
     namespace := "" // can change
     clusterName := "" 
 
-    componentConfiguration, err := collectLogLevelConfiguration(ctx, namespace, clusterName)
+    componentConfiguration, err := collectLogLevelConfiguration(ctx, namespace, clusterName, nil)
     if err != nil {
         return err
     }

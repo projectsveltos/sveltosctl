@@ -26,7 +26,7 @@ import (
 )
 
 func unsetDebuggingConfiguration(ctx context.Context, component, namespace, clusterName string) error {
-    cc, err := collectLogLevelConfiguration(ctx, namespace, clusterName)
+    cc, err := collectLogLevelConfiguration(ctx, namespace, clusterName, nil)
     if err != nil {
         return err
     }
