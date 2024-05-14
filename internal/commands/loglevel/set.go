@@ -17,59 +17,59 @@ limitations under the License.
 package loglevel
 
 import (
-	"context"
-	"fmt"
-	"strings"
+    "context"
+    "fmt"
+    "strings"
 
-	docopt "github.com/docopt/docopt-go"
+    docopt "github.com/docopt/docopt-go"
 
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+    libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+    apierrors "k8s.io/apimachinery/pkg/api/errors"
+    metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1alpha1.LogLevel,
-	component string, dc *libsveltosv1alpha1.DebuggingConfiguration,) error {
+    component string, dc *libsveltosv1alpha1.DebuggingConfiguration,) error {
 
-	cc, err := collectLogLevelConfiguration(ctx, dc)
-	if err != nil {
-		return nil
-	}
+    cc, err := collectLogLevelConfiguration(ctx, dc)
+    if err != nil {
+        return nil
+    }
 
-	found := false
-	spec := make([]libsveltosv1alpha1.ComponentConfiguration, len(cc))
+    found := false
+    spec := make([]libsveltosv1alpha1.ComponentConfiguration, len(cc))
 
-	for i, c := range cc {
-		if string(c.component) == component {
-			spec[i] = libsveltosv1alpha1.ComponentConfiguration{
-				Component: c.component,
-				LogLevel:  logSeverity,
-			}
-			found = true
-			break
-		} else {
-			spec[i] = libsveltosv1alpha1.ComponentConfiguration{
-				Component: c.component,
-				LogLevel:  c.logSeverity,
-			}
-		}
-	}
+    for i, c := range cc {
+        if string(c.component) == component {
+            spec[i] = libsveltosv1alpha1.ComponentConfiguration{
+                Component: c.component,
+                LogLevel:  logSeverity,
+            }
+            found = true
+            break
+        } else {
+            spec[i] = libsveltosv1alpha1.ComponentConfiguration{
+                Component: c.component,
+                LogLevel:  c.logSeverity,
+            }
+        }
+    }
 
-	if !found {
-		spec = append(spec,
-			libsveltosv1alpha1.ComponentConfiguration{
-				Component: libsveltosv1alpha1.Component(component),
-				LogLevel:  logSeverity,
-			},
-		)
-	}
+    if !found {
+        spec = append(spec,
+            libsveltosv1alpha1.ComponentConfiguration{
+                Component: libsveltosv1alpha1.Component(component),
+                LogLevel:  logSeverity,
+            },
+        )
+    }
 
-	return updateLogLevelConfiguration(ctx, spec, dc)
+    return updateLogLevelConfiguration(ctx, spec, dc)
 }
 
-// Set displays/changes log verbosity for a given component
+// set changes log verbosity for a given component
 func Set(ctx context.Context, args []string) error {
-	doc := `Usage:
+    doc := `Usage:
   sveltosctl log-level set --component=<name> (--info|--debug|--verbose) [--namespace=<namespace>] [--clusterName=<cluster-name>] [--clusterType=<cluster-type>]
 Options:
   -h --help                  	  Show this screen.
@@ -84,58 +84,64 @@ Options:
 Description:
   The log-level set command set log severity for the specified component.
 `
-	parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
-	if err != nil {
-		return fmt.Errorf(
-			"invalid option: 'sveltosctl %s'. Use flag '--help' to read about a specific subcommand",
-			strings.Join(args, " "),
-		)
-	}
-	if len(parsedArgs) == 0 {
-		return nil
-	}
+    parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
+    if err != nil {
+        return fmt.Errorf(
+            "invalid option: 'sveltosctl %s'. Use flag '--help' to read about a specific subcommand",
+            strings.Join(args, " "),
+        )
+    }
+    if len(parsedArgs) == 0 {
+        return nil
+    }
 
-	component := ""
-	if passedComponent := parsedArgs["--component"]; passedComponent != nil {
-		component = passedComponent.(string)
-	}
+    component := ""
+    if passedComponent := parsedArgs["--component"]; passedComponent != nil {
+        component = passedComponent.(string)
+    }
 
-	info := parsedArgs["--info"].(bool)
-	debug := parsedArgs["--debug"].(bool)
-	verbose := parsedArgs["--verbose"].(bool)
+    info := parsedArgs["--info"].(bool)
+    debug := parsedArgs["--debug"].(bool)
+    verbose := parsedArgs["--verbose"].(bool)
 
-	namespace := parsedArgs["--namespace"].(string)
-	clusterName:= parsedArgs["--clusterName"].(string)
-	clusterType:= parsedArgs["--clusterType"].(string)
+    namespace := ""
+    if parsedNamespace := parsedArgs["--namespace"]; parsedNamespace != nil {
+        namespace = parsedNamespace.(string)
+    }
 
-	var logSeverity libsveltosv1alpha1.LogLevel
-	if info {
-		logSeverity = libsveltosv1alpha1.LogLevelInfo
-	} else if debug {
-		logSeverity = libsveltosv1alpha1.LogLevelDebug
-	} else if verbose {
-		logSeverity = libsveltosv1alpha1.LogLevelVerbose
-	}
+    clusterName := ""
+    if parsedClusterName := parsedArgs["--clusterName"]; parsedClusterName != nil {
+        clusterName = parsedClusterName.(string)
+    }
 
-	if namespace != "" && clusterName != "" && clusterType != "" {
-		dc := &libsveltosv1alpha1.DebuggingConfiguration{
-			ObjectMeta: metav1.ObjectMeta{
-				Namespace: namespace,
-			},
-			ClusterName: clusterName,
-			ClusterType: clusterType,
-		}
-		return updateDebuggingConfiguration(ctx, logSeverity, component, dc) 
-	}
-	instance := utils.GetAccessInstance()
+    clusterType := ""
+    if parsedClusterType := parsedArgs["--clusterType"]; parsedClusterType != nil {
+        clusterType = parsedClusterType.(string)
+    }
 
-	dc, err := instance.GetDebuggingConfiguration(ctx)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return make([]*componentConfiguration, 0), nil
-		}
-		return nil, err
-	}
+    var logSeverity libsveltosv1alpha1.LogLevel
+    if info {
+        logSeverity = libsveltosv1alpha1.LogLevelInfo
+    } else if debug {
+        logSeverity = libsveltosv1alpha1.LogLevelDebug
+    } else if verbose {
+        logSeverity = libsveltosv1alpha1.LogLevelVerbose
+    }
 
-	return updateDebuggingConfiguration(ctx, logSeverity, component, dc)
+    // if namespace, cluster name, and cluster type are provided, update the managed cluster
+    if namespace != "" && clusterName != "" && clusterType != "" {
+        return updateDebuggingConfigurationInManaged(ctx, logSeverity, component, namespace, clusterName, clusterType)
+    }
+
+    // get access instance for the management cluster
+    instance := utils.GetAccessInstance()
+    dc, err := instance.GetDebuggingConfiguration(ctx)
+    if err != nil {
+        if apierrors.IsNotFound(err) {
+            return fmt.Errorf("DebuggingConfiguration not found")
+        }
+        return err
+    }
+
+    return updateDebuggingConfiguration(ctx, logSeverity, component, dc)
 }
