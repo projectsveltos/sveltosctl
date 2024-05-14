@@ -18,13 +18,17 @@ package loglevel
 
 import (
     "context"
+    "fmt"
     "sort"
+    "path/filepath"
 
     apierrors "k8s.io/apimachinery/pkg/api/errors"
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+    "k8s.io/client-go/kubernetes"
+    "k8s.io/client-go/tools/clientcmd"
+    "k8s.io/client-go/util/homedir"
 
     libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
-    "github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
 type componentConfiguration struct {
@@ -41,66 +45,85 @@ func (c byComponent) Less(i, j int) bool {
     return c[i].component < c[j].component
 }
 
-func collectLogLevelConfiguration(ctx context.Context, dc *libsveltosv1alpha1.DebuggingConfiguration) ([]*componentConfiguration, error) {
-    configurationSettings := make([]*componentConfiguration, len(dc.Spec.Configuration))
-
-    for i, c := range dc.Spec.Configuration {
-        configurationSettings[i] = &componentConfiguration{
-            component:   c.Component,
-            logSeverity: c.LogLevel,
-        }
+// configures the Kubernetes client to target the correct cluster based on namespace and clusterName.
+func ConfigureClient(ctx context.Context, namespace, clusterName string) (*kubernetes.Clientset, error) {
+    kubeconfigPath := filepath.Join(homedir.HomeDir(), ".kube", "config")
+    config, err := clientcmd.LoadFromFile(kubeconfigPath)
+    if err != nil {
+        return nil, fmt.Errorf("failed to load kubeconfig from %s: %v", kubeconfigPath, err)
     }
 
-    // Sort this by component name first. Component/node is higher priority than Component
-    sort.Sort(byComponent(configurationSettings))
+    // use it to change the context if clusterName is specified
+    if clusterName != "" {
+        contextName := fmt.Sprintf("%s-context", clusterName)
+        if _, exists := config.Contexts[contextName]; !exists {
+            return nil, fmt.Errorf("no context found for the specified cluster name: %s", clusterName)
+        }
+        config.CurrentContext = contextName
+    }
 
+    // build a rest.Config from the kubeconfig and the overridden current context.
+    restConfig, err := clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{CurrentContext: config.CurrentContext}).ClientConfig()
+    if err != nil {
+        return nil, fmt.Errorf("failed to create Kubernetes REST client configuration: %v", err)
+    }
+
+    // create the Kubernetes client using the configured REST config
+    clientset, err := kubernetes.NewForConfig(restConfig)
+    if err != nil {
+        return nil, fmt.Errorf("failed to create Kubernetes clientset: %v", err)
+    }
+
+    return clientset, nil
+}
+
+func collectLogLevelConfiguration(ctx context.Context, namespace, clusterName string) ([]*componentConfiguration, error) {
+    clientset, err := ConfigureClient(ctx, namespace, clusterName)
+    if err != nil {
+        return nil, err
+    }
+
+    // retrieving DebuggingConfiguration
+    dc, err := clientset.CoreV1().ConfigMaps(namespace).Get(ctx, "debugging-configuration", metav1.GetOptions{})
+    if err != nil {
+        if apierrors.IsNotFound(err) {
+            return make([]*componentConfiguration, 0), nil
+        }
+        return nil, err
+    }
+
+    configurationSettings := make([]*componentConfiguration, len(dc.Data))
+
+    sort.Sort(byComponent(configurationSettings))
     return configurationSettings, nil
 }
 
 func updateLogLevelConfiguration(
     ctx context.Context,
     spec []libsveltosv1alpha1.ComponentConfiguration,
-    dc *libsveltosv1alpha1.DebuggingConfiguration,
+    namespace, clusterName string,
 ) error {
-    dc.Spec = libsveltosv1alpha1.DebuggingConfigurationSpec{
-        Configuration: spec,
-    }
-
-    instance := utils.GetAccessInstance()  // define instance
-    return instance.UpdateDebuggingConfiguration(ctx, dc)
-}
-
-// updates the log severity for a managed cluster
-func updateDebuggingConfigurationInManaged(
-    ctx context.Context,
-    logSeverity libsveltosv1alpha1.LogLevel,
-    component string,
-    namespace string,
-    clusterName string,
-    clusterType string,
-) error {
-    // get a client for the managed cluster using namespace, clusterName, and clusterType
-    instance := utils.GetAccessInstance()
-    client, err := instance.GetClientForCluster(namespace, clusterName, clusterType)  // Correct method name
+    clientset, err := ConfigureClient(ctx, namespace, clusterName)
     if err != nil {
         return err
     }
 
-    // get the debuggingconfiguration from the managed cluster
-    dc, err := client.GetDebuggingConfiguration(ctx, namespace)
+    // retrieve existing DebuggingConfiguration or create new if not exists
+    dc, err := clientset.CoreV1().ConfigMaps(namespace).Get(ctx, "debugging-configuration", metav1.GetOptions{})
     if err != nil {
         if apierrors.IsNotFound(err) {
-            dc = &libsveltosv1alpha1.DebuggingConfiguration{
+            dc = &corev1.ConfigMap{
                 ObjectMeta: metav1.ObjectMeta{
+                    Name: "debugging-configuration",
                     Namespace: namespace,
                 },
-                Spec: libsveltosv1alpha1.DebuggingConfigurationSpec{},
+                Data: make(map[string]string),
             }
         } else {
             return err
         }
     }
 
-    // update the log severity in the managed cluster
-    return updateDebuggingConfiguration(ctx, logSeverity, component, dc)
+    _, err = clientset.CoreV1().ConfigMaps(namespace).Update(ctx, dc, metav1.UpdateOptions{})
+    return err
 }
