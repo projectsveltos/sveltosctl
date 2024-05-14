@@ -133,14 +133,19 @@ Description:
         return updateDebuggingConfigurationInManaged(ctx, logSeverity, component, namespace, clusterName, clusterType)
     }
 
-    instance := utils.GetAccessInstance()
-    dc, err := instance.GetDebuggingConfiguration(ctx)
-    if err != nil {
-        if apierrors.IsNotFound(err) {
-            return fmt.Errorf("DebuggingConfiguration not found")
-        }
-        return err
-    }
+	instance := utils.GetAccessInstance()
+	dc, err := instance.GetDebuggingConfiguration(ctx)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return fmt.Errorf("DebuggingConfiguration not found")
+		}
+		return err
+	}
+	
+	cc, err := collectLogLevelConfiguration(ctx, dc)  // pass dc
+	if err != nil {
+		return err
+	}
 
-    return updateDebuggingConfiguration(ctx, logSeverity, component, dc)
+    return updateLogLevelConfiguration(ctx, spec, dc)  // Pass dc
 }

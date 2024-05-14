@@ -66,6 +66,7 @@ func updateLogLevelConfiguration(
         Configuration: spec,
     }
 
+    instance := utils.GetAccessInstance()  // Define instance
     return instance.UpdateDebuggingConfiguration(ctx, dc)
 }
 
@@ -80,7 +81,7 @@ func updateDebuggingConfigurationInManaged(
 ) error {
     // get a client for the managed cluster using namespace, clusterName, and clusterType
     instance := utils.GetAccessInstance()
-    client, err := instance.GetClientForCluster(namespace, clusterName, clusterType)
+    client, err := instance.GetClientForCluster(namespace, clusterName, clusterType)  // Correct method name
     if err != nil {
         return err
     }
