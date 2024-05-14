@@ -23,6 +23,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -35,9 +36,10 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
+	eventv1alpha1 "github.com/projectsveltos/event-manager/api/v1alpha1"
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
 )
 
@@ -102,10 +104,31 @@ func addToScheme(scheme *runtime.Scheme) error {
 	if err := libsveltosv1alpha1.AddToScheme(scheme); err != nil {
 		return err
 	}
+	if err := eventv1alpha1.AddToScheme(scheme); err != nil {
+		return err
+	}
 	if err := rbacv1.AddToScheme(scheme); err != nil {
 		return err
 	}
+	if err := apiextensionsv1.AddToScheme(scheme); err != nil {
+		return err
+	}
 	return nil
+}
+
+// GetScheme returns scheme
+func (a *k8sAccess) GetScheme() *runtime.Scheme {
+	return a.scheme
+}
+
+// GetClient returns scheme
+func (a *k8sAccess) GetClient() client.Client {
+	return a.client
+}
+
+// GetConfig returns restConfig
+func (a *k8sAccess) GetConfig() *rest.Config {
+	return a.restConfig
 }
 
 // ListNamespaces gets all namespaces.

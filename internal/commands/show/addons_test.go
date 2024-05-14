@@ -29,16 +29,16 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/klog/v2/klogr"
+	"k8s.io/klog/v2/textlogger"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
+	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/commands/show"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
-var _ = Describe("Features", func() {
+var _ = Describe("AddOnss", func() {
 	var clusterConfiguration *configv1alpha1.ClusterConfiguration
 	var ns *corev1.Namespace
 
@@ -59,7 +59,7 @@ var _ = Describe("Features", func() {
 		}
 	})
 
-	It("show features displays deployed helm charts", func() {
+	It("show addons displays deployed helm charts", func() {
 		clusterProfileName1 := randomString()
 		charts1 := []configv1alpha1.Chart{
 			*generateChart(), *generateChart(),
@@ -83,7 +83,8 @@ var _ = Describe("Features", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
-		err = show.DisplayFeatures(context.TODO(), "", "", "", klogr.New())
+		err = show.DisplayAddOns(context.TODO(), "", "", "",
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 
 		clusterInfo := fmt.Sprintf("%s/%s", clusterConfiguration.Namespace, clusterConfiguration.Name)
@@ -109,7 +110,7 @@ var _ = Describe("Features", func() {
 		os.Stdout = old
 	})
 
-	It("show features display deployed resources", func() {
+	It("show addonss display deployed resources", func() {
 		clusterProfileName1 := randomString()
 		resource1 := []configv1alpha1.Resource{
 			*generateResource(), *generateResource(), *generateResource(),
@@ -133,7 +134,8 @@ var _ = Describe("Features", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
-		err = show.DisplayFeatures(context.TODO(), "", "", "", klogr.New())
+		err = show.DisplayAddOns(context.TODO(), "", "", "",
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 
 		clusterInfo := fmt.Sprintf("%s/%s", clusterConfiguration.Namespace, clusterConfiguration.Name)

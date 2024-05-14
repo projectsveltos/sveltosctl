@@ -22,3 +22,5 @@ out.json
 hack/tools/bin/
 
 bin/
+
+manifest/manifest.yaml-e

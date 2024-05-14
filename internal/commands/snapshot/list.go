@@ -28,7 +28,7 @@ import (
 	"github.com/olekukonko/tablewriter"
 
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	"github.com/projectsveltos/sveltosctl/internal/snapshotter"
+	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
@@ -93,8 +93,9 @@ func displaySnapshot(snapshotInstance *utilsv1alpha1.Snapshot,
 	table *tablewriter.Table, logger logr.Logger) error {
 
 	logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering Snapshot instance %s", snapshotInstance.Name))
-	snapshotClient := snapshotter.GetClient()
-	results, err := snapshotClient.ListSnapshots(snapshotInstance, logger)
+	snapshotClient := collector.GetClient()
+	results, err := snapshotClient.ListCollections(snapshotInstance.Spec.Storage, snapshotInstance.Name,
+		collector.Snapshot, logger)
 	if err != nil {
 		return err
 	}

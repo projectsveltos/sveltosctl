@@ -20,17 +20,17 @@ var (
 	ListSnapshots     = listSnapshots
 	ListSnapshotDiffs = listSnapshotDiffs
 
-	ListDiffInClusterConfigurations = listDiffInClusterConfigurations
-	ListClusterConfigurationDiff    = listClusterConfigurationDiff
-	ChartDifference                 = chartDifference
-	ResourceDifference              = resourceDifference
-	AddChartEntry                   = addChartEntry
-	AddResourceEntry                = addResourceEntry
-	AppendChartsAndResources        = appendChartsAndResources
-	ListDiff                        = listDiff
+	ListDiffInClusterConfigurations            = listDiffInClusterConfigurations
+	ListClusterConfigurationDiff               = listClusterConfigurationDiff
+	ChartDifference                            = chartDifference
+	ResourceDifference                         = resourceDifference
+	AddChartEntry                              = addChartEntry
+	AddResourceEntry                           = addResourceEntry
+	AppendChartsAndResourcesForClusterProfiles = appendChartsAndResourcesForClusterProfiles
+	ListDiff                                   = listDiff
 
 	GetAndRollbackConfigMaps        = getAndRollbackConfigMaps
-	GetAndRollbackClusterProfiles   = getAndRollbackClusterProfiles
+	GetAndRollbackProfiles          = getAndRollbackProfiles
 	RollbackConfigMaps              = rollbackConfigMaps
 	RollbackSecrets                 = rollbackSecrets
 	RollbackClusters                = rollbackClusters

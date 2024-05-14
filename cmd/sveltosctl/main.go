@@ -29,7 +29,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2"
-	"k8s.io/klog/v2/klogr"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -42,11 +41,15 @@ func main() {
 	doc := `Usage:
 	sveltosctl [options] <command> [<args>...]
 
-    show           Display information on deployed policies (resources and helm releases) in each cluster
+    show           Display information on deployed Kubernetes addons (resources and helm releases) in each cluster
                    or for ClusterProfiles in DryRun mode, what changes would take effect if the ClusterProfile
-                   mode was to be moved out of DryRun mode.
+                   mode was to be moved out of DryRun mode. Displays also information on which permissions each
+                   tenant admin has in each managed cluster.
     snapshot       Displays collected snaphost. Visualize diffs between two collected snapshots.
+    techsupport    Displays collected techsupport.
     register       Onboard an existing non CAPI cluster by creating all necessary internal resources.
+    generate       Generates a Kubeconfig that can later be used to register a cluster.
+                   Run this command with sveltosctl pointing to the cluster you want Sveltos to manage.
     log-level      Allows changing the log verbosity.
     version        Display the version of sveltosctl.
 
@@ -75,7 +78,9 @@ Description:
 		SkipHelpFlags: false,
 	}
 
-	logger := klogr.New()
+	ctrl.SetLogger(klog.Background())
+
+	logger := klog.FromContext(ctx)
 	opts, err := parser.ParseArgs(doc, nil, "")
 	if err != nil {
 		var userError docopt.UserError
@@ -98,8 +103,12 @@ Description:
 			err = commands.Show(ctx, args, logger)
 		case "snapshot":
 			err = commands.Snapshot(ctx, args, logger)
+		case "techsupport":
+			err = commands.Techsupport(ctx, args, logger)
 		case "register":
 			err = commands.RegisterCluster(ctx, args, logger)
+		case "generate":
+			err = commands.Generate(ctx, args, logger)
 		case "log-level":
 			err = commands.LogLevel(ctx, args, logger)
 		case "version":

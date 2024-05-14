@@ -21,26 +21,13 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"reflect"
 	"strings"
 
 	docopt "github.com/docopt/docopt-go"
 	"github.com/go-logr/logr"
-	"k8s.io/klog/v2/klogr"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/commands/snapshot"
-	"github.com/projectsveltos/sveltosctl/internal/snapshotter"
-	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
 // Snapshot takes keyword then calls subcommand.
@@ -89,6 +76,7 @@ See 'sveltosctl snapshot <subcommand> --help' to read about a specific subcomman
 		select {}
 	} else if opts["<subcommand>"] != nil {
 		switch command {
+		//nolint: goconst // same command name
 		case "list":
 			err = snapshot.List(ctx, arguments, logger)
 		case "diff":
@@ -103,116 +91,4 @@ See 'sveltosctl snapshot <subcommand> --help' to read about a specific subcomman
 		return err
 	}
 	return nil
-}
-
-func watchResources(ctx context.Context, logger logr.Logger) error {
-	scheme, _ := utils.GetScheme()
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:         scheme,
-		LeaderElection: false,
-	})
-	if err != nil {
-		logger.Error(err, "unable to start manager")
-		os.Exit(1)
-	}
-
-	// Create an un-managed controller
-	c, err := controller.NewUnmanaged("sveltoswacther", mgr, controller.Options{
-		Reconciler:              reconcile.Func(SnapshotReconciler),
-		MaxConcurrentReconciles: 1,
-	})
-
-	if err != nil {
-		logger.Error(err, "unable to create watcher")
-		return err
-	}
-
-	if err := c.Watch(&source.Kind{Type: &utilsv1alpha1.Snapshot{}},
-		handler.EnqueueRequestsFromMapFunc(snapshotHandler),
-		addModifyDeletePredicates(),
-	); err != nil {
-		logger.Error(err, "unable to watch resource Snapshot")
-		return err
-	}
-
-	// Start controller in a goroutine so not to block.
-	go func() {
-		const workerNumber = 10
-		snapshotter.InitializeClient(ctx, logger.WithName("snapshotter"), mgr.GetClient(), workerNumber)
-		// Start controller. This will block until the context is
-		// closed, or the controller returns an error.
-		logger.Info("Starting watcher controller")
-		if err := c.Start(ctx); err != nil {
-			logger.Error(err, "cannot run controller")
-			panic(1)
-		}
-	}()
-
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
-		logger.Error(err, "unable to continue running manager")
-		return err
-	}
-
-	return nil
-}
-
-func addModifyDeletePredicates() predicate.Funcs {
-	logger := klogr.New()
-	return predicate.Funcs{
-		UpdateFunc: func(e event.UpdateEvent) bool {
-			newObject := e.ObjectNew.(*utilsv1alpha1.Snapshot)
-			oldObject := e.ObjectOld.(*utilsv1alpha1.Snapshot)
-			logger.Info(fmt.Sprintf("Update kind: %s Info: %s/%s",
-				newObject.GetObjectKind().GroupVersionKind().Kind,
-				newObject.GetNamespace(), newObject.GetName()))
-
-			if oldObject == nil ||
-				!reflect.DeepEqual(newObject.Spec, oldObject.Spec) {
-
-				return true
-			}
-
-			return false
-		},
-		DeleteFunc: func(e event.DeleteEvent) bool {
-			object := e.Object
-			o := e.Object
-			logger.Info(fmt.Sprintf("Delete kind: %s Info: %s/%s",
-				object.GetObjectKind().GroupVersionKind().Kind,
-				o.GetNamespace(), o.GetName()))
-			return true
-		},
-		CreateFunc: func(e event.CreateEvent) bool {
-			object := e.Object
-			o := e.Object
-			logger.Info(fmt.Sprintf("Create kind: %s Info: %s/%s",
-				object.GetObjectKind().GroupVersionKind().Kind,
-				o.GetNamespace(), o.GetName()))
-			return true
-		},
-		GenericFunc: func(e event.GenericEvent) bool {
-			return false
-		},
-	}
-}
-
-func snapshotHandler(o client.Object) []reconcile.Request {
-	snapshotInstance := o.(*utilsv1alpha1.Snapshot)
-
-	logger := klogr.New().WithValues(
-		"objectMapper",
-		"snapshotHandler",
-		"snapshot",
-		snapshotInstance.Name,
-	)
-
-	logger.V(logs.LogInfo).Info("reacting to Snapshot change")
-
-	return []reconcile.Request{
-		{
-			NamespacedName: client.ObjectKey{
-				Name: snapshotInstance.Name,
-			},
-		},
-	}
 }

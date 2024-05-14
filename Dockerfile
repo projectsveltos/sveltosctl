@@ -1,19 +1,11 @@
 # Build the manager binary
-FROM golang:1.19 as builder
+FROM golang:1.22 as builder
 
 ARG ARCH
-ARG PKEY
 ARG GIT_VERSION=unknown
 ARG LDFLAGS
-
-
-ENV GOPRIVATE github.com/projectsveltos
-RUN git config --global url."ssh://git@github.com/".insteadOf https://github.com/
-# replace with correct SSH if using customized
-ENV GIT_SSH_COMMAND 'ssh -i /workspace/.ssh/$PKEY -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
-COPY .ssh/ /workspace/.ssh/
-COPY .gitconfig /workspace/.gitconfig
-
+ARG BUILDOS
+ARG TARGETARCH
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -29,7 +21,7 @@ COPY cmd/ cmd
 COPY internal/ internal/
 
 # Build
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=$ARCH GO111MODULE=on go build -ldflags "$LDFLAGS" -a -o sveltosctl cmd/sveltosctl/main.go
+RUN CGO_ENABLED=0 GOOS=$BUILDOS GOARCH=$TARGETARCH GO111MODULE=on go build -ldflags "$LDFLAGS" -a -o sveltosctl cmd/sveltosctl/main.go
 
 LABEL name="Sveltos CLI tool" \
       vendor="Projectsveltos" \

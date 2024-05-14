@@ -17,7 +17,6 @@ limitations under the License.
 package show_test
 
 import (
-	"encoding/base64"
 	"fmt"
 	"time"
 	"unicode/utf8"
@@ -31,7 +30,7 @@ import (
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
+	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -187,7 +186,7 @@ func createSecretWithPolicy(namespace, configMapName string, policyStrs ...strin
 	}
 	for i := range policyStrs {
 		key := fmt.Sprintf("policy%d.yaml", i)
-		secret.Data[key] = []byte(base64.StdEncoding.EncodeToString([]byte(policyStrs[i])))
+		secret.Data[key] = []byte(policyStrs[i])
 	}
 
 	Expect(addTypeInformationToObject(secret)).To(Succeed())

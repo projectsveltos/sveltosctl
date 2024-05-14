@@ -18,7 +18,6 @@ package snapshot
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -37,13 +36,13 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/klog/v2/klogr"
+	"k8s.io/klog/v2/textlogger"
 
+	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
-	"github.com/projectsveltos/sveltosctl/internal/snapshotter"
+	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -106,8 +105,9 @@ func listSnapshotDiffs(ctx context.Context, snapshotName, fromSample, toSample,
 		return err
 	}
 
-	snapshotClient := snapshotter.GetClient()
-	artifactFolder, err := snapshotClient.GetCollectedSnapshotFolder(snapshotInstance, logger)
+	snapshotClient := collector.GetClient()
+	artifactFolder, err := snapshotClient.GetFolder(snapshotInstance.Spec.Storage, snapshotInstance.Name,
+		collector.Snapshot, logger)
 	if err != nil {
 		return err
 	}
@@ -149,7 +149,7 @@ func listSnapshotDiffs(ctx context.Context, snapshotName, fromSample, toSample,
 }
 
 func listDiff(fromFolder, toFolder, kind string, rawDiff bool, logger logr.Logger) error {
-	snapshotClient := snapshotter.GetClient()
+	snapshotClient := collector.GetClient()
 	froms, err := snapshotClient.GetClusterResources(fromFolder, kind, logger)
 	if err != nil {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect %ss from folder %s", kind, fromFolder))
@@ -250,7 +250,7 @@ func listSnapshotDiffsBewteenSamples(fromFolder, toFolder, passedNamespace, pass
 
 	// Following maps contain per Cluster corresponding ClusterConfiguration at the time snapshot was taken
 	// There is one ClusterConfigurations per Cluster
-	snapshotClient := snapshotter.GetClient()
+	snapshotClient := collector.GetClient()
 	fromClusterConfigurationMap, err := snapshotClient.GetNamespacedResources(fromFolder,
 		configv1alpha1.ClusterConfigurationKind, logger)
 	if err != nil {
@@ -272,7 +272,7 @@ func listSnapshotDiffsBewteenSamples(fromFolder, toFolder, passedNamespace, pass
 	err = listFeatureDiff(fromFolder, toFolder, fromClusterConfigurationMap, toClusterConfigurationMap,
 		passedNamespace, passedCluster, rawDiff, table, logger)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	return nil
@@ -405,7 +405,11 @@ func listClusterConfigurationDiff(fromFolder, toFolder string, fromClusterConfig
 	if toClusterConfiguration != nil {
 		for i := range toClusterConfiguration.Status.ClusterProfileResources {
 			cpr := &toClusterConfiguration.Status.ClusterProfileResources[i]
-			toCharts, toResources = appendChartsAndResources(cpr, toCharts, toResources)
+			toCharts, toResources = appendChartsAndResourcesForClusterProfiles(cpr, toCharts, toResources)
+		}
+		for i := range toClusterConfiguration.Status.ProfileResources {
+			pr := &toClusterConfiguration.Status.ProfileResources[i]
+			toCharts, toResources = appendChartsAndResourcesForProfiles(pr, toCharts, toResources)
 		}
 	}
 
@@ -414,7 +418,11 @@ func listClusterConfigurationDiff(fromFolder, toFolder string, fromClusterConfig
 	if fromClusterConfiguration != nil {
 		for i := range fromClusterConfiguration.Status.ClusterProfileResources {
 			cpr := &fromClusterConfiguration.Status.ClusterProfileResources[i]
-			fromCharts, fromResources = appendChartsAndResources(cpr, fromCharts, fromResources)
+			fromCharts, fromResources = appendChartsAndResourcesForClusterProfiles(cpr, fromCharts, fromResources)
+		}
+		for i := range fromClusterConfiguration.Status.ProfileResources {
+			pr := &fromClusterConfiguration.Status.ProfileResources[i]
+			fromCharts, fromResources = appendChartsAndResourcesForProfiles(pr, fromCharts, fromResources)
 		}
 	}
 
@@ -583,7 +591,7 @@ func resourceDifference(fromFolder, toFolder string, from, to []configv1alpha1.R
 	return addedResources, modifiedResources, deletedResources, nil
 }
 
-func appendChartsAndResources(cpr *configv1alpha1.ClusterProfileResource, charts []configv1alpha1.Chart,
+func appendChartsAndResourcesForClusterProfiles(cpr *configv1alpha1.ClusterProfileResource, charts []configv1alpha1.Chart,
 	resources []configv1alpha1.Resource) ([]configv1alpha1.Chart, []configv1alpha1.Resource) {
 
 	for i := range cpr.Features {
@@ -592,10 +600,22 @@ func appendChartsAndResources(cpr *configv1alpha1.ClusterProfileResource, charts
 			c.LastAppliedTime = nil
 			charts = append(charts, c)
 		}
-		for j := range cpr.Features[i].Resources {
-			r := cpr.Features[i].Resources[j]
-			resources = append(resources, r)
+		resources = append(resources, cpr.Features[i].Resources...)
+	}
+
+	return charts, resources
+}
+
+func appendChartsAndResourcesForProfiles(pr *configv1alpha1.ProfileResource, charts []configv1alpha1.Chart,
+	resources []configv1alpha1.Resource) ([]configv1alpha1.Chart, []configv1alpha1.Resource) {
+
+	for i := range pr.Features {
+		for j := range pr.Features[i].Charts {
+			c := pr.Features[i].Charts[j]
+			c.LastAppliedTime = nil
+			charts = append(charts, c)
 		}
+		resources = append(resources, pr.Features[i].Resources...)
 	}
 
 	return charts, resources
@@ -625,7 +645,7 @@ func hasDiff(fromFolder, toFolder string, from, to *configv1alpha1.Resource, raw
 		fmt.Sprintf("%s from %s", resourceInfo, toFolder),
 		fromResource, edits))
 
-	if rawDiff {
+	if rawDiff && diff != "" {
 		//nolint: forbidigo // print diff
 		fmt.Println(diff)
 	}
@@ -696,10 +716,7 @@ func getResourceFromResourceOwner(folder string, resource *configv1alpha1.Resour
 		}
 		data = make(map[string]string)
 		for key, value := range secret.Data {
-			data[key], err = decode(value)
-			if err != nil {
-				return "", err
-			}
+			data[key] = string(value)
 		}
 	}
 
@@ -728,15 +745,6 @@ func getResourceFromResourceOwner(folder string, resource *configv1alpha1.Resour
 		resource.Kind, resource.Namespace, resource.Name, ownerPath)
 }
 
-func decode(encoded []byte) (string, error) {
-	decoded, err := base64.StdEncoding.DecodeString(string(encoded))
-	if err != nil {
-		return "", err
-	}
-
-	return string(decoded), nil
-}
-
 func buildOwnerPath(folder string, resource *configv1alpha1.Resource) string {
 	return filepath.Join(folder,
 		resource.Owner.Namespace,
@@ -750,7 +758,7 @@ func getResourceOwner(ownerFile string) (*unstructured.Unstructured, error) {
 		return nil, err
 	}
 
-	instance := snapshotter.GetClient()
+	instance := collector.GetClient()
 	u, err := instance.GetUnstructured(content)
 	if err != nil {
 		return nil, err
@@ -802,7 +810,7 @@ Description:
 		}
 	}
 
-	logger = klogr.New()
+	logger = textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1)))
 
 	snapshostName := parsedArgs["--snapshot"].(string)
 	toSample := parsedArgs["--to-sample"].(string)

@@ -19,7 +19,7 @@ package show
 import (
 	corev1 "k8s.io/api/core/v1"
 
-	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
+	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
 )
 
 func doConsiderNamespace(ns *corev1.Namespace, passedNamespace string) bool {
@@ -37,7 +37,12 @@ func doConsiderClusterConfiguration(clusterConfiguration *configv1alpha1.Cluster
 		return true
 	}
 
-	return clusterConfiguration.Name == passedCluster
+	if clusterConfiguration.Labels == nil {
+		return false
+	}
+
+	clusterName := clusterConfiguration.Labels[configv1alpha1.ClusterNameLabel]
+	return clusterName == passedCluster
 }
 
 func doConsiderClusterReport(clusterReport *configv1alpha1.ClusterReport,
@@ -50,13 +55,13 @@ func doConsiderClusterReport(clusterReport *configv1alpha1.ClusterReport,
 	return clusterReport.Spec.ClusterName == passedCluster
 }
 
-func doConsiderClusterProfile(clusterProfileNames []string, passedClusterProfile string) bool {
-	if passedClusterProfile == "" {
+func doConsiderProfile(profileNames []string, passedProfile string) bool {
+	if passedProfile == "" {
 		return true
 	}
 
-	for i := range clusterProfileNames {
-		if clusterProfileNames[i] == passedClusterProfile {
+	for i := range profileNames {
+		if profileNames[i] == passedProfile {
 			return true
 		}
 	}

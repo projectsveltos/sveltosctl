@@ -29,16 +29,16 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/klog/v2/klogr"
+	"k8s.io/klog/v2/textlogger"
 	kubectlscheme "k8s.io/kubectl/pkg/scheme"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
-	configv1alpha1 "github.com/projectsveltos/sveltos-manager/api/v1alpha1"
+	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/commands/snapshot"
-	"github.com/projectsveltos/sveltosctl/internal/snapshotter"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -173,8 +173,8 @@ var _ = Describe("Snapshot Rollback", func() {
 		updateConfigMapData(currentConfigMap)
 
 		// Rollback
-		Expect(snapshot.RollbackConfigMaps(context.TODO(),
-			[]*unstructured.Unstructured{configMap}, klogr.New())).To(Succeed())
+		Expect(snapshot.RollbackConfigMaps(context.TODO(), []*unstructured.Unstructured{configMap},
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		Expect(instance.GetResource(context.TODO(),
 			types.NamespacedName{Namespace: namespace, Name: name}, currentConfigMap)).To(Succeed())
@@ -208,8 +208,8 @@ var _ = Describe("Snapshot Rollback", func() {
 		updateSecretData(currentSecret)
 
 		// Rollback
-		Expect(snapshot.RollbackSecrets(context.TODO(),
-			[]*unstructured.Unstructured{secret}, klogr.New())).To(Succeed())
+		Expect(snapshot.RollbackSecrets(context.TODO(), []*unstructured.Unstructured{secret},
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		Expect(instance.GetResource(context.TODO(),
 			types.NamespacedName{Namespace: namespace, Name: name}, currentSecret)).To(Succeed())
@@ -239,8 +239,8 @@ var _ = Describe("Snapshot Rollback", func() {
 		updateClusterProfileSpec(currentCP)
 
 		// Rollback
-		Expect(snapshot.RollbackClusterProfile(context.TODO(),
-			cp, klogr.New())).To(Succeed())
+		Expect(snapshot.RollbackClusterProfile(context.TODO(), cp,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		Expect(instance.GetResource(context.TODO(),
 			types.NamespacedName{Name: name}, currentCP)).To(Succeed())
@@ -275,7 +275,8 @@ var _ = Describe("Snapshot Rollback", func() {
 
 		// Rollback
 		Expect(snapshot.RollbackClusters(context.TODO(), []*unstructured.Unstructured{cluster}, "",
-			libsveltosv1alpha1.ClusterTypeCapi, klogr.New())).To(Succeed())
+			libsveltosv1alpha1.ClusterTypeCapi,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		Expect(instance.GetResource(context.TODO(),
 			types.NamespacedName{Namespace: namespace, Name: name}, currentCluster)).To(Succeed())
@@ -343,7 +344,7 @@ var _ = Describe("Snapshot Rollback", func() {
 		updateClusterProfileSpec(currentClusterProfile)
 
 		Expect(snapshot.RollbackConfigurationToSnapshot(context.TODO(), folder, "", "", "", "", "",
-			klogr.New())).To(Succeed())
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		Expect(instance.GetResource(context.TODO(),
 			types.NamespacedName{Namespace: namespace, Name: name}, currentConfigMap)).To(Succeed())
@@ -369,9 +370,12 @@ var _ = Describe("Snapshot Rollback", func() {
 		name := randomString()
 		namespace := randomString()
 
+		collectorClient := collector.GetClient()
+
 		configMap, err := GetUnstructured([]byte(fmt.Sprintf(configMapWithPolicy, namespace, name)))
 		Expect(err).To(BeNil())
-		Expect(snapshotter.DumpObject(configMap, folder, klogr.New())).To(Succeed())
+		Expect(collectorClient.DumpObject(configMap, folder,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		scheme, err := utils.GetScheme()
 		Expect(err).To(BeNil())
@@ -379,7 +383,8 @@ var _ = Describe("Snapshot Rollback", func() {
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
 
 		// now read it back it should succeed
-		Expect(snapshot.GetAndRollbackConfigMaps(context.TODO(), folder, "", klogr.New())).To(Succeed())
+		Expect(snapshot.GetAndRollbackConfigMaps(context.TODO(), folder, "",
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		currentConfigMap := &corev1.ConfigMap{}
 		Expect(c.Get(context.TODO(),
@@ -392,9 +397,12 @@ var _ = Describe("Snapshot Rollback", func() {
 
 		name := randomString()
 
+		collectorClient := collector.GetClient()
+
 		clusterProfile, err := GetUnstructured([]byte(fmt.Sprintf(clusterProfileTemplate, name)))
 		Expect(err).To(BeNil())
-		Expect(snapshotter.DumpObject(clusterProfile, folder, klogr.New())).To(Succeed())
+		Expect(collectorClient.DumpObject(clusterProfile, folder,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		scheme, err := utils.GetScheme()
 		Expect(err).To(BeNil())
@@ -402,7 +410,8 @@ var _ = Describe("Snapshot Rollback", func() {
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
 
 		// now read it back it should succeed
-		Expect(snapshot.GetAndRollbackClusterProfiles(context.TODO(), folder, "", klogr.New())).To(Succeed())
+		Expect(snapshot.GetAndRollbackProfiles(context.TODO(), folder, "", "",
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		currentClusterProfile := &configv1alpha1.ClusterProfile{}
 		Expect(c.Get(context.TODO(),
@@ -494,13 +503,16 @@ func createDirectoryWithObjects(snapshotName, snapshotStorage string, objects []
 	By(fmt.Sprintf("Created temporary directory %s", snapshotDir))
 	Expect(err).To(BeNil())
 
+	collectorClient := collector.GetClient()
+
 	for i := range objects {
 		o := objects[i]
 		Expect(addTypeInformationToObject(o)).To(Succeed())
 		By(fmt.Sprintf("Adding %s %s/%s to directory %s",
 			o.GetObjectKind().GroupVersionKind().GroupKind().Kind, o.GetNamespace(), o.GetName(), snapshotDir))
 
-		Expect(snapshotter.DumpObject(o, snapshotDir, klogr.New())).To(Succeed())
+		Expect(collectorClient.DumpObject(o, snapshotDir,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 	}
 
 	return snapshotDir
