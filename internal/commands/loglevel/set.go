@@ -72,14 +72,14 @@ func Set(ctx context.Context, args []string) error {
     doc := `Usage:
   sveltosctl log-level set --component=<name> (--info|--debug|--verbose) [--namespace=<namespace>] [--clusterName=<cluster-name>] [--clusterType=<cluster-type>]
 Options:
-  -h --help                		   Show this screen.
-     --component=<name>    		   Name of the component for which log severity is being set.
-     --namespace=<namespace> 	   Namespace of the cluster.
-     --cluster=<cluster-name> 	   Name of the cluster.
-     --cluster-type=<cluster-type> Type of the cluster (Capi or Sveltos).
-     --info                		   Set log severity to info.
-     --debug               		   Set log severity to debug.
-     --verbose             		   Set log severity to verbose.
+  -h --help                  	  Show this screen.
+     --component=<name>      	  Name of the component for which log severity is being set.
+     --info                  	  Set log severity to info.
+     --debug                 	  Set log severity to debug.
+     --verbose               	  Set log severity to verbose.
+     --namespace=<namespace> 	  Namespace in the managed cluster (optional).
+     --clusterName=<cluster-name> Name of the managed cluster (optional).
+     --clusterType=<cluster-type> Type of the managed cluster (optional).
 	 
 Description:
   The log-level set command sets log severity for the specified component in the specified cluster.
@@ -128,12 +128,11 @@ Description:
         logSeverity = libsveltosv1alpha1.LogLevelVerbose
     }
 
-    // if namespace, cluster name, and cluster type are provided, update the managed cluster
+    // if namespace, clusterName, and clusterType are provided, update the configuration in the managed cluster
     if namespace != "" && clusterName != "" && clusterType != "" {
         return updateDebuggingConfigurationInManaged(ctx, logSeverity, component, namespace, clusterName, clusterType)
     }
 
-    // get access instance for the management cluster
     instance := utils.GetAccessInstance()
     dc, err := instance.GetDebuggingConfiguration(ctx)
     if err != nil {

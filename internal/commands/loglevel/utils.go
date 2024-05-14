@@ -62,7 +62,6 @@ func updateLogLevelConfiguration(
     spec []libsveltosv1alpha1.ComponentConfiguration,
     dc *libsveltosv1alpha1.DebuggingConfiguration,
 ) error {
-
     dc.Spec = libsveltosv1alpha1.DebuggingConfigurationSpec{
         Configuration: spec,
     }
@@ -79,15 +78,14 @@ func updateDebuggingConfigurationInManaged(
     clusterName string,
     clusterType string,
 ) error {
-    
-    // get a client for the managed cluster using; namespace, clusterName, and clusterType
+    // get a client for the managed cluster using namespace, clusterName, and clusterType
     instance := utils.GetAccessInstance()
-    client, err := instance.GetClientForManagedCluster(namespace, clusterName, clusterType)
+    client, err := instance.GetClientForCluster(namespace, clusterName, clusterType)
     if err != nil {
         return err
     }
 
-    // get the DebuggingConfiguration from the managed cluster
+    // get the debuggingconfiguration from the managed cluster
     dc, err := client.GetDebuggingConfiguration(ctx, namespace)
     if err != nil {
         if apierrors.IsNotFound(err) {
