@@ -17,63 +17,69 @@ limitations under the License.
 package utils_test
 
 import (
-	"context"
+    "context"
 
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+    . "github.com/onsi/ginkgo/v2"
+    . "github.com/onsi/gomega"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+    metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+    "k8s.io/apimachinery/pkg/runtime"
+    "k8s.io/apimachinery/pkg/types"
+    "sigs.k8s.io/controller-runtime/pkg/client"
+    "sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
-	"github.com/projectsveltos/sveltosctl/internal/utils"
+    libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+    "github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
 var _ = Describe("DebuggingConfigurations", func() {
-	It("GetDebuggingConfiguration returns the default instance", func() {
-		dc := &libsveltosv1alpha1.DebuggingConfiguration{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: utils.DefaultInstanceName,
-			},
-		}
+    testNamespace := "default"
+    testClusterName := utils.DefaultInstanceName
 
-		initObjects := []client.Object{dc}
-		scheme := runtime.NewScheme()
-		Expect(utils.AddToScheme(scheme)).To(Succeed())
-		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
+    It("GetDebuggingConfiguration returns the default instance", func() {
+        dc := &libsveltosv1alpha1.DebuggingConfiguration{
+            ObjectMeta: metav1.ObjectMeta{
+                Namespace: testNamespace,
+                Name:      testClusterName,
+            },
+        }
 
-		k8sAccess := utils.GetK8sAccess(scheme, c)
-		currentDC, err := k8sAccess.GetDebuggingConfiguration(context.TODO())
-		Expect(err).To(BeNil())
-		Expect(currentDC).ToNot(BeNil())
-		Expect(currentDC.Name).To(Equal(dc.Name))
-	})
+        initObjects := []client.Object{dc}
+        scheme := runtime.NewScheme()
+        Expect(utils.AddToScheme(scheme)).To(Succeed())
+        c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
-	It("UpdateDebuggingConfiguration updates default DebuggingConfiguration instance", func() {
-		dc := &libsveltosv1alpha1.DebuggingConfiguration{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: utils.DefaultInstanceName,
-			},
-		}
+        k8sAccess := utils.GetK8sAccess(scheme, c)
+        currentDC, err := k8sAccess.GetDebuggingConfiguration(context.TODO(), testNamespace, testClusterName)
+        Expect(err).To(BeNil())
+        Expect(currentDC).ToNot(BeNil())
+        Expect(currentDC.Name).To(Equal(dc.Name))
+    })
 
-		scheme := runtime.NewScheme()
-		Expect(utils.AddToScheme(scheme)).To(Succeed())
-		c := fake.NewClientBuilder().WithScheme(scheme).Build()
+    It("UpdateDebuggingConfiguration updates default DebuggingConfiguration instance", func() {
+        dc := &libsveltosv1alpha1.DebuggingConfiguration{
+            ObjectMeta: metav1.ObjectMeta{
+                Namespace: testNamespace,
+                Name:      testClusterName,
+            },
+        }
 
-		k8sAccess := utils.GetK8sAccess(scheme, c)
-		Expect(k8sAccess.UpdateDebuggingConfiguration(context.TODO(), dc)).To(Succeed())
+        scheme := runtime.NewScheme()
+        Expect(utils.AddToScheme(scheme)).To(Succeed())
+        c := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-		currentDC := &libsveltosv1alpha1.DebuggingConfiguration{}
-		Expect(c.Get(context.TODO(), types.NamespacedName{Name: utils.DefaultInstanceName}, currentDC)).To(Succeed())
-		currentDC.Spec.Configuration = []libsveltosv1alpha1.ComponentConfiguration{
-			{Component: libsveltosv1alpha1.ComponentClassifier, LogLevel: libsveltosv1alpha1.LogLevelDebug},
-		}
+        k8sAccess := utils.GetK8sAccess(scheme, c)
+        Expect(k8sAccess.UpdateDebuggingConfiguration(context.TODO(), testNamespace, testClusterName, dc)).To(Succeed())
 
-		Expect(k8sAccess.UpdateDebuggingConfiguration(context.TODO(), currentDC)).To(Succeed())
-		Expect(c.Get(context.TODO(), types.NamespacedName{Name: utils.DefaultInstanceName}, currentDC)).To(Succeed())
-		Expect(len(currentDC.Spec.Configuration)).To(Equal(1))
-	})
+        currentDC := &libsveltosv1alpha1.DebuggingConfiguration{}
+        Expect(c.Get(context.TODO(), types.NamespacedName{Namespace: testNamespace, Name: testClusterName}, currentDC)).To(Succeed())
+        currentDC.Spec.Configuration = []libsveltosv1alpha1.ComponentConfiguration{
+            {Component: libsveltosv1alpha1.ComponentClassifier, LogLevel: libsveltosv1alpha1.LogLevelDebug},
+        }
+
+        Expect(k8sAccess.UpdateDebuggingConfiguration(context.TODO(), testNamespace, testClusterName, currentDC)).To(Succeed())
+        Expect(c.Get(context.TODO(), types.NamespacedName{Namespace: testNamespace, Name: testClusterName}, currentDC)).To(Succeed())
+        Expect(len(currentDC.Spec.Configuration)).To(Equal(1))
+    })
 })
+
