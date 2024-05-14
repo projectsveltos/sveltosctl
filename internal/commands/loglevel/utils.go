@@ -17,19 +17,19 @@ limitations under the License.
 package loglevel
 
 import (
-	"context"
-	"sort"
+    "context"
+    "sort"
 
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+    apierrors "k8s.io/apimachinery/pkg/api/errors"
+    metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
-	"github.com/projectsveltos/sveltosctl/internal/utils"
+    libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+    "github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
 type componentConfiguration struct {
-	component   libsveltosv1beta1.Component
-	logSeverity libsveltosv1beta1.LogLevel
+    component   libsveltosv1alpha1.Component
+    logSeverity libsveltosv1alpha1.LogLevel
 }
 
 // byComponent sorts componentConfiguration by name.
@@ -38,34 +38,70 @@ type byComponent []*componentConfiguration
 func (c byComponent) Len() int      { return len(c) }
 func (c byComponent) Swap(i, j int) { c[i], c[j] = c[j], c[i] }
 func (c byComponent) Less(i, j int) bool {
-	return c[i].component < c[j].component
+    return c[i].component < c[j].component
 }
 
 func collectLogLevelConfiguration(ctx context.Context, dc *libsveltosv1alpha1.DebuggingConfiguration) ([]*componentConfiguration, error) {
-	configurationSettings := make([]*componentConfiguration, len(dc.Spec.Configuration))
+    configurationSettings := make([]*componentConfiguration, len(dc.Spec.Configuration))
 
-	for i, c := range dc.Spec.Configuration {
-		configurationSettings[i] = &componentConfiguration{
-			component:   c.Component,
-			logSeverity: c.LogLevel,
-		}
-	}
+    for i, c := range dc.Spec.Configuration {
+        configurationSettings[i] = &componentConfiguration{
+            component:   c.Component,
+            logSeverity: c.LogLevel,
+        }
+    }
 
-	// Sort this by component name first. Component/node is higher priority than Component
-	sort.Sort(byComponent(configurationSettings))
+    // Sort this by component name first. Component/node is higher priority than Component
+    sort.Sort(byComponent(configurationSettings))
 
-	return configurationSettings, nil
+    return configurationSettings, nil
 }
 
 func updateLogLevelConfiguration(
-	ctx context.Context,
-	spec []libsveltosv1alpha1.ComponentConfiguration,
-	dc *libsveltosv1alpha1.DebuggingConfiguration,
+    ctx context.Context,
+    spec []libsveltosv1alpha1.ComponentConfiguration,
+    dc *libsveltosv1alpha1.DebuggingConfiguration,
 ) error {
 
-	dc.Spec = libsveltosv1alpha1.DebuggingConfigurationSpec{
-		Configuration: spec,
-	}
+    dc.Spec = libsveltosv1alpha1.DebuggingConfigurationSpec{
+        Configuration: spec,
+    }
 
-	return instance.UpdateDebuggingConfiguration(ctx, dc, namespace, clusterName, clusterType)
+    return instance.UpdateDebuggingConfiguration(ctx, dc)
+}
+
+// updates the log severity for a managed cluster
+func updateDebuggingConfigurationInManaged(
+    ctx context.Context,
+    logSeverity libsveltosv1alpha1.LogLevel,
+    component string,
+    namespace string,
+    clusterName string,
+    clusterType string,
+) error {
+    
+    // get a client for the managed cluster using; namespace, clusterName, and clusterType
+    instance := utils.GetAccessInstance()
+    client, err := instance.GetClientForManagedCluster(namespace, clusterName, clusterType)
+    if err != nil {
+        return err
+    }
+
+    // get the DebuggingConfiguration from the managed cluster
+    dc, err := client.GetDebuggingConfiguration(ctx, namespace)
+    if err != nil {
+        if apierrors.IsNotFound(err) {
+            dc = &libsveltosv1alpha1.DebuggingConfiguration{
+                ObjectMeta: metav1.ObjectMeta{
+                    Namespace: namespace,
+                },
+                Spec: libsveltosv1alpha1.DebuggingConfigurationSpec{},
+            }
+        } else {
+            return err
+        }
+    }
+
+    // update the log severity in the managed cluster
+    return updateDebuggingConfiguration(ctx, logSeverity, component, dc)
 }
