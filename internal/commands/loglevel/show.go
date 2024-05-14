@@ -26,11 +26,15 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-func showLogSettings(ctx context.Context, namespace, clusterName, clusterType string) error {
-	componentConfiguration, err := collectLogLevelConfiguration(ctx, namespace, clusterName, clusterType)
-	if err != nil {
-		return err
-	}
+func showLogSettings(ctx context.Context) error {
+    // adjust as necessary
+    namespace := "default" // can change
+    clusterName := "" 
+
+    componentConfiguration, err := collectLogLevelConfiguration(ctx, namespace, clusterName)
+    if err != nil {
+        return err
+    }
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"COMPONENT", "VERBOSITY"})

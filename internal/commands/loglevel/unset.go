@@ -25,34 +25,36 @@ import (
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 )
 
-func unsetDebuggingConfiguration(ctx context.Context, component, namespace, clusterName, clusterType string) error {
-	cc, err := collectLogLevelConfiguration(ctx, namespace, clusterName, clusterType)
-	if err != nil {
-		return nil
-	}
+func unsetDebuggingConfiguration(ctx context.Context, component string) error {
+    namespace := "default"  // default. can change
+    clusterName := ""
 
-	found := false
-	spec := make([]libsveltosv1beta1.ComponentConfiguration, 0)
+    cc, err := collectLogLevelConfiguration(ctx, namespace, clusterName)
+    if err != nil {
+        return err
+    }
 
-	for _, c := range cc {
-		if string(c.component) == component {
-			found = true
-			continue
-		} else {
-			spec = append(spec,
-				libsveltosv1beta1.ComponentConfiguration{
-					Component: c.component,
-					LogLevel:  c.logSeverity,
-				},
-			)
-		}
-	}
+    found := false
+    spec := make([]libsveltosv1alpha1.ComponentConfiguration, 0)
 
-	if found {
-		return updateLogLevelConfiguration(ctx, spec, namespace, clusterName, clusterType)
-	}
-	return nil
+    for _, c := range cc {
+        if string(c.component) == component {
+            found = true
+            continue
+        } else {
+            spec = append(spec, libsveltosv1alpha1.ComponentConfiguration{
+                Component: c.component,
+                LogLevel:  c.logSeverity,
+            })
+        }
+    }
+
+    if found {
+        return updateLogLevelConfiguration(ctx, spec, namespace, clusterName)
+    }
+    return nil
 }
+
 
 // Unset resets log verbosity for a given component
 func Unset(ctx context.Context, args []string) error {
