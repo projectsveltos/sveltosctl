@@ -26,10 +26,7 @@ import (
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 )
 
-func unsetDebuggingConfiguration(ctx context.Context, component string) error {
-    namespace := "default"  // default. can change
-    clusterName := ""
-
+func unsetDebuggingConfiguration(ctx context.Context, component, namespace, clusterName string) error {
     cc, err := collectLogLevelConfiguration(ctx, namespace, clusterName)
     if err != nil {
         return err
@@ -57,18 +54,21 @@ func unsetDebuggingConfiguration(ctx context.Context, component string) error {
 }
 
 
+
 // Unset resets log verbosity for a given component
 func Unset(ctx context.Context, args []string) error {
 	doc := `Usage:
-  sveltosctl log-level unset --component=<name>
+  sveltosctl log-level unset --component=<name> [--namespace=<namespace>] [--cluster=<cluster>]
 Options:
-  -h --help             Show this screen.
-     --component=<name> Name of the component for which log severity is being set.
+  -h --help               Show this screen.
+     --component=<name>   Name of the component for which log severity is being set.
+     --namespace=<namespace>   Namespace of the component (default "default").
+     --cluster=<cluster>       Cluster name (optional).
 	 
 Description:
-  The log-level set command set log severity for the specified component.
+  The log-level unset command removes log severity settings for the specified component.
 `
-	parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
+	parsedArgs, err := docopt.ParseArgs(doc, args, "1.0")
 	if err != nil {
 		return fmt.Errorf(
 			"invalid option: 'sveltosctl %s'. Use flag '--help' to read about a specific subcommand",
@@ -79,10 +79,17 @@ Description:
 		return nil
 	}
 
-	component := ""
-	if passedComponent := parsedArgs["--component"]; passedComponent != nil {
-		component = passedComponent.(string)
+	component := parsedArgs["--component"].(string)
+	namespace := "default"
+	if ns, ok := parsedArgs["--namespace"]; ok && ns != nil {
+		namespace = ns.(string)
 	}
 
-	return unsetDebuggingConfiguration(ctx, component)
+	clusterName := ""
+	if cl, ok := parsedArgs["--cluster"]; ok && cl != nil {
+		clusterName = cl.(string)
+	}
+
+	return unsetDebuggingConfiguration(ctx, component, namespace, clusterName)
 }
+
