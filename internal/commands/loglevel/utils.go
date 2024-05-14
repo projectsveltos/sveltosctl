@@ -66,7 +66,7 @@ func updateLogLevelConfiguration(
         Configuration: spec,
     }
 
-    instance := utils.GetAccessInstance()  // Define instance
+    instance := utils.GetAccessInstance()  // define instance
     return instance.UpdateDebuggingConfiguration(ctx, dc)
 }
 
