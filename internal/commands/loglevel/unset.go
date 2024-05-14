@@ -25,10 +25,7 @@ import (
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 )
 
-func unsetDebuggingConfiguration(ctx context.Context, component string) error {
-    namespace := "default"  // default. can change
-    clusterName := ""
-
+func unsetDebuggingConfiguration(ctx context.Context, component, namespace, clusterName string) error {
     cc, err := collectLogLevelConfiguration(ctx, namespace, clusterName)
     if err != nil {
         return err
@@ -56,21 +53,21 @@ func unsetDebuggingConfiguration(ctx context.Context, component string) error {
 }
 
 
+
 // Unset resets log verbosity for a given component
 func Unset(ctx context.Context, args []string) error {
 	doc := `Usage:
-  sveltosctl log-level unset --component=<name> [--namespace=<namespace>] [--cluster=<cluster-name>] [--cluster-type=<cluster-type>]
+  sveltosctl log-level unset --component=<name> [--namespace=<namespace>] [--cluster=<cluster>]
 Options:
-  -h --help                		   Show this screen.
-     --component=<name>    		   Name of the component for which log severity is being unset.
-     --namespace=<namespace> 	   Namespace of the cluster.
-     --cluster=<cluster-name> 	   Name of the cluster.
-     --cluster-type=<cluster-type> Type of the cluster (Capi or Sveltos).
+  -h --help               Show this screen.
+     --component=<name>   Name of the component for which log severity is being set.
+     --namespace=<namespace>   Namespace of the component (default "default").
+     --cluster=<cluster>       Cluster name (optional).
 	 
 Description:
-  The log-level unset command unset log severity for the specified component in the specified cluster.
+  The log-level unset command removes log severity settings for the specified component.
 `
-	parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
+	parsedArgs, err := docopt.ParseArgs(doc, args, "1.0")
 	if err != nil {
 		return fmt.Errorf(
 			"invalid option: 'sveltosctl %s'. Use flag '--help' to read about a specific subcommand",
@@ -81,9 +78,10 @@ Description:
 		return nil
 	}
 
-	component := ""
-	if passedComponent := parsedArgs["--component"]; passedComponent != nil {
-		component = passedComponent.(string)
+	component := parsedArgs["--component"].(string)
+	namespace := "default"
+	if ns, ok := parsedArgs["--namespace"]; ok && ns != nil {
+		namespace = ns.(string)
 	}
 	namespace := ""
     if passedNamespace := parsedArgs["--namespace"]; passedNamespace != nil {
@@ -98,5 +96,11 @@ Description:
         clusterType = passedClusterType.(string)
     }
 
-	return unsetDebuggingConfiguration(ctx, component, namespace, clusterName, clusterType)
+	clusterName := ""
+	if cl, ok := parsedArgs["--cluster"]; ok && cl != nil {
+		clusterName = cl.(string)
+	}
+
+	return unsetDebuggingConfiguration(ctx, component, namespace, clusterName)
 }
+
