@@ -77,9 +77,9 @@ Options:
      --info                  	  Set log severity to info.
      --debug                 	  Set log severity to debug.
      --verbose               	  Set log severity to verbose.
-	 --namespace=<namespace> 	  Namespace in the managed cluster (optional).
+     --namespace=<namespace> 	  Namespace in the managed cluster (optional).
      --clusterName=<cluster-name> Name of the managed cluster (optional).
-	 --clusterType=<cluster-type> Type of the managed cluster (optional).
+     --clusterType=<cluster-type> Type of the managed cluster (optional).
 	 
 Description:
   The log-level set command set log severity for the specified component.
@@ -128,12 +128,11 @@ Description:
         logSeverity = libsveltosv1alpha1.LogLevelVerbose
     }
 
-    // if namespace, cluster name, and cluster type are provided, update the managed cluster
+    // if namespace, clusterName, and clusterType are provided, update the configuration in the managed cluster
     if namespace != "" && clusterName != "" && clusterType != "" {
         return updateDebuggingConfigurationInManaged(ctx, logSeverity, component, namespace, clusterName, clusterType)
     }
 
-    // get access instance for the management cluster
     instance := utils.GetAccessInstance()
     dc, err := instance.GetDebuggingConfiguration(ctx)
     if err != nil {
