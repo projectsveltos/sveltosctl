@@ -28,45 +28,39 @@ import (
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1alpha1.LogLevel, component string, dc *libsveltosv1alpha1.DebuggingConfiguration) error {
-    cc, err := collectLogLevelConfiguration(ctx, dc)
+func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1alpha1.LogLevel, component, namespace, clusterName string) error {
+    cc, err := collectLogLevelConfiguration(ctx, namespace, clusterName)
     if err != nil {
-        return err  // Propagate error up
+        return err
     }
 
-    var specUpdated bool
-    spec := make([]libsveltosv1alpha1.ComponentConfiguration, 0, len(cc)+1)
+    found := false
+    spec := make([]libsveltosv1alpha1.ComponentConfiguration, len(cc))
 
-    for _, c := range cc {
-        if c.component.Name == component {
-            if c.logSeverity != logSeverity {
-                spec = append(spec, libsveltosv1alpha1.ComponentConfiguration{
-                    Component: c.component,
-                    LogLevel:  logSeverity,
-                })
-                specUpdated = true
-            } else {
-                spec = append(spec, libsveltosv1alpha1.ComponentConfiguration{
-                    Component: c.component,
-                    LogLevel:  c.logSeverity,
-                })
+    for i, c := range cc {
+        if string(c.component) == component {
+            spec[i] = libsveltosv1alpha1.ComponentConfiguration{
+                Component: c.component,
+                LogLevel:  logSeverity,
             }
+            found = true
+            break
         } else {
-            spec = append(spec, libsveltosv1alpha1.ComponentConfiguration{
+            spec[i] = libsveltosv1alpha1.ComponentConfiguration{
                 Component: c.component,
                 LogLevel:  c.logSeverity,
-            })
+            }
         }
     }
 
-    if !specUpdated {
+    if !found {
         spec = append(spec, libsveltosv1alpha1.ComponentConfiguration{
             Component: libsveltosv1alpha1.Component(component),
             LogLevel:  logSeverity,
         })
     }
 
-    return updateLogLevelConfiguration(ctx, spec, dc)
+    return updateLogLevelConfiguration(ctx, spec, namespace, clusterName)
 }
 
 // set changes log verbosity for a given component
