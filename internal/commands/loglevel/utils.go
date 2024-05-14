@@ -123,6 +123,6 @@ func updateLogLevelConfiguration(
         Configuration: spec,
     }
 
-    err = instance.UpdateDebuggingConfiguration(ctx, dc)
-    return namespace, clusterName, err
+    err = instance.UpdateDebuggingConfiguration(ctx, namespace, clusterName, dc)
+    return err
 }
