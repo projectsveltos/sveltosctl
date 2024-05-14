@@ -72,21 +72,20 @@ func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1a
 // set changes log verbosity for a given component
 func Set(ctx context.Context, args []string) error {
     doc := `Usage:
-  sveltosctl log-level set --component=<name> (--info|--debug|--verbose) [--namespace=<namespace>] [--clusterName=<cluster-name>] [--clusterType=<cluster-type>]
+  sveltosctl log-level set --component=<name> [--cluster-namespace=<namespace>] [--cluster-name=<name>] (--info|--debug|--verbose)
 Options:
-  -h --help                  	  Show this screen.
-     --component=<name>      	  Name of the component for which log severity is being set.
-     --info                  	  Set log severity to info.
-     --debug                 	  Set log severity to debug.
-     --verbose               	  Set log severity to verbose.
-     --namespace=<namespace> 	  Namespace in the managed cluster (optional).
-     --clusterName=<cluster-name> Name of the managed cluster (optional).
-     --clusterType=<cluster-type> Type of the managed cluster (optional).
+  -h --help                     Show this screen.
+     --component=<name>         Name of the component for which log severity is being set.
+     --cluster-namespace=<namespace> Optional cluster namespace.
+     --cluster-name=<name>      Optional cluster name.
+     --info                     Set log severity to info.
+     --debug                    Set log severity to debug.
+     --verbose                  Set log severity to verbose.
 	 
 Description:
-  The log-level set command sets log severity for the specified component in the specified cluster.
+  The log-level set command sets log severity for the specified component, optionally in a specified managed cluster.
 `
-    parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
+    parsedArgs, err := docopt.ParseArgs(doc, args, "1.0")
     if err != nil {
         return fmt.Errorf(
             "invalid option: 'sveltosctl %s'. Use flag '--help' to read about a specific subcommand",
@@ -97,57 +96,21 @@ Description:
         return nil
     }
 
-    component := ""
-    if passedComponent := parsedArgs["--component"]; passedComponent != nil {
-        component = passedComponent.(string)
-    }
-
-    info := parsedArgs["--info"].(bool)
-    debug := parsedArgs["--debug"].(bool)
-    verbose := parsedArgs["--verbose"].(bool)
-
-    namespace := ""
-    if parsedNamespace := parsedArgs["--namespace"]; parsedNamespace != nil {
-        namespace = parsedNamespace.(string)
-    }
-
-    clusterName := ""
-    if parsedClusterName := parsedArgs["--clusterName"]; parsedClusterName != nil {
-        clusterName = parsedClusterName.(string)
-    }
-
-    clusterType := ""
-    if parsedClusterType := parsedArgs["--clusterType"]; parsedClusterType != nil {
-        clusterType = parsedClusterType.(string)
-    }
+	component := ""
+	if passedComponent := parsedArgs["--component"]; passedComponent != nil {
+		component = passedComponent.(string)
+	}
+    namespace := parsedArgs["--cluster-namespace"].(string) // may be nil
+    clusterName := parsedArgs["--cluster-name"].(string)    // may be nil
 
     var logSeverity libsveltosv1alpha1.LogLevel
-    if info {
+    if parsedArgs["--info"].(bool) {
         logSeverity = libsveltosv1alpha1.LogLevelInfo
-    } else if debug {
+    } else if parsedArgs["--debug"].(bool) {
         logSeverity = libsveltosv1alpha1.LogLevelDebug
-    } else if verbose {
+    } else if parsedArgs["--verbose"].(bool) {
         logSeverity = libsveltosv1alpha1.LogLevelVerbose
     }
 
-    // if namespace, clusterName, and clusterType are provided, update the configuration in the managed cluster
-    if namespace != "" && clusterName != "" && clusterType != "" {
-        return updateDebuggingConfigurationInManaged(ctx, logSeverity, component, namespace, clusterName, clusterType)
-    }
-
-	instance := utils.GetAccessInstance()
-	dc, err := instance.GetDebuggingConfiguration(ctx)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return fmt.Errorf("DebuggingConfiguration not found")
-		}
-		return err
-	}
-	
-	cc, err := collectLogLevelConfiguration(ctx, dc)  // pass dc
-	if err != nil {
-		return err
-	}
-
-    return updateLogLevelConfiguration(ctx, spec, dc)  // Pass dc
+    return updateDebuggingConfiguration(ctx, logSeverity, component, namespace, clusterName)
 }
