@@ -18,13 +18,18 @@ package loglevel
 
 import (
     "context"
+    "fmt"
     "sort"
+    "path/filepath"
 
     apierrors "k8s.io/apimachinery/pkg/api/errors"
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/api/core/v1"
+    "k8s.io/client-go/kubernetes"
+    "k8s.io/client-go/tools/clientcmd"
+    "k8s.io/client-go/util/homedir"
 
     libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
-    "github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
 type componentConfiguration struct {
@@ -41,19 +46,47 @@ func (c byComponent) Less(i, j int) bool {
     return c[i].component < c[j].component
 }
 
-func collectLogLevelConfiguration(ctx context.Context, namespace, clusterName string) ([]*componentConfiguration, error) {
+// configures the Kubernetes client to target the correct cluster based on namespace and clusterName.
+// func ConfigureClient(ctx context.Context, namespace, clusterName string) (*kubernetes.Clientset, error) {
+//     kubeconfigPath := filepath.Join(homedir.HomeDir(), ".kube", "config")
+//     config, err := clientcmd.LoadFromFile(kubeconfigPath)
+//     if err != nil {
+//         return nil, fmt.Errorf("failed to load kubeconfig from %s: %v", kubeconfigPath, err)
+//     }
+
+//     // use it to change the context if clusterName is specified
+//     if clusterName != "" {
+//         contextName := fmt.Sprintf("%s-context", clusterName)
+//         if _, exists := config.Contexts[contextName]; !exists {
+//             return nil, fmt.Errorf("no context found for the specified cluster name: %s", clusterName)
+//         }
+//         config.CurrentContext = contextName
+//     }
+
+//     // build a rest.Config from the kubeconfig and the overridden current context.
+//     restConfig, err := clientcmd.NewDefaultClientConfig(*config, &clientcmd.ConfigOverrides{CurrentContext: config.CurrentContext}).ClientConfig()
+//     if err != nil {
+//         return nil, fmt.Errorf("failed to create Kubernetes REST client configuration: %v", err)
+//     }
+
+//     // create the Kubernetes client using the configured REST config
+//     clientset, err := kubernetes.NewForConfig(restConfig)
+//     if err != nil {
+//         return nil, fmt.Errorf("failed to create Kubernetes clientset: %v", err)
+//     }
+
+//     return clientset, nil
+// }
+
+func collectLogLevelConfiguration(ctx context.Context, namespace, clusterName string) ([]*componentConfiguration, string, string, error) {
     instance := utils.GetAccessInstance()
 
     dc, err := instance.GetDebuggingConfiguration(ctx, namespace, clusterName)
     if err != nil {
-        if apierrors.IsNotFound(err) {
-            return make([]*componentConfiguration, 0), nil
-        }
-        return nil, err
+        return nil, namespace, clusterName, err
     }
 
     configurationSettings := make([]*componentConfiguration, len(dc.Spec.Configuration))
-
     for i, c := range dc.Spec.Configuration {
         configurationSettings[i] = &componentConfiguration{
             component:   c.Component,
@@ -61,30 +94,28 @@ func collectLogLevelConfiguration(ctx context.Context, namespace, clusterName st
         }
     }
 
-    // Sort this by component name first. Component/node is higher priority than Component
     sort.Sort(byComponent(configurationSettings))
-
-    return configurationSettings, nil
+    return configurationSettings, namespace, clusterName, nil
 }
 
 func updateLogLevelConfiguration(
     ctx context.Context,
     namespace, clusterName string,
     spec []libsveltosv1alpha1.ComponentConfiguration,
-) error {
-    instance := utils.GetAccessInstance()
+) (string, string, error) {
 
+    instance := utils.GetAccessInstance()
     dc, err := instance.GetDebuggingConfiguration(ctx, namespace, clusterName)
     if err != nil {
         if apierrors.IsNotFound(err) {
             dc = &libsveltosv1alpha1.DebuggingConfiguration{
                 ObjectMeta: metav1.ObjectMeta{
                     Namespace: namespace,
-                    Name: clusterName,
+                    Name:      clusterName,
                 },
             }
         } else {
-            return err
+            return namespace, clusterName, err
         }
     }
 
@@ -92,6 +123,6 @@ func updateLogLevelConfiguration(
         Configuration: spec,
     }
 
-    return instance.UpdateDebuggingConfiguration(ctx, dc)
+    err = instance.UpdateDebuggingConfiguration(ctx, dc)
+    return namespace, clusterName, err
 }
-
