@@ -27,10 +27,14 @@ import (
 )
 
 func showLogSettings(ctx context.Context) error {
-	componentConfiguration, err := collectLogLevelConfiguration(ctx)
-	if err != nil {
-		return err
-	}
+    // adjust as necessary
+    namespace := "default" // can change
+    clusterName := "" 
+
+    componentConfiguration, err := collectLogLevelConfiguration(ctx, namespace, clusterName)
+    if err != nil {
+        return err
+    }
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"COMPONENT", "VERBOSITY"})
