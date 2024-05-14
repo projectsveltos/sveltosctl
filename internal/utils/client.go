@@ -18,6 +18,10 @@ package utils
 
 import (
 	"context"
+	"fmt"
+    "os"
+    "path/filepath"
+	"encoding/json"
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
@@ -33,6 +37,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/restmapper"
+	"k8s.io/client-go/tools/clientcmd"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -41,6 +46,7 @@ import (
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // k8sAccess is used to access resources in the management cluster.
@@ -117,6 +123,61 @@ func addToScheme(scheme *runtime.Scheme) error {
 		return err
 	}
 	return nil
+}
+
+func (a *k8sAccess) GetDebuggingConfiguration(ctx context.Context, namespace, clusterName string) (*libsveltosv1alpha1.DebuggingConfiguration, error) {
+    if clusterName != "" {
+        // dynamic switch contexts based on clusterName (if necessary)
+        err := a.switchContext(clusterName)
+        if err != nil {
+            return nil, err
+        }
+    }
+
+    cm, err := a.clientset.CoreV1().ConfigMaps(namespace).Get(ctx, "debugging-configuration", metav1.GetOptions{})
+    if err != nil {
+        return nil, fmt.Errorf("failed to retrieve ConfigMap: %v", err)
+    }
+
+    debuggingConfig := &libsveltosv1alpha1.DebuggingConfiguration{}
+    if data, ok := cm.Data["config"]; ok {
+        err = json.Unmarshal([]byte(data), debuggingConfig)
+        if err != nil {
+            return nil, fmt.Errorf("failed to unmarshal debugging configuration: %v", err)
+        }
+    } else {
+        return nil, fmt.Errorf("no 'config' key in ConfigMap")
+    }
+
+    return debuggingConfig, nil
+}
+
+// to make it more dynamic if wanting to change Kubernetes contexts within k8sAccess
+func (a *k8sAccess) switchContext(clusterName string) error {
+    kubeConfigPath := os.Getenv("KUBECONFIG")
+    if kubeConfigPath == "" {
+        homeDir, err := os.UserHomeDir()
+        if err != nil {
+            return fmt.Errorf("unable to find home directory: %v", err)
+        }
+        kubeConfigPath = filepath.Join(homeDir, ".kube", "config")
+    }
+
+    // clusterName can be part of the context or filename modifications?
+    // this needs to be adjusted based on how your clusters are managed.
+    // not sure if config might be stored as separate files or within the same file as different contexts?
+    config, err := clientcmd.BuildConfigFromFlags("", kubeConfigPath)
+    if err != nil {
+        return fmt.Errorf("failed to build config from kubeconfig at %s: %v", kubeConfigPath, err)
+    }
+
+    clientset, err := kubernetes.NewForConfig(config)
+    if err != nil {
+        return fmt.Errorf("failed to create clientset from config: %v", err)
+    }
+
+    a.clientset = clientset
+    return nil
 }
 
 // GetScheme returns scheme
