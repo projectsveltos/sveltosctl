@@ -28,40 +28,42 @@ import (
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1alpha1.LogLevel,
-    component string, dc *libsveltosv1alpha1.DebuggingConfiguration,) error {
-
+func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1alpha1.LogLevel, component string, dc *libsveltosv1alpha1.DebuggingConfiguration) error {
     cc, err := collectLogLevelConfiguration(ctx, dc)
     if err != nil {
-        return nil
+        return err  // Propagate error up
     }
 
-    found := false
-    spec := make([]libsveltosv1alpha1.ComponentConfiguration, len(cc))
+    var specUpdated bool
+    spec := make([]libsveltosv1alpha1.ComponentConfiguration, 0, len(cc)+1)
 
-    for i, c := range cc {
-        if string(c.component) == component {
-            spec[i] = libsveltosv1alpha1.ComponentConfiguration{
-                Component: c.component,
-                LogLevel:  logSeverity,
+    for _, c := range cc {
+        if c.component.Name == component {
+            if c.logSeverity != logSeverity {
+                spec = append(spec, libsveltosv1alpha1.ComponentConfiguration{
+                    Component: c.component,
+                    LogLevel:  logSeverity,
+                })
+                specUpdated = true
+            } else {
+                spec = append(spec, libsveltosv1alpha1.ComponentConfiguration{
+                    Component: c.component,
+                    LogLevel:  c.logSeverity,
+                })
             }
-            found = true
-            break
         } else {
-            spec[i] = libsveltosv1alpha1.ComponentConfiguration{
+            spec = append(spec, libsveltosv1alpha1.ComponentConfiguration{
                 Component: c.component,
                 LogLevel:  c.logSeverity,
-            }
+            })
         }
     }
 
-    if !found {
-        spec = append(spec,
-            libsveltosv1alpha1.ComponentConfiguration{
-                Component: libsveltosv1alpha1.Component(component),
-                LogLevel:  logSeverity,
-            },
-        )
+    if !specUpdated {
+        spec = append(spec, libsveltosv1alpha1.ComponentConfiguration{
+            Component: libsveltosv1alpha1.Component(component),
+            LogLevel:  logSeverity,
+        })
     }
 
     return updateLogLevelConfiguration(ctx, spec, dc)
