@@ -32,12 +32,14 @@ const (
 // GetDebuggingConfiguration gets default DebuggingConfiguration
 func (a *k8sAccess) GetDebuggingConfiguration(
 	ctx context.Context,
+	clusterNamespace, clusterName string,
 ) (*libsveltosv1alpha1.DebuggingConfiguration, error) {
 
 	req := &libsveltosv1alpha1.DebuggingConfiguration{}
 
 	reqName := client.ObjectKey{
-		Name: defaultInstanceName,
+		Namespace: clusterNamespace,
+		Name:      clusterName,
 	}
 
 	if err := a.client.Get(ctx, reqName, req); err != nil {
@@ -51,11 +53,13 @@ func (a *k8sAccess) GetDebuggingConfiguration(
 // updates it.
 func (a *k8sAccess) UpdateDebuggingConfiguration(
 	ctx context.Context,
+	clusterNamespace, clusterName string,
 	dc *libsveltosv1alpha1.DebuggingConfiguration,
 ) error {
 
 	reqName := client.ObjectKey{
-		Name: defaultInstanceName,
+		Namespace: clusterNamespace,
+		Name:      clusterName,
 	}
 
 	tmp := &libsveltosv1alpha1.DebuggingConfiguration{}
