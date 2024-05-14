@@ -28,7 +28,7 @@ import (
 
 func showLogSettings(ctx context.Context) error {
     // adjust as necessary
-    namespace := "default" // can change
+    namespace := "" // can change
     clusterName := "" 
 
     componentConfiguration, err := collectLogLevelConfiguration(ctx, namespace, clusterName)
