@@ -47,7 +47,7 @@ var _ = Describe("Unset", func() {
         Expect(err).To(BeNil())
         c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
-        utils.InitializeManagementClusterAccess(scheme, nil, nil, c)
+        utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
 
         Expect(loglevel.UnsetDebuggingConfiguration(context.TODO(), string(libsveltosv1alpha1.ComponentClassifier), testNamespace, testClusterName)).To(Succeed())
 
