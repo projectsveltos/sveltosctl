@@ -36,7 +36,12 @@ import (
 
 var _ = Describe("Show", func() {
 	It("show displays current log level settings in managed cluster", func() {
+		testNamespace := "namespace"
+		testClusterName := "clusterName"
+
 		dc := getDebuggingConfiguration()
+		dc.Namespace = testNamespace
+		dc.Name = testClusterName
 		dc.Spec.Configuration = []libsveltosv1alpha1.ComponentConfiguration{
 			{Component: libsveltosv1alpha1.ComponentClassifier, LogLevel: libsveltosv1alpha1.LogLevelDebug},
 		}
@@ -51,8 +56,8 @@ var _ = Describe("Show", func() {
 		Expect(err).To(BeNil())
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
-		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
-		err = loglevel.ShowLogSettings(context.TODO(), "namespace", "clusterName")
+		utils.InitializeManagementClusterAccess(scheme, nil, nil, c)
+		err = loglevel.ShowLogSettings(context.TODO(), testNamespace, testClusterName)
 		Expect(err).To(BeNil())
 
 		w.Close()
@@ -83,3 +88,4 @@ var _ = Describe("Show", func() {
 		os.Stdout = old
 	})
 })
+
