@@ -43,7 +43,7 @@ func (a *k8sAccess) GetDebuggingConfiguration(
 
 	reqName := client.ObjectKey{
 		Namespace: namespace,
-		Name:      defaultInstanceName,
+		Name:      clusterName,
 	}
 
     reqName := client.ObjectKey{
@@ -69,7 +69,7 @@ func (a *k8sAccess) UpdateDebuggingConfiguration(
 
 	reqName := client.ObjectKey{
 		Namespace: namespace,
-		Name:      defaultInstanceName,
+		Name:      clusterName,
 	}
 
     if namespace == "" && clusterName == "" && clusterType == "" {
@@ -85,6 +85,7 @@ func (a *k8sAccess) UpdateDebuggingConfiguration(
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			dc.Namespace = namespace
+			dc.Name = clusterName
 			err = a.client.Create(ctx, dc)
 			if err != nil {
 				return err
@@ -95,6 +96,7 @@ func (a *k8sAccess) UpdateDebuggingConfiguration(
 	}
 
 	dc.Namespace = namespace
+	dc.Name = clusterName
 	err = a.client.Update(ctx, dc)
 	if err != nil {
 		return err
