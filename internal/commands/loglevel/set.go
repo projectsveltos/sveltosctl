@@ -28,7 +28,7 @@ import (
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1alpha1.LogLevel, component, namespace, clusterName string) error {
+func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1alpha1.LogLevel, component, namespace string, clusterName string) error {
     cc, err := collectLogLevelConfiguration(ctx, namespace, clusterName)
     if err != nil {
         return err
