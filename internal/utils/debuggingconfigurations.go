@@ -29,18 +29,18 @@ const (
 	defaultInstanceName = "default"
 )
 
-// GetDebuggingConfiguration gets default DebuggingConfiguration
+// GetDebuggingConfiguration gets default DebuggingConfiguration in the specified namespace and cluster
 func (a *k8sAccess) GetDebuggingConfiguration(
 	ctx context.Context,
-	clusterNamespace string, 
+	namespace string,
 	clusterName string,
 ) (*libsveltosv1alpha1.DebuggingConfiguration, error) {
 
 	req := &libsveltosv1alpha1.DebuggingConfiguration{}
 
 	reqName := client.ObjectKey{
-		Namespace: clusterNamespace,
-		Name:      clusterName,
+		Namespace: namespace,
+		Name:      defaultInstanceName,
 	}
 
 	if err := a.client.Get(ctx, reqName, req); err != nil {
@@ -50,17 +50,18 @@ func (a *k8sAccess) GetDebuggingConfiguration(
 	return req, nil
 }
 
-// UpdateDebuggingConfiguration creates, if not existing already, default DebuggingConfiguration. Otherwise
+// UpdateDebuggingConfiguration creates, if not existing already, default DebuggingConfiguration in the specified namespace and cluster. Otherwise
 // updates it.
 func (a *k8sAccess) UpdateDebuggingConfiguration(
 	ctx context.Context,
-	clusterNamespace, clusterName string,
 	dc *libsveltosv1alpha1.DebuggingConfiguration,
+	namespace string,
+	clusterName string,
 ) error {
 
 	reqName := client.ObjectKey{
-		Namespace: clusterNamespace,
-		Name:      clusterName,
+		Namespace: namespace,
+		Name:      defaultInstanceName,
 	}
 
 	tmp := &libsveltosv1alpha1.DebuggingConfiguration{}
@@ -68,6 +69,7 @@ func (a *k8sAccess) UpdateDebuggingConfiguration(
 	err := a.client.Get(ctx, reqName, tmp)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
+			dc.Namespace = namespace
 			err = a.client.Create(ctx, dc)
 			if err != nil {
 				return err
@@ -77,6 +79,7 @@ func (a *k8sAccess) UpdateDebuggingConfiguration(
 		}
 	}
 
+	dc.Namespace = namespace
 	err = a.client.Update(ctx, dc)
 	if err != nil {
 		return err

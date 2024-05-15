@@ -79,7 +79,7 @@ Options:
      --verbose          Set log severity to verbose.
 	 
 Description:
-  The log-level set command set log severity for the specified component in the specified cluster.
+  The log-level set command sets log severity for the specified component in the specified cluster.
 `
 	parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
 	if err != nil {
