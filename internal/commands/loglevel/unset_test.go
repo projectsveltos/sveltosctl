@@ -30,37 +30,33 @@ import (
 )
 
 var _ = Describe("Unset", func() {
-    It("unset removes log level settings", func() {
-        // default or test-specific namespace and cluster name
-        testNamespace := "default"
-        testClusterName := "test-cluster"
+	It("unset removes log level settings in managed cluster", func() {
+		dc := getDebuggingConfiguration()
+		dc.Spec.Configuration = []libsveltosv1alpha1.ComponentConfiguration{
+			{Component: libsveltosv1alpha1.ComponentClassifier, LogLevel: libsveltosv1alpha1.LogLevelInfo},
+			{Component: libsveltosv1alpha1.ComponentAddonManager, LogLevel: libsveltosv1alpha1.LogLevelInfo},
+		}
 
-        dc := getDebuggingConfiguration()
-        dc.Spec.Configuration = []libsveltosv1alpha1.ComponentConfiguration{
-            {Component: libsveltosv1alpha1.ComponentClassifier, LogLevel: libsveltosv1alpha1.LogLevelInfo},
-            {Component: libsveltosv1alpha1.ComponentAddonManager, LogLevel: libsveltosv1alpha1.LogLevelInfo},
-        }
+		initObjects := []client.Object{dc}
 
-        initObjects := []client.Object{dc}
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
-        scheme, err := utils.GetScheme()
-        Expect(err).To(BeNil())
-        c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
+		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
 
-        utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
+		Expect(loglevel.UnsetDebuggingConfiguration(context.TODO(), string(libsveltosv1alpha1.ComponentClassifier), "namespace", "clusterName")).To(Succeed())
 
-        Expect(loglevel.UnsetDebuggingConfiguration(context.TODO(), string(libsveltosv1alpha1.ComponentClassifier), testNamespace, testClusterName)).To(Succeed())
+		k8sAccess := utils.GetAccessInstance()
 
-        k8sAccess := utils.GetAccessInstance()
-
-        currentDC, err := k8sAccess.GetDebuggingConfiguration(context.TODO(), testNamespace, testClusterName)
-        Expect(err).To(BeNil())
-        Expect(currentDC).ToNot(BeNil())
-        Expect(currentDC.Spec.Configuration).ToNot(BeNil())
-        Expect(len(currentDC.Spec.Configuration)).To(Equal(1))
-        Expect(currentDC.Spec.Configuration[0].Component).To(Equal(libsveltosv1alpha1.ComponentAddonManager))
-        Expect(currentDC.Spec.Configuration[0].LogLevel).To(Equal(libsveltosv1alpha1.LogLevelInfo))
-
-    })
+		currentDC, err := k8sAccess.GetDebuggingConfiguration(context.TODO(), "namespace", "clusterName")
+		Expect(err).To(BeNil())
+		Expect(currentDC).ToNot(BeNil())
+		Expect(currentDC.Spec.Configuration).ToNot(BeNil())
+		Expect(len(currentDC.Spec.Configuration)).To(Equal(1))
+		Expect(currentDC.Spec.Configuration[0].Component).To(Equal(libsveltosv1alpha1.ComponentAddonManager))
+		Expect(currentDC.Spec.Configuration[0].LogLevel).To(Equal(libsveltosv1alpha1.LogLevelInfo))
+	})
 })
+
 

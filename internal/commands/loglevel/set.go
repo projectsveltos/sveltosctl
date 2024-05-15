@@ -17,94 +17,96 @@ limitations under the License.
 package loglevel
 
 import (
-    "context"
-    "fmt"
-    "strings"
+	"context"
+	"fmt"
+	"strings"
 
-    docopt "github.com/docopt/docopt-go"
-
-    libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
-    apierrors "k8s.io/apimachinery/pkg/api/errors"
-    metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	docopt "github.com/docopt/docopt-go"
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
-func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1alpha1.LogLevel, component, namespace string, clusterName string) error {
-    cc, err := collectLogLevelConfiguration(ctx, namespace, clusterName)
-    if err != nil {
-        return err
-    }
+func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1alpha1.LogLevel,
+	component, namespace, clusterName string) error {
 
-    found := false
-    spec := make([]libsveltosv1alpha1.ComponentConfiguration, len(cc))
+	cc, err := collectLogLevelConfiguration(ctx, namespace, clusterName)
+	if err != nil {
+		return nil
+	}
 
-    for i, c := range cc {
-        if string(c.component) == component {
-            spec[i] = libsveltosv1alpha1.ComponentConfiguration{
-                Component: c.component,
-                LogLevel:  logSeverity,
-            }
-            found = true
-            break
-        } else {
-            spec[i] = libsveltosv1alpha1.ComponentConfiguration{
-                Component: c.component,
-                LogLevel:  c.logSeverity,
-            }
-        }
-    }
+	found := false
+	spec := make([]libsveltosv1alpha1.ComponentConfiguration, len(cc))
 
-    if !found {
-        spec = append(spec, libsveltosv1alpha1.ComponentConfiguration{
-            Component: libsveltosv1alpha1.Component(component),
-            LogLevel:  logSeverity,
-        })
-    }
+	for i, c := range cc {
+		if string(c.component) == component {
+			spec[i] = libsveltosv1alpha1.ComponentConfiguration{
+				Component: c.component,
+				LogLevel:  logSeverity,
+			}
+			found = true
+			break
+		} else {
+			spec[i] = libsveltosv1alpha1.ComponentConfiguration{
+				Component: c.component,
+				LogLevel:  c.logSeverity,
+			}
+		}
+	}
 
-    return updateLogLevelConfiguration(ctx, namespace, clusterName, spec)
+	if !found {
+		spec = append(spec,
+			libsveltosv1alpha1.ComponentConfiguration{
+				Component: libsveltosv1alpha1.Component(component),
+				LogLevel:  logSeverity,
+			},
+		)
+	}
+
+	return updateLogLevelConfiguration(ctx, spec, namespace, clusterName)
 }
 
-// set changes log verbosity for a given component
+// Set displays/changes log verbosity for a given component
 func Set(ctx context.Context, args []string) error {
-    doc := `Usage:
-  sveltosctl log-level set --component=<name> [--cluster-namespace=<namespace>] [--cluster-name=<name>] (--info|--debug|--verbose)
+	doc := `Usage:
+  sveltosctl log-level set --component=<name> --namespace=<namespace> --cluster=<cluster-name> (--info|--debug|--verbose)
 Options:
-  -h --help                     Show this screen.
-     --component=<name>         Name of the component for which log severity is being set.
-     --cluster-namespace=<namespace> Optional cluster namespace.
-     --cluster-name=<name>      Optional cluster name.
-     --info                     Set log severity to info.
-     --debug                    Set log severity to debug.
-     --verbose                  Set log severity to verbose.
+  -h --help             Show this screen.
+     --component=<name> Name of the component for which log severity is being set.
+     --namespace=<namespace> Namespace of the cluster.
+     --cluster=<cluster-name> Name of the cluster.
+     --info             Set log severity to info.
+     --debug            Set log severity to debug.
+     --verbose          Set log severity to verbose.
 	 
 Description:
-  The log-level set command sets log severity for the specified component, optionally in a specified managed cluster.
+  The log-level set command set log severity for the specified component in the specified cluster.
 `
-    parsedArgs, err := docopt.ParseArgs(doc, args, "1.0")
-    if err != nil {
-        return fmt.Errorf(
-            "invalid option: 'sveltosctl %s'. Use flag '--help' to read about a specific subcommand",
-            strings.Join(args, " "),
-        )
-    }
-    if len(parsedArgs) == 0 {
-        return nil
-    }
-
-	component := ""
-	if passedComponent := parsedArgs["--component"]; passedComponent != nil {
-		component = passedComponent.(string)
+	parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
+	if err != nil {
+		return fmt.Errorf(
+			"invalid option: 'sveltosctl %s'. Use flag '--help' to read about a specific subcommand",
+			strings.Join(args, " "),
+		)
 	}
-    namespace := parsedArgs["--cluster-namespace"].(string) // may be nil
-    clusterName := parsedArgs["--cluster-name"].(string)    // may be nil
+	if len(parsedArgs) == 0 {
+		return nil
+	}
 
-    var logSeverity libsveltosv1alpha1.LogLevel
-    if parsedArgs["--info"].(bool) {
-        logSeverity = libsveltosv1alpha1.LogLevelInfo
-    } else if parsedArgs["--debug"].(bool) {
-        logSeverity = libsveltosv1alpha1.LogLevelDebug
-    } else if parsedArgs["--verbose"].(bool) {
-        logSeverity = libsveltosv1alpha1.LogLevelVerbose
-    }
+	component := parsedArgs["--component"].(string)
+	namespace := parsedArgs["--namespace"].(string)
+	clusterName := parsedArgs["--cluster"].(string)
+	info := parsedArgs["--info"].(bool)
+	debug := parsedArgs["--debug"].(bool)
+	verbose := parsedArgs["--verbose"].(bool)
 
-    return updateDebuggingConfiguration(ctx, logSeverity, component, namespace, clusterName)
+	var logSeverity libsveltosv1alpha1.LogLevel
+	if info {
+		logSeverity = libsveltosv1alpha1.LogLevelInfo
+	} else if debug {
+		logSeverity = libsveltosv1alpha1.LogLevelDebug
+	} else if verbose {
+		logSeverity = libsveltosv1alpha1.LogLevelVerbose
+	}
+
+	return updateDebuggingConfiguration(ctx, logSeverity, component, namespace, clusterName)
 }

@@ -32,7 +32,8 @@ const (
 // GetDebuggingConfiguration gets default DebuggingConfiguration
 func (a *k8sAccess) GetDebuggingConfiguration(
 	ctx context.Context,
-	clusterNamespace, clusterName string,
+	clusterNamespace string, 
+	clusterName string,
 ) (*libsveltosv1alpha1.DebuggingConfiguration, error) {
 
 	req := &libsveltosv1alpha1.DebuggingConfiguration{}

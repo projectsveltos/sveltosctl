@@ -26,15 +26,11 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-func showLogSettings(ctx context.Context) error {
-    // adjust as necessary
-    namespace := "" // can change
-    clusterName := "" 
-
-    componentConfiguration, err := collectLogLevelConfiguration(ctx, namespace, clusterName, nil)
-    if err != nil {
-        return err
-    }
+func showLogSettings(ctx context.Context, namespace, clusterName string) error {
+	componentConfiguration, err := collectLogLevelConfiguration(ctx, namespace, clusterName)
+	if err != nil {
+		return err
+	}
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"COMPONENT", "VERBOSITY"})
@@ -56,12 +52,14 @@ func showLogSettings(ctx context.Context) error {
 // Show displays information about log verbosity (if set)
 func Show(ctx context.Context, args []string) error {
 	doc := `Usage:
-  sveltosctl log-level show
+  sveltosctl log-level show --namespace=<namespace> --cluster=<cluster-name>
 Options:
   -h --help             Show this screen.
+     --namespace=<namespace> Namespace of the cluster.
+     --cluster=<cluster-name> Name of the cluster.
      
 Description:
-  The log-level show command shows information about current log verbosity.
+  The log-level show command shows information about current log verbosity in the specified cluster.
 `
 	parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
 	if err != nil {
@@ -74,5 +72,8 @@ Description:
 		return nil
 	}
 
-	return showLogSettings(ctx)
+	namespace := parsedArgs["--namespace"].(string)
+	clusterName := parsedArgs["--cluster"].(string)
+
+	return showLogSettings(ctx, namespace, clusterName)
 }
