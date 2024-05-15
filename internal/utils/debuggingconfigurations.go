@@ -32,7 +32,7 @@ const (
 // GetDebuggingConfiguration gets default DebuggingConfiguration in the specified namespace and cluster
 func (a *k8sAccess) GetDebuggingConfiguration(
 	ctx context.Context,
-	clusterNamespace string, 
+	namespace string,
 	clusterName string,
 ) (*libsveltosv1alpha1.DebuggingConfiguration, error) {
 
@@ -42,8 +42,8 @@ func (a *k8sAccess) GetDebuggingConfiguration(
     logger := klog.FromContext(ctx)
 
 	reqName := client.ObjectKey{
-		Namespace: clusterNamespace,
-		Name:      clusterName,
+		Namespace: namespace,
+		Name:      defaultInstanceName,
 	}
 
     reqName := client.ObjectKey{
@@ -62,13 +62,14 @@ func (a *k8sAccess) GetDebuggingConfiguration(
 // updates it.
 func (a *k8sAccess) UpdateDebuggingConfiguration(
 	ctx context.Context,
-	clusterNamespace, clusterName string,
 	dc *libsveltosv1alpha1.DebuggingConfiguration,
+	namespace string,
+	clusterName string,
 ) error {
 
 	reqName := client.ObjectKey{
-		Namespace: clusterNamespace,
-		Name:      clusterName,
+		Namespace: namespace,
+		Name:      defaultInstanceName,
 	}
 
     if namespace == "" && clusterName == "" && clusterType == "" {
@@ -80,31 +81,24 @@ func (a *k8sAccess) UpdateDebuggingConfiguration(
         }
     }
 
-    reqName := client.ObjectKey{
-        Name:      defaultInstanceName,
-        Namespace: namespace,
-    }
+	err := a.client.Get(ctx, reqName, tmp)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			dc.Namespace = namespace
+			err = a.client.Create(ctx, dc)
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+	}
 
-    tmp := &libsveltosv1alpha1.DebuggingConfiguration{}
+	dc.Namespace = namespace
+	err = a.client.Update(ctx, dc)
+	if err != nil {
+		return err
+	}
 
-    err = c.Get(ctx, reqName, tmp)
-    if err != nil {
-        if apierrors.IsNotFound(err) {
-            dc.Namespace = namespace
-            err = c.Create(ctx, dc)
-            if err != nil {
-                return err
-            }
-        } else {
-            return err
-        }
-    }
-
-    dc.Namespace = namespace
-    err = c.Update(ctx, dc)
-    if err != nil {
-        return err
-    }
-
-    return nil
+	return nil
 }
