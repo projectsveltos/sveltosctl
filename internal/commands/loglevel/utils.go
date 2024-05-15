@@ -95,7 +95,7 @@ func collectLogLevelConfiguration(ctx context.Context, namespace, clusterName st
     }
 
     sort.Sort(byComponent(configurationSettings))
-    return configurationSettings, namespace, clusterName, nil
+    return configurationSettings, namespace, clusterName
 }
 
 func updateLogLevelConfiguration(
