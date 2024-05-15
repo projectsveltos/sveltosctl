@@ -78,7 +78,7 @@ func (c byComponent) Less(i, j int) bool {
 //     return clientset, nil
 // }
 
-func collectLogLevelConfiguration(ctx context.Context, namespace, clusterName string) ([]*componentConfiguration, string, string, error) {
+func collectLogLevelConfiguration(ctx context.Context, namespace string, clusterName string) ([]*componentConfiguration, string, string, error) {
     instance := utils.GetAccessInstance()
 
     dc, err := instance.GetDebuggingConfiguration(ctx, namespace, clusterName)
@@ -100,7 +100,8 @@ func collectLogLevelConfiguration(ctx context.Context, namespace, clusterName st
 
 func updateLogLevelConfiguration(
     ctx context.Context,
-    namespace, clusterName string,
+    namespace string,
+    clusterName string,
     spec []libsveltosv1alpha1.ComponentConfiguration,
 ) (string, string, error) {
 
