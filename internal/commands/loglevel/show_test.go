@@ -52,7 +52,7 @@ var _ = Describe("Show", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
-		err = loglevel.ShowLogSettings(context.TODO(), "", "", "")
+		err = loglevel.ShowLogSettings(context.TODO(), "namespace", "clusterName")
 		Expect(err).To(BeNil())
 
 		w.Close()

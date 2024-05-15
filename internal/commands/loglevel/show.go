@@ -26,15 +26,11 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-func showLogSettings(ctx context.Context) error {
-    // adjust as necessary
-    namespace := "" // can change
-    clusterName := "" 
-
-    componentConfiguration, err := collectLogLevelConfiguration(ctx, namespace, clusterName, nil)
-    if err != nil {
-        return err
-    }
+func showLogSettings(ctx context.Context, namespace, clusterName string) error {
+	componentConfiguration, err := collectLogLevelConfiguration(ctx, namespace, clusterName)
+	if err != nil {
+		return err
+	}
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"COMPONENT", "VERBOSITY"})
@@ -56,12 +52,11 @@ func showLogSettings(ctx context.Context) error {
 // Show displays information about log verbosity (if set)
 func Show(ctx context.Context, args []string) error {
 	doc := `Usage:
-  sveltosctl log-level show [--namespace=<namespace>] [--cluster=<cluster-name>] [--cluster-type=<cluster-type>]
+  sveltosctl log-level show --namespace=<namespace> --cluster=<cluster-name>
 Options:
-  	-h --help                        Show this screen.
-       --namespace=<namespace>       Namespace of the cluster.
-       --cluster=<cluster-name>      Name of the cluster.
-       --cluster-type=<cluster-type> Type of the cluster (Capi or Sveltos).
+  -h --help             Show this screen.
+     --namespace=<namespace> Namespace of the cluster.
+     --cluster=<cluster-name> Name of the cluster.
      
 Description:
   The log-level show command shows information about current log verbosity in the specified cluster.
@@ -77,19 +72,8 @@ Description:
 		return nil
 	}
 
-	namespace := ""
-    if passedNamespace := parsedArgs["--namespace"]; passedNamespace != nil {
-        namespace = passedNamespace.(string)
-    }
-	clusterName := ""
-	if passedClusterName := parsedArgs["--cluster"]; passedClusterName != nil {
-        clusterName = passedClusterName.(string)
-    }
-	clusterType := ""
-	if passedClusterType := parsedArgs["--cluster-type"]; passedClusterType != nil {
-        clusterType = passedClusterType.(string)
-    }
+	namespace := parsedArgs["--namespace"].(string)
+	clusterName := parsedArgs["--cluster"].(string)
 
-
-	return showLogSettings(ctx, namespace, clusterName, clusterType)
+	return showLogSettings(ctx, namespace, clusterName)
 }
