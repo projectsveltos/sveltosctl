@@ -56,7 +56,7 @@ var _ = Describe("Show", func() {
 		Expect(err).To(BeNil())
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
-		utils.InitializeManagementClusterAccess(scheme, nil, nil, c)
+		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
 		err = loglevel.ShowLogSettings(context.TODO(), testNamespace, testClusterName)
 		Expect(err).To(BeNil())
 
