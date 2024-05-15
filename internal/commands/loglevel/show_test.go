@@ -34,11 +34,13 @@ import (
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
+const (
+	testNamespace  = "namespace"
+	testClusterName = "clusterName"
+)
+
 var _ = Describe("Show", func() {
 	It("show displays current log level settings in managed cluster", func() {
-		testNamespace := "namespace"
-		testClusterName := "clusterName"
-
 		dc := getDebuggingConfiguration()
 		dc.Namespace = testNamespace
 		dc.Name = testClusterName
@@ -88,4 +90,3 @@ var _ = Describe("Show", func() {
 		os.Stdout = old
 	})
 })
-
