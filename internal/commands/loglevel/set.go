@@ -29,7 +29,7 @@ import (
 )
 
 func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1alpha1.LogLevel, component, namespace, clusterName string) error {
-    cc, err := collectLogLevelConfiguration(ctx, namespace, clusterName, nil)
+    cc, err := collectLogLevelConfiguration(ctx, namespace, clusterName)
     if err != nil {
         return err
     }
