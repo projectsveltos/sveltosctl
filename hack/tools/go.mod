@@ -3,7 +3,7 @@ module github.com/projectsveltos/sveltosctl/hack/tools
 go 1.22.0
 
 require (
-	github.com/onsi/ginkgo/v2 v2.17.2
+	github.com/onsi/ginkgo/v2 v2.17.3
 	golang.org/x/oauth2 v0.20.0
 	k8s.io/client-go v0.30.0
 	sigs.k8s.io/controller-tools v0.15.0

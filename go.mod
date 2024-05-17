@@ -4,17 +4,17 @@ go 1.22.0
 
 require (
 	github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815
-	github.com/fatih/color v1.16.0
+	github.com/fatih/color v1.17.0
 	github.com/gdexlab/go-render v1.0.1
 	github.com/go-logr/logr v1.4.1
 	github.com/hexops/gotextdiff v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/onsi/ginkgo/v2 v2.17.2
+	github.com/onsi/ginkgo/v2 v2.17.3
 	github.com/onsi/gomega v1.33.1
 	github.com/pkg/errors v0.9.1
-	github.com/projectsveltos/addon-controller v0.29.1-0.20240506153432-eaf7530a303f
-	github.com/projectsveltos/event-manager v0.29.1-0.20240506171853-b2bd905472bb
-	github.com/projectsveltos/libsveltos v0.29.1-0.20240506121921-5f0f0328e94b
+	github.com/projectsveltos/addon-controller v0.30.1-0.20240517115441-933aca645ca1
+	github.com/projectsveltos/event-manager v0.30.1-0.20240517121758-dc66ae4bf2af
+	github.com/projectsveltos/libsveltos v0.30.1-0.20240517095820-fd9879699f8d
 	github.com/robfig/cron/v3 v3.0.1
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.30.0
@@ -23,8 +23,8 @@ require (
 	k8s.io/client-go v0.30.0
 	k8s.io/klog/v2 v2.120.1
 	k8s.io/kubectl v0.30.0
-	sigs.k8s.io/cluster-api v1.7.1
-	sigs.k8s.io/controller-runtime v0.18.1
+	sigs.k8s.io/cluster-api v1.7.2
+	sigs.k8s.io/controller-runtime v0.18.2
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -125,7 +125,7 @@ require (
 	github.com/opencontainers/go-digest/blake3 v0.0.0-20231025023718-d50d2fec9c98 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc5 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
-	github.com/prometheus/client_golang v1.19.0 // indirect
+	github.com/prometheus/client_golang v1.19.1 // indirect
 	github.com/prometheus/client_model v0.5.0 // indirect
 	github.com/prometheus/common v0.48.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
@@ -166,7 +166,7 @@ require (
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	helm.sh/helm/v3 v3.14.4 // indirect
+	helm.sh/helm/v3 v3.15.0 // indirect
 	k8s.io/apiserver v0.30.0 // indirect
 	k8s.io/cli-runtime v0.30.0 // indirect
 	k8s.io/component-base v0.30.0 // indirect
