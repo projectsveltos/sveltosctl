@@ -80,7 +80,8 @@ func updateLogLevelConfiguration(
 		if apierrors.IsNotFound(err) {
 			dc = &libsveltosv1alpha1.DebuggingConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
-					Name: "default",
+					Name:      clusterName,
+					Namespace: namespace,
 				},
 			}
 		} else {
