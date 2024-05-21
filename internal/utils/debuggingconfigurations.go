@@ -31,6 +31,7 @@ func (a *k8sAccess) GetDebuggingConfiguration(
     namespace string,
     clusterName string,
     clusterType string,
+    logger logr.Logger,
 ) (*libsveltosv1alpha1.DebuggingConfiguration, error) {
 
     req := &libsveltosv1alpha1.DebuggingConfiguration{}
@@ -40,7 +41,7 @@ func (a *k8sAccess) GetDebuggingConfiguration(
     if namespace == "" && clusterName == "" && clusterType == "" {
         c = a.client
     } else {
-        c, err = clusterproxy.GetSveltosKubernetesClient(ctx, a.logger, a.client, a.scheme, namespace, clusterName)
+        c, err = clusterproxy.GetSveltosKubernetesClient(ctx, logger, a.client, a.scheme, namespace, clusterName)
         if err != nil {
             return nil, err
         }
@@ -49,7 +50,6 @@ func (a *k8sAccess) GetDebuggingConfiguration(
     reqName := client.ObjectKey{
         Namespace: namespace,
         Name:      clusterName,
-		Type:	   clusterType,
     }
 
     if err := c.Get(ctx, reqName, req); err != nil {
@@ -67,6 +67,7 @@ func (a *k8sAccess) UpdateDebuggingConfiguration(
     namespace string,
     clusterName string,
     clusterType string,
+    logger logr.Logger,
 ) error {
 
     var c client.Client
@@ -75,7 +76,7 @@ func (a *k8sAccess) UpdateDebuggingConfiguration(
     if namespace == "" && clusterName == "" && clusterType == "" {
         c = a.client
     } else {
-        c, err = clusterproxy.GetSveltosKubernetesClient(ctx, a.logger, a.client, a.scheme, namespace, clusterName)
+        c, err = clusterproxy.GetSveltosKubernetesClient(ctx, logger, a.client, a.scheme, namespace, clusterName)
         if err != nil {
             return err
         }
@@ -84,7 +85,6 @@ func (a *k8sAccess) UpdateDebuggingConfiguration(
     reqName := client.ObjectKey{
         Namespace: namespace,
         Name:      clusterName,
-		Type:	   clusterType,
     }
 
     tmp := &libsveltosv1alpha1.DebuggingConfiguration{}
@@ -94,7 +94,6 @@ func (a *k8sAccess) UpdateDebuggingConfiguration(
         if apierrors.IsNotFound(err) {
             dc.Namespace = namespace
             dc.Name = clusterName
-            dc.Type = clusterType
             err = c.Create(ctx, dc)
             if err != nil {
                 return err
@@ -105,7 +104,6 @@ func (a *k8sAccess) UpdateDebuggingConfiguration(
     }
 
     dc.Namespace = namespace
-    dc.Type = clusterType
     err = c.Update(ctx, dc)
     if err != nil {
         return err
