@@ -17,108 +17,105 @@ limitations under the License.
 package utils
 
 import (
-	"context"
-
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
-	clusterproxy "github.com/projectsveltos/libsveltos/lib/clusterproxy"
-	"github.com/go-logr/logr"
-	"k8s.io/apimachinery/pkg/runtime"
+    "context"
+    "github.com/go-logr/logr"
+    "k8s.io/apimachinery/pkg/runtime"
+    "sigs.k8s.io/controller-runtime/pkg/client"
+    apierrors "k8s.io/apimachinery/pkg/api/errors"
+    libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+    clusterproxy "github.com/projectsveltos/libsveltos/lib/clusterproxy"
 )
 
 // k8sAccess is a struct that holds the client and other necessary fields like logger and scheme
 type k8sAccess struct {
-	client client.Client
-	logger logr.Logger
-	scheme *runtime.Scheme
+    client client.Client
+    logger logr.Logger
+    scheme *runtime.Scheme
 }
 
 // GetDebuggingConfiguration gets default DebuggingConfiguration in the specified namespace and cluster
 func (a *k8sAccess) GetDebuggingConfiguration(
-	ctx context.Context,
-	namespace string,
-	clusterName string,
-	clusterType string,
+    ctx context.Context,
+    namespace string,
+    clusterName string,
+    clusterType string,
 ) (*libsveltosv1alpha1.DebuggingConfiguration, error) {
 
-	req := &libsveltosv1alpha1.DebuggingConfiguration{}
-	var c client.Client
-	var err error
+    req := &libsveltosv1alpha1.DebuggingConfiguration{}
+    var c client.Client
+    var err error
 
-	if namespace == "" && clusterName == "" && clusterType == "" {
-		c = a.client
-	} else {
-		c, err = clusterproxy.GetSveltosKubernetesClient(ctx, a.logger, a.client, a.scheme, namespace, clusterName)
-		if err != nil {
-			return nil, err
-		}
-	}
+    if namespace == "" && clusterName == "" && clusterType == "" {
+        c = a.client
+    } else {
+        c, err = clusterproxy.GetSveltosKubernetesClient(ctx, a.logger, a.client, a.scheme, namespace, clusterName)
+        if err != nil {
+            return nil, err
+        }
+    }
 
-	reqName := client.ObjectKey{
-		Namespace: namespace,
-		Name:      clusterName,
-	}
+    reqName := client.ObjectKey{
+        Namespace: namespace,
+        Name:      clusterName,
+    }
 
-	if err := c.Get(ctx, reqName, req); err != nil {
-		return nil, err
-	}
+    if err := c.Get(ctx, reqName, req); err != nil {
+        return nil, err
+    }
 
-	return req, nil
+    return req, nil
 }
 
 // UpdateDebuggingConfiguration creates, if not existing already, default DebuggingConfiguration in the specified namespace and cluster. Otherwise
 // updates it.
 func (a *k8sAccess) UpdateDebuggingConfiguration(
-	ctx context.Context,
-	dc *libsveltosv1alpha1.DebuggingConfiguration,
-	namespace string,
-	clusterName string,
-	clusterType string,
+    ctx context.Context,
+    dc *libsveltosv1alpha1.DebuggingConfiguration,
+    namespace string,
+    clusterName string,
+    clusterType string,
 ) error {
 
-	var c client.Client
-	var err error
+    var c client.Client
+    var err error
 
-	if namespace == "" && clusterName == "" && clusterType == "" {
-		c = a.client
-	} else {
-		c, err = clusterproxy.GetSveltosKubernetesClient(ctx, a.logger, a.client, a.scheme, namespace, clusterName)
-		if err != nil {
-			return err
-		}
-	}
+    if namespace == "" && clusterName == "" && clusterType == "" {
+        c = a.client
+    } else {
+        c, err = clusterproxy.GetSveltosKubernetesClient(ctx, a.logger, a.client, a.scheme, namespace, clusterName)
+        if err != nil {
+            return err
+        }
+    }
 
-	reqName := client.ObjectKey{
-		Namespace: namespace,
-		Name:      clusterName,
-	}
+    reqName := client.ObjectKey{
+        Namespace: namespace,
+        Name:      clusterName,
+    }
 
-	tmp := &libsveltosv1alpha1.DebuggingConfiguration{}
+    tmp := &libsveltosv1alpha1.DebuggingConfiguration{}
 
-	err = c.Get(ctx, reqName, tmp)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			dc.Namespace = namespace
-			dc.Name = clusterName
-			dc.Type = clusterType
-			err = c.Create(ctx, dc)
-			if err != nil {
-				return err
-			}
-		} else {
-			return err
-		}
-	}
+    err = c.Get(ctx, reqName, tmp)
+    if err != nil {
+        if apierrors.IsNotFound(err) {
+            dc.Namespace = namespace
+            dc.Name = clusterName
+            dc.Type = clusterType
+            err = c.Create(ctx, dc)
+            if err != nil {
+                return err
+            }
+        } else {
+            return err
+        }
+    }
 
-	dc.Namespace = namespace
-	dc.Name = clusterName
-	dc.Type = clusterType
-	err = c.Update(ctx, dc)
-	if err != nil {
-		return err
-	}
+    dc.Namespace = namespace
+    dc.Type = clusterType
+    err = c.Update(ctx, dc)
+    if err != nil {
+        return err
+    }
 
-	return nil
+    return nil
 }
