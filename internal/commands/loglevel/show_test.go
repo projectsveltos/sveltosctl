@@ -34,16 +34,9 @@ import (
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
-const (
-	testNamespace  = "namespace"
-	testClusterName = "clusterName"
-)
-
 var _ = Describe("Show", func() {
 	It("show displays current log level settings in managed cluster", func() {
 		dc := getDebuggingConfiguration()
-		dc.Namespace = testNamespace
-		dc.Name = testClusterName
 		dc.Spec.Configuration = []libsveltosv1alpha1.ComponentConfiguration{
 			{Component: libsveltosv1alpha1.ComponentClassifier, LogLevel: libsveltosv1alpha1.LogLevelDebug},
 		}
@@ -59,7 +52,7 @@ var _ = Describe("Show", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
-		err = loglevel.ShowLogSettings(context.TODO(), testNamespace, testClusterName)
+		err = loglevel.ShowLogSettings(context.TODO(), "", "", "")
 		Expect(err).To(BeNil())
 
 		w.Close()

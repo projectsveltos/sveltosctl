@@ -33,14 +33,11 @@ import (
 )
 
 var _ = Describe("DebuggingConfigurations", func() {
-	testNamespace := "default"
-	testClusterName := utils.DefaultInstanceName
 
 	It("GetDebuggingConfiguration returns the default instance", func() {
 		dc := &libsveltosv1alpha1.DebuggingConfiguration{
 			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testClusterName,
+				Name: utils.DefaultInstanceName,
 			},
 		}
 
@@ -50,7 +47,7 @@ var _ = Describe("DebuggingConfigurations", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		k8sAccess := utils.GetK8sAccess(scheme, c)
-		currentDC, err := k8sAccess.GetDebuggingConfiguration(context.TODO(), testNamespace, testClusterName)
+		currentDC, err := k8sAccess.GetDebuggingConfiguration(context.TODO(), "", "", "")
 		Expect(err).To(BeNil())
 		Expect(currentDC).ToNot(BeNil())
 		Expect(currentDC.Name).To(Equal(dc.Name))
@@ -59,8 +56,7 @@ var _ = Describe("DebuggingConfigurations", func() {
 	It("UpdateDebuggingConfiguration updates default DebuggingConfiguration instance", func() {
 		dc := &libsveltosv1alpha1.DebuggingConfiguration{
 			ObjectMeta: metav1.ObjectMeta{
-				Namespace: testNamespace,
-				Name:      testClusterName,
+				Name: utils.DefaultInstanceName,
 			},
 		}
 
@@ -69,16 +65,16 @@ var _ = Describe("DebuggingConfigurations", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 		k8sAccess := utils.GetK8sAccess(scheme, c)
-		Expect(k8sAccess.UpdateDebuggingConfiguration(context.TODO(), dc, testNamespace, testClusterName)).To(Succeed())
+		Expect(k8sAccess.UpdateDebuggingConfiguration(context.TODO(), dc, "", "", "")).To(Succeed())
 
 		currentDC := &libsveltosv1alpha1.DebuggingConfiguration{}
-		Expect(c.Get(context.TODO(), types.NamespacedName{Namespace: testNamespace, Name: testClusterName}, currentDC)).To(Succeed())
+		Expect(c.Get(context.TODO(), types.NamespacedName{Name: utils.DefaultInstanceName}, currentDC)).To(Succeed())
 		currentDC.Spec.Configuration = []libsveltosv1alpha1.ComponentConfiguration{
 			{Component: libsveltosv1alpha1.ComponentClassifier, LogLevel: libsveltosv1alpha1.LogLevelDebug},
 		}
 
-		Expect(k8sAccess.UpdateDebuggingConfiguration(context.TODO(), currentDC, testNamespace, testClusterName)).To(Succeed())
-		Expect(c.Get(context.TODO(), types.NamespacedName{Namespace: testNamespace, Name: testClusterName}, currentDC)).To(Succeed())
+		Expect(k8sAccess.UpdateDebuggingConfiguration(context.TODO(), currentDC, "", "", "")).To(Succeed())
+		Expect(c.Get(context.TODO(), types.NamespacedName{Namespace: utils.DefaultInstanceName}, currentDC)).To(Succeed())
 		Expect(len(currentDC.Spec.Configuration)).To(Equal(1))
 	})
 })
