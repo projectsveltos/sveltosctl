@@ -31,11 +31,7 @@ import (
 
 var _ = Describe("Unset", func() {
 	It("unset removes log level settings in managed cluster", func() {
-		testNamespace := "namespace"
-		testClusterName := "clusterName"
 		dc := getDebuggingConfiguration()
-		dc.Namespace = testNamespace
-		dc.Name = testClusterName
 		dc.Spec.Configuration = []libsveltosv1alpha1.ComponentConfiguration{
 			{Component: libsveltosv1alpha1.ComponentClassifier, LogLevel: libsveltosv1alpha1.LogLevelInfo},
 			{Component: libsveltosv1alpha1.ComponentAddonManager, LogLevel: libsveltosv1alpha1.LogLevelInfo},
@@ -49,11 +45,11 @@ var _ = Describe("Unset", func() {
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
 
-		Expect(loglevel.UnsetDebuggingConfiguration(context.TODO(), string(libsveltosv1alpha1.ComponentClassifier), testNamespace, testClusterName)).To(Succeed())
+		Expect(loglevel.UnsetDebuggingConfiguration(context.TODO(), string(libsveltosv1alpha1.ComponentClassifier), "", "", "")).To(Succeed())
 
 		k8sAccess := utils.GetAccessInstance()
 
-		currentDC, err := k8sAccess.GetDebuggingConfiguration(context.TODO(), testNamespace, testClusterName)
+		currentDC, err := k8sAccess.GetDebuggingConfiguration(context.TODO(), "", "", "")
 		Expect(err).To(BeNil())
 		Expect(currentDC).ToNot(BeNil())
 		Expect(currentDC.Spec.Configuration).ToNot(BeNil())

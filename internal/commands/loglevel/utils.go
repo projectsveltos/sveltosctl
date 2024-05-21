@@ -41,10 +41,10 @@ func (c byComponent) Less(i, j int) bool {
 	return c[i].component < c[j].component
 }
 
-func collectLogLevelConfiguration(ctx context.Context, namespace, clusterName string) ([]*componentConfiguration, error) {
+func collectLogLevelConfiguration(ctx context.Context, namespace, clusterName, clusterType string) ([]*componentConfiguration, error) {
 	instance := utils.GetAccessInstance()
 
-	dc, err := instance.GetDebuggingConfiguration(ctx, namespace, clusterName)
+	dc, err := instance.GetDebuggingConfiguration(ctx, namespace, clusterName, clusterType)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			return make([]*componentConfiguration, 0), nil
@@ -70,12 +70,12 @@ func collectLogLevelConfiguration(ctx context.Context, namespace, clusterName st
 func updateLogLevelConfiguration(
 	ctx context.Context,
 	spec []libsveltosv1alpha1.ComponentConfiguration,
-	namespace, clusterName string,
+	namespace, clusterName, clusterType string,
 ) error {
 
 	instance := utils.GetAccessInstance()
 
-	dc, err := instance.GetDebuggingConfiguration(ctx, namespace, clusterName)
+	dc, err := instance.GetDebuggingConfiguration(ctx, namespace, clusterName, clusterType)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			dc = &libsveltosv1alpha1.DebuggingConfiguration{
@@ -92,5 +92,5 @@ func updateLogLevelConfiguration(
 		Configuration: spec,
 	}
 
-	return instance.UpdateDebuggingConfiguration(ctx, dc, namespace, clusterName)
+	return instance.UpdateDebuggingConfiguration(ctx, dc, namespace, clusterName, clusterType)
 }

@@ -26,8 +26,8 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-func showLogSettings(ctx context.Context, namespace, clusterName string) error {
-	componentConfiguration, err := collectLogLevelConfiguration(ctx, namespace, clusterName)
+func showLogSettings(ctx context.Context, namespace, clusterName, clusterType string) error {
+	componentConfiguration, err := collectLogLevelConfiguration(ctx, namespace, clusterName, clusterType)
 	if err != nil {
 		return err
 	}
@@ -52,11 +52,12 @@ func showLogSettings(ctx context.Context, namespace, clusterName string) error {
 // Show displays information about log verbosity (if set)
 func Show(ctx context.Context, args []string) error {
 	doc := `Usage:
-  sveltosctl log-level show --namespace=<namespace> --cluster=<cluster-name>
+  sveltosctl log-level show [--namespace=<namespace>] [--cluster=<cluster-name>] [--cluster-type=<cluster-type>]
 Options:
-  -h --help             Show this screen.
-     --namespace=<namespace> Namespace of the cluster.
-     --cluster=<cluster-name> Name of the cluster.
+  	-h --help                        Show this screen.
+       --namespace=<namespace>       Namespace of the cluster.
+       --cluster=<cluster-name>      Name of the cluster.
+       --cluster-type=<cluster-type> Type of the cluster (Capi or Sveltos).
      
 Description:
   The log-level show command shows information about current log verbosity in the specified cluster.
@@ -74,6 +75,7 @@ Description:
 
 	namespace := parsedArgs["--namespace"].(string)
 	clusterName := parsedArgs["--cluster"].(string)
+	clusterType := parsedArgs["--cluster-type"].(string)
 
-	return showLogSettings(ctx, namespace, clusterName)
+	return showLogSettings(ctx, namespace, clusterName, clusterType)
 }

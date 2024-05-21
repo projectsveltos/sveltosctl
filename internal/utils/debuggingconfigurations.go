@@ -17,16 +17,13 @@ limitations under the License.
 package utils
 
 import (
-    "context"
-    "sigs.k8s.io/controller-runtime/pkg/client"
-    "k8s.io/klog/v2"
-    apierrors "k8s.io/apimachinery/pkg/api/errors"
-    libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
-    clusterproxy "github.com/projectsveltos/libsveltos/lib/clusterproxy"
-)
+	"context"
 
-const (
-	defaultInstanceName = "default"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	clusterproxy "github.com/projectsveltos/libsveltos/lib/clusterproxy"
 )
 
 // GetDebuggingConfiguration gets default DebuggingConfiguration in the specified namespace and cluster
@@ -34,22 +31,31 @@ func (a *k8sAccess) GetDebuggingConfiguration(
 	ctx context.Context,
 	namespace string,
 	clusterName string,
+	clusterType string,
 ) (*libsveltosv1alpha1.DebuggingConfiguration, error) {
 
-    req := &libsveltosv1alpha1.DebuggingConfiguration{}
-    var c client.Client
-    var err error
-    logger := klog.FromContext(ctx)
+	req := &libsveltosv1alpha1.DebuggingConfiguration{}
+	var c client.Client
+	var err error
+
+	if namespace == "" && clusterName == "" && clusterType == "" {
+		c = a.client
+	} else {
+		c, err = clusterproxy.GetSveltosKubernetesClient(ctx, a.client, namespace, clusterName, clusterType)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	reqName := client.ObjectKey{
 		Namespace: namespace,
 		Name:      clusterName,
+		Type:      clusterType,
 	}
 
-    reqName := client.ObjectKey{
-        Name:      defaultInstanceName,
-        Namespace: namespace,
-    }
+	if err := c.Get(ctx, reqName, req); err != nil {
+		return nil, err
+	}
 
     if err := c.Get(ctx, reqName, req); err != nil {
         return nil, err
@@ -65,11 +71,25 @@ func (a *k8sAccess) UpdateDebuggingConfiguration(
 	dc *libsveltosv1alpha1.DebuggingConfiguration,
 	namespace string,
 	clusterName string,
+	clusterType string,
 ) error {
+
+	var c client.Client
+	var err error
+
+	if namespace == "" && clusterName == "" && clusterType == "" {
+		c = a.client
+	} else {
+		c, err = clusterproxy.GetSveltosKubernetesClient(ctx, a.client, namespace, clusterName, clusterType)
+		if err != nil {
+			return err
+		}
+	}
 
 	reqName := client.ObjectKey{
 		Namespace: namespace,
 		Name:      clusterName,
+		Type:      clusterType,
 	}
 
     if namespace == "" && clusterName == "" && clusterType == "" {
@@ -81,12 +101,13 @@ func (a *k8sAccess) UpdateDebuggingConfiguration(
         }
     }
 
-	err := a.client.Get(ctx, reqName, tmp)
+	err = c.Get(ctx, reqName, tmp)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			dc.Namespace = namespace
 			dc.Name = clusterName
-			err = a.client.Create(ctx, dc)
+			dc.Type = clusterType
+			err = c.Create(ctx, dc)
 			if err != nil {
 				return err
 			}
@@ -97,7 +118,8 @@ func (a *k8sAccess) UpdateDebuggingConfiguration(
 
 	dc.Namespace = namespace
 	dc.Name = clusterName
-	err = a.client.Update(ctx, dc)
+	dc.Type = clusterType
+	err = c.Update(ctx, dc)
 	if err != nil {
 		return err
 	}
