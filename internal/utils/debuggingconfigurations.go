@@ -19,6 +19,7 @@ package utils
 import (
     "context"
     "sigs.k8s.io/controller-runtime/pkg/client"
+	"github.com/go-logr/logr"
     apierrors "k8s.io/apimachinery/pkg/api/errors"
     libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
     clusterproxy "github.com/projectsveltos/libsveltos/lib/clusterproxy"
@@ -39,8 +40,7 @@ func (a *k8sAccess) GetDebuggingConfiguration(
     if namespace == "" && clusterName == "" && clusterType == "" {
         c = a.client
     } else {
-        logger := a.logger
-        c, err = clusterproxy.GetSveltosKubernetesClient(ctx, logger, a.client, a.scheme, namespace, clusterName)
+        c, err = clusterproxy.GetSveltosKubernetesClient(ctx, logr.Logger, a.client, a.scheme, namespace, clusterName)
         if err != nil {
             return nil, err
         }
@@ -74,8 +74,7 @@ func (a *k8sAccess) UpdateDebuggingConfiguration(
     if namespace == "" && clusterName == "" && clusterType == "" {
         c = a.client
     } else {
-        logger := a.logger
-        c, err = clusterproxy.GetSveltosKubernetesClient(ctx, logger, a.client, a.scheme, namespace, clusterName)
+        c, err = clusterproxy.GetSveltosKubernetesClient(ctx, logr.Logger, a.client, a.scheme, namespace, clusterName)
         if err != nil {
             return err
         }
