@@ -19,19 +19,11 @@ package utils
 import (
     "context"
     "github.com/go-logr/logr"
-    "k8s.io/apimachinery/pkg/runtime"
     "sigs.k8s.io/controller-runtime/pkg/client"
     apierrors "k8s.io/apimachinery/pkg/api/errors"
     libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
     clusterproxy "github.com/projectsveltos/libsveltos/lib/clusterproxy"
 )
-
-// k8sAccess is a struct that holds the client and other necessary fields like logger and scheme
-type k8sAccess struct {
-    client client.Client
-    logger logr.Logger
-    scheme *runtime.Scheme
-}
 
 // GetDebuggingConfiguration gets default DebuggingConfiguration in the specified namespace and cluster
 func (a *k8sAccess) GetDebuggingConfiguration(
