@@ -25,21 +25,13 @@ import (
     clusterproxy "github.com/projectsveltos/libsveltos/lib/clusterproxy"
 )
 
-var (
-    logger logr.Logger
-)
-
-// SetLogger sets the logger for the package
-func SetLogger(l logr.Logger) {
-    logger = l
-}
-
 // GetDebuggingConfiguration gets default DebuggingConfiguration in the specified namespace and cluster
 func (a *k8sAccess) GetDebuggingConfiguration(
     ctx context.Context,
     namespace string,
     clusterName string,
     clusterType string,
+    logger logr.Logger,
 ) (*libsveltosv1alpha1.DebuggingConfiguration, error) {
 
     req := &libsveltosv1alpha1.DebuggingConfiguration{}
@@ -75,6 +67,7 @@ func (a *k8sAccess) UpdateDebuggingConfiguration(
     namespace string,
     clusterName string,
     clusterType string,
+    logger logr.Logger,
 ) error {
 
     var c client.Client
