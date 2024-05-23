@@ -54,6 +54,7 @@ func (a *k8sAccess) GetDebuggingConfiguration(
     reqName := client.ObjectKey{
         Name:      defaultInstanceName,
         Namespace: namespace,
+        Type: clusterType,
     }
 
     if err := c.Get(ctx, reqName, req); err != nil {
@@ -89,6 +90,7 @@ func (a *k8sAccess) UpdateDebuggingConfiguration(
     reqName := client.ObjectKey{
         Namespace: namespace,
         Name:      clusterName,
+        Type: clusterType,
     }
 
     tmp := &libsveltosv1alpha1.DebuggingConfiguration{}
