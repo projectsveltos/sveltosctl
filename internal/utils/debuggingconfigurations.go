@@ -19,7 +19,7 @@ package utils
 import (
     "context"
     "sigs.k8s.io/controller-runtime/pkg/client"
-    "github.com/go-logr/logr"
+    "k8s.io/klog/v2"
     apierrors "k8s.io/apimachinery/pkg/api/errors"
     libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
     clusterproxy "github.com/projectsveltos/libsveltos/lib/clusterproxy"
@@ -36,11 +36,12 @@ func (a *k8sAccess) GetDebuggingConfiguration(
     req := &libsveltosv1alpha1.DebuggingConfiguration{}
     var c client.Client
     var err error
+    logger := klog.FromContext(ctx)
 
     if namespace == "" && clusterName == "" && clusterType == "" {
         c = a.client
     } else {
-        c, err = clusterproxy.GetKubernetesClient(ctx, a.client, namespace, clusterName, "", "", libsveltosv1alpha1.ClusterType(clusterType), a.logger)
+        c, err = clusterproxy.GetKubernetesClient(ctx, a.client, namespace, clusterName, "", "", libsveltosv1alpha1.ClusterType(clusterType), logger)
         if err != nil {
             return nil, err
         }
@@ -70,11 +71,12 @@ func (a *k8sAccess) UpdateDebuggingConfiguration(
 
     var c client.Client
     var err error
+    logger := klog.FromContext(ctx)
 
     if namespace == "" && clusterName == "" && clusterType == "" {
         c = a.client
     } else {
-        c, err = clusterproxy.GetKubernetesClient(ctx, a.client, namespace, clusterName, "", "", libsveltosv1alpha1.ClusterType(clusterType), a.logger)
+        c, err = clusterproxy.GetKubernetesClient(ctx, a.client, namespace, clusterName, "", "", libsveltosv1alpha1.ClusterType(clusterType), logger)
         if err != nil {
             return err
         }
