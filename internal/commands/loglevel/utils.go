@@ -81,6 +81,8 @@ func updateLogLevelConfiguration(
 			dc = &libsveltosv1alpha1.DebuggingConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "default",
+					Namespace: namespace,
+					Type: clusterType,
 				},
 			}
 		} else {
