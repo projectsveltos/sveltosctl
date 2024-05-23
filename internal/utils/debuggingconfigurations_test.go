@@ -74,7 +74,7 @@ var _ = Describe("DebuggingConfigurations", func() {
 		}
 
 		Expect(k8sAccess.UpdateDebuggingConfiguration(context.TODO(), currentDC, "", "", "")).To(Succeed())
-		Expect(c.Get(context.TODO(), types.NamespacedName{Namespace: utils.DefaultInstanceName}, currentDC)).To(Succeed())
+		Expect(c.Get(context.TODO(), types.NamespacedName{Name: utils.DefaultInstanceName}, currentDC)).To(Succeed())
 		Expect(len(currentDC.Spec.Configuration)).To(Equal(1))
 	})
 })
