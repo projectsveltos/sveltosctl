@@ -82,7 +82,6 @@ func updateLogLevelConfiguration(
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "default",
 					Namespace: namespace,
-					Type: clusterType,
 				},
 			}
 		} else {
