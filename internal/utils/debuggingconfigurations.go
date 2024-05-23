@@ -54,7 +54,7 @@ func (a *k8sAccess) GetDebuggingConfiguration(
     reqName := client.ObjectKey{
         Name:      defaultInstanceName,
         Namespace: namespace,
-        Type: clusterType,
+        Type:      clusterType,
     }
 
     if err := c.Get(ctx, reqName, req); err != nil {
@@ -88,9 +88,9 @@ func (a *k8sAccess) UpdateDebuggingConfiguration(
     }
 
     reqName := client.ObjectKey{
+        Name:      defaultInstanceName,
         Namespace: namespace,
-        Name:      clusterName,
-        Type: clusterType,
+        Type:      clusterType,
     }
 
     tmp := &libsveltosv1alpha1.DebuggingConfiguration{}
@@ -99,7 +99,7 @@ func (a *k8sAccess) UpdateDebuggingConfiguration(
     if err != nil {
         if apierrors.IsNotFound(err) {
             dc.Namespace = namespace
-            dc.Name = clusterName
+            dc.Type = clusterType
             err = c.Create(ctx, dc)
             if err != nil {
                 return err
@@ -110,6 +110,7 @@ func (a *k8sAccess) UpdateDebuggingConfiguration(
     }
 
     dc.Namespace = namespace
+    dc.Type = clusterType
     err = c.Update(ctx, dc)
     if err != nil {
         return err
