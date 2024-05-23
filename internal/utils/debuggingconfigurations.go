@@ -25,6 +25,10 @@ import (
     clusterproxy "github.com/projectsveltos/libsveltos/lib/clusterproxy"
 )
 
+const (
+	defaultInstanceName = "default"
+)
+
 // GetDebuggingConfiguration gets default DebuggingConfiguration in the specified namespace and cluster
 func (a *k8sAccess) GetDebuggingConfiguration(
     ctx context.Context,
@@ -48,8 +52,8 @@ func (a *k8sAccess) GetDebuggingConfiguration(
     }
 
     reqName := client.ObjectKey{
+        Name:      defaultInstanceName,
         Namespace: namespace,
-        Name:      clusterName,
     }
 
     if err := c.Get(ctx, reqName, req); err != nil {
