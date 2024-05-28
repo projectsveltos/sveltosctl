@@ -73,9 +73,19 @@ Description:
 		return nil
 	}
 
-	namespace := parsedArgs["--namespace"].(string)
-	clusterName := parsedArgs["--cluster"].(string)
-	clusterType := parsedArgs["--cluster-type"].(string)
+	namespace := ""
+    if passedNamespace := parsedArgs["--namespace"]; passedNamespace != nil {
+        namespace = passedNamespace.(string)
+    }
+	clusterName := ""
+	if passedClusterName := parsedArgs["--cluster"]; passedClusterName != nil {
+        clusterName = passedClusterName.(string)
+    }
+	clusterType := ""
+	if passedClusterType := parsedArgs["--cluster-type"]; passedClusterType != nil {
+        clusterType = passedClusterType.(string)
+    }
+
 
 	return showLogSettings(ctx, namespace, clusterName, clusterType)
 }
