@@ -79,6 +79,7 @@ Description:
 		return nil
 	}
 
+	component := ""
 	if passedComponent := parsedArgs["--component"]; passedComponent != nil {
 		component = passedComponent.(string)
 	}

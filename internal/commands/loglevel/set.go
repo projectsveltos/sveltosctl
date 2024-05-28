@@ -91,8 +91,9 @@ Description:
 	}
 	if len(parsedArgs) == 0 {
 		return nil
-	}component
+	}
 
+	component := ""
 	if passedComponent := parsedArgs["--component"]; passedComponent != nil {
 		component = passedComponent.(string)
 	}
