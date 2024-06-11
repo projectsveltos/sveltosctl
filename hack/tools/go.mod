@@ -4,7 +4,7 @@ go 1.22.0
 
 require (
 	github.com/onsi/ginkgo/v2 v2.19.0
-	golang.org/x/oauth2 v0.20.0
+	golang.org/x/oauth2 v0.21.0
 	k8s.io/client-go v0.30.1
 	sigs.k8s.io/controller-tools v0.15.0
 	sigs.k8s.io/kind v0.23.0
