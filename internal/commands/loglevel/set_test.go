@@ -30,18 +30,17 @@ import (
 
 var _ = Describe("Set", func() {
 	It("set updates default DebuggingConfiguration instance", func() {
-
 		scheme, err := utils.GetScheme()
 		Expect(err).To(BeNil())
 		c := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
 		Expect(loglevel.UpdateDebuggingConfiguration(context.TODO(), libsveltosv1alpha1.LogLevelDebug,
-			string(libsveltosv1alpha1.ComponentAddonManager))).To(Succeed())
+			string(libsveltosv1alpha1.ComponentAddonManager), "", "", "")).To(Succeed())
 
 		k8sAccess := utils.GetAccessInstance()
 
-		currentDC, err := k8sAccess.GetDebuggingConfiguration(context.TODO())
+		currentDC, err := k8sAccess.GetDebuggingConfiguration(context.TODO(), "", "", "")
 		Expect(err).To(BeNil())
 		Expect(currentDC).ToNot(BeNil())
 		Expect(currentDC.Spec.Configuration).ToNot(BeNil())
@@ -50,8 +49,8 @@ var _ = Describe("Set", func() {
 		Expect(currentDC.Spec.Configuration[0].LogLevel).To(Equal(libsveltosv1alpha1.LogLevelDebug))
 
 		Expect(loglevel.UpdateDebuggingConfiguration(context.TODO(), libsveltosv1alpha1.LogLevelInfo,
-			string(libsveltosv1alpha1.ComponentAddonManager))).To(Succeed())
-		currentDC, err = k8sAccess.GetDebuggingConfiguration(context.TODO())
+			string(libsveltosv1alpha1.ComponentAddonManager), "", "", "")).To(Succeed())
+		currentDC, err = k8sAccess.GetDebuggingConfiguration(context.TODO(), "", "", "")
 		Expect(err).To(BeNil())
 		Expect(currentDC).ToNot(BeNil())
 		Expect(currentDC.Spec.Configuration).ToNot(BeNil())

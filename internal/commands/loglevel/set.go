@@ -22,14 +22,14 @@ import (
 	"strings"
 
 	docopt "github.com/docopt/docopt-go"
-
 	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
 func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1alpha1.LogLevel,
-	component string) error {
+	component, namespace, clusterName, clusterType string) error {
 
-	cc, err := collectLogLevelConfiguration(ctx)
+	cc, err := collectLogLevelConfiguration(ctx, namespace, clusterName, clusterType)
 	if err != nil {
 		return nil
 	}
@@ -62,22 +62,25 @@ func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1a
 		)
 	}
 
-	return updateLogLevelConfiguration(ctx, spec)
+	return updateLogLevelConfiguration(ctx, spec, namespace, clusterName, clusterType)
 }
 
 // Set displays/changes log verbosity for a given component
 func Set(ctx context.Context, args []string) error {
 	doc := `Usage:
-  sveltosctl log-level set --component=<name> (--info|--debug|--verbose)
+  sveltosctl log-level set --component=<name> [--namespace=<namespace>] [--cluster=<cluster-name>] [--cluster-type=<cluster-type>] (--info|--debug|--verbose)
 Options:
-  -h --help             Show this screen.
-     --component=<name> Name of the component for which log severity is being set.
-     --info             Set log severity to info.
-     --debug            Set log severity to debug.
-     --verbose          Set log severity to verbose.
+  -h --help                		   Show this screen.
+     --component=<name>    		   Name of the component for which log severity is being set.
+     --namespace=<namespace> 	   Namespace of the cluster.
+     --cluster=<cluster-name> 	   Name of the cluster.
+     --cluster-type=<cluster-type> Type of the cluster (Capi or Sveltos).
+     --info                		   Set log severity to info.
+     --debug               		   Set log severity to debug.
+     --verbose             		   Set log severity to verbose.
 	 
 Description:
-  The log-level set command set log severity for the specified component.
+  The log-level set command sets log severity for the specified component in the specified cluster.
 `
 	parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
 	if err != nil {
@@ -94,6 +97,18 @@ Description:
 	if passedComponent := parsedArgs["--component"]; passedComponent != nil {
 		component = passedComponent.(string)
 	}
+	namespace := ""
+    if passedNamespace := parsedArgs["--namespace"]; passedNamespace != nil {
+        namespace = passedNamespace.(string)
+    }
+	clusterName := ""
+	if passedClusterName := parsedArgs["--cluster"]; passedClusterName != nil {
+        clusterName = passedClusterName.(string)
+    }
+	clusterType := ""
+	if passedClusterType := parsedArgs["--cluster-type"]; passedClusterType != nil {
+        clusterType = passedClusterType.(string)
+    }
 
 	info := parsedArgs["--info"].(bool)
 	debug := parsedArgs["--debug"].(bool)
@@ -108,5 +123,5 @@ Description:
 		logSeverity = libsveltosv1alpha1.LogLevelVerbose
 	}
 
-	return updateDebuggingConfiguration(ctx, logSeverity, component)
+	return updateDebuggingConfiguration(ctx, logSeverity, component, namespace, clusterName, clusterType)
 }
