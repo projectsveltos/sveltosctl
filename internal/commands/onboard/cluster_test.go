@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 
 	"github.com/projectsveltos/sveltosctl/internal/commands/onboard"
@@ -61,7 +61,7 @@ var _ = Describe("OnboardCluster", func() {
 
 		instance := utils.GetAccessInstance()
 
-		sveltosCluster := &libsveltosv1alpha1.SveltosCluster{}
+		sveltosCluster := &libsveltosv1beta1.SveltosCluster{}
 		err = instance.GetResource(context.TODO(),
 			types.NamespacedName{Namespace: clusterNamespace, Name: clusterName}, sveltosCluster)
 		Expect(err).To(BeNil())

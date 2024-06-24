@@ -29,7 +29,7 @@ import (
 	"github.com/olekukonko/tablewriter"
 	"gopkg.in/yaml.v2"
 
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	libsveltosutils "github.com/projectsveltos/libsveltos/lib/utils"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
@@ -107,7 +107,7 @@ func displayResourcesInNamespaces(ctx context.Context,
 	return nil
 }
 
-func displayResourcesInReport(healthCheckReport *libsveltosv1alpha1.HealthCheckReport,
+func displayResourcesInReport(healthCheckReport *libsveltosv1beta1.HealthCheckReport,
 	passedGroup, passedKind, passedNamespace string, full bool,
 	table *tablewriter.Table, logger logr.Logger) error {
 
@@ -134,7 +134,7 @@ func displayResourcesInReport(healthCheckReport *libsveltosv1alpha1.HealthCheckR
 	return nil
 }
 
-func displayResource(resourceStatus *libsveltosv1alpha1.ResourceStatus,
+func displayResource(resourceStatus *libsveltosv1beta1.ResourceStatus,
 	clusterNamespace, clusterName string, table *tablewriter.Table) {
 
 	clusterInfo := fmt.Sprintf("%s/%s", clusterNamespace, clusterName)
@@ -143,7 +143,7 @@ func displayResource(resourceStatus *libsveltosv1alpha1.ResourceStatus,
 	resourceName := resourceStatus.ObjectRef.Name
 	message := resourceStatus.Message
 
-	if resourceStatus.HealthStatus != libsveltosv1alpha1.HealthStatusHealthy {
+	if resourceStatus.HealthStatus != libsveltosv1beta1.HealthStatusHealthy {
 		data := []string{clusterInfo, gvk, resourceNamespace, resourceName, message}
 		table.Rich(data, []tablewriter.Colors{{tablewriter.Bold, tablewriter.FgBlackColor},
 			{tablewriter.Bold, tablewriter.FgBlackColor}, {tablewriter.Bold, tablewriter.BgRedColor},
@@ -154,7 +154,7 @@ func displayResource(resourceStatus *libsveltosv1alpha1.ResourceStatus,
 	table.Append(genResourceRow(clusterInfo, gvk, resourceNamespace, resourceName, message))
 }
 
-func printResource(resourceStatus *libsveltosv1alpha1.ResourceStatus,
+func printResource(resourceStatus *libsveltosv1beta1.ResourceStatus,
 	clusterNamespace, clusterName string, logger logr.Logger) error {
 
 	clusterInfo := fmt.Sprintf("%s/%s", clusterNamespace, clusterName)
@@ -179,7 +179,7 @@ func printResource(resourceStatus *libsveltosv1alpha1.ResourceStatus,
 		return err
 	}
 
-	if resourceStatus.HealthStatus != libsveltosv1alpha1.HealthStatusHealthy {
+	if resourceStatus.HealthStatus != libsveltosv1beta1.HealthStatusHealthy {
 		red := color.New(color.FgRed).SprintfFunc()
 		//nolint: forbidigo // printing results to stdout
 		fmt.Println("Cluster: ", red(clusterInfo))
@@ -195,7 +195,7 @@ func printResource(resourceStatus *libsveltosv1alpha1.ResourceStatus,
 	return nil
 }
 
-func doConsiderResourceStatus(resourceStatus *libsveltosv1alpha1.ResourceStatus,
+func doConsiderResourceStatus(resourceStatus *libsveltosv1beta1.ResourceStatus,
 	passedGroup, passedKind, passedNamespace string) bool {
 
 	if passedGroup != "" {

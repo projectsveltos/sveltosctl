@@ -24,7 +24,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/commands/loglevel"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -32,9 +32,9 @@ import (
 var _ = Describe("Unset", func() {
 	It("unset removes log level settings", func() {
 		dc := getDebuggingConfiguration()
-		dc.Spec.Configuration = []libsveltosv1alpha1.ComponentConfiguration{
-			{Component: libsveltosv1alpha1.ComponentClassifier, LogLevel: libsveltosv1alpha1.LogLevelInfo},
-			{Component: libsveltosv1alpha1.ComponentAddonManager, LogLevel: libsveltosv1alpha1.LogLevelInfo},
+		dc.Spec.Configuration = []libsveltosv1beta1.ComponentConfiguration{
+			{Component: libsveltosv1beta1.ComponentClassifier, LogLevel: libsveltosv1beta1.LogLevelInfo},
+			{Component: libsveltosv1beta1.ComponentAddonManager, LogLevel: libsveltosv1beta1.LogLevelInfo},
 		}
 
 		initObjects := []client.Object{dc}
@@ -45,7 +45,7 @@ var _ = Describe("Unset", func() {
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
 
-		Expect(loglevel.UnsetDebuggingConfiguration(context.TODO(), string(libsveltosv1alpha1.ComponentClassifier))).To(Succeed())
+		Expect(loglevel.UnsetDebuggingConfiguration(context.TODO(), string(libsveltosv1beta1.ComponentClassifier))).To(Succeed())
 
 		k8sAccess := utils.GetAccessInstance()
 
@@ -54,8 +54,8 @@ var _ = Describe("Unset", func() {
 		Expect(currentDC).ToNot(BeNil())
 		Expect(currentDC.Spec.Configuration).ToNot(BeNil())
 		Expect(len(currentDC.Spec.Configuration)).To(Equal(1))
-		Expect(currentDC.Spec.Configuration[0].Component).To(Equal(libsveltosv1alpha1.ComponentAddonManager))
-		Expect(currentDC.Spec.Configuration[0].LogLevel).To(Equal(libsveltosv1alpha1.LogLevelInfo))
+		Expect(currentDC.Spec.Configuration[0].Component).To(Equal(libsveltosv1beta1.ComponentAddonManager))
+		Expect(currentDC.Spec.Configuration[0].LogLevel).To(Equal(libsveltosv1beta1.LogLevelInfo))
 
 	})
 })

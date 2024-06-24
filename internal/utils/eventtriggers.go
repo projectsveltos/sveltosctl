@@ -21,16 +21,16 @@ import (
 
 	"github.com/go-logr/logr"
 
-	eventv1alpha1 "github.com/projectsveltos/event-manager/api/v1alpha1"
+	eventv1beta1 "github.com/projectsveltos/event-manager/api/v1beta1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 )
 
 // ListEventTriggers returns all current EventTriggers
 func (a *k8sAccess) ListEventTriggers(ctx context.Context,
-	logger logr.Logger) (*eventv1alpha1.EventTriggerList, error) {
+	logger logr.Logger) (*eventv1beta1.EventTriggerList, error) {
 
 	logger.V(logs.LogDebug).Info("Get all EventTriggers")
-	eventTriggers := &eventv1alpha1.EventTriggerList{}
+	eventTriggers := &eventv1beta1.EventTriggerList{}
 	err := a.client.List(ctx, eventTriggers)
 	return eventTriggers, err
 }

@@ -34,10 +34,10 @@ import (
 	"k8s.io/klog/v2/textlogger"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
+	utilsv1beta1 "github.com/projectsveltos/sveltosctl/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -51,7 +51,7 @@ func rollbackConfiguration(ctx context.Context,
 
 	// Get the directory containing the collected snapshots for Snapshot instance snapshotName
 	instance := utils.GetAccessInstance()
-	snapshotInstance := &utilsv1alpha1.Snapshot{}
+	snapshotInstance := &utilsv1beta1.Snapshot{}
 	err := instance.GetResource(ctx, types.NamespacedName{Name: snapshotName}, snapshotInstance)
 	if err != nil {
 		return err
@@ -188,7 +188,7 @@ func getAndRollbackCAPIClusters(ctx context.Context, folder, passedNamespace, pa
 	for ns := range clusterMap {
 		if passedNamespace == "" || ns == passedNamespace {
 			logger.V(logs.LogDebug).Info(fmt.Sprintf("rollback Clusters in namespace %s", ns))
-			err = rollbackClusters(ctx, clusterMap[ns], passedCluster, libsveltosv1alpha1.ClusterTypeCapi, logger)
+			err = rollbackClusters(ctx, clusterMap[ns], passedCluster, libsveltosv1beta1.ClusterTypeCapi, logger)
 			if err != nil {
 				return err
 			}
@@ -200,7 +200,7 @@ func getAndRollbackCAPIClusters(ctx context.Context, folder, passedNamespace, pa
 
 func getAndRollbackSveltosClusters(ctx context.Context, folder, passedNamespace, passedCluster string, logger logr.Logger) error {
 	snapshotClient := collector.GetClient()
-	clusterMap, err := snapshotClient.GetNamespacedResources(folder, libsveltosv1alpha1.SveltosClusterKind, logger)
+	clusterMap, err := snapshotClient.GetNamespacedResources(folder, libsveltosv1beta1.SveltosClusterKind, logger)
 	if err != nil {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect SveltosCluster from folder %s", folder))
 		return err
@@ -209,7 +209,7 @@ func getAndRollbackSveltosClusters(ctx context.Context, folder, passedNamespace,
 	for ns := range clusterMap {
 		if passedNamespace == "" || ns == passedNamespace {
 			logger.V(logs.LogDebug).Info(fmt.Sprintf("rollback Clusters in namespace %s", ns))
-			err = rollbackClusters(ctx, clusterMap[ns], passedCluster, libsveltosv1alpha1.ClusterTypeSveltos, logger)
+			err = rollbackClusters(ctx, clusterMap[ns], passedCluster, libsveltosv1beta1.ClusterTypeSveltos, logger)
 			if err != nil {
 				return err
 			}
@@ -276,7 +276,7 @@ func rollbackProfiles(ctx context.Context, resources []*unstructured.Unstructure
 
 func getAndRollbackClassifiers(ctx context.Context, folder, passedClassifier string, logger logr.Logger) error {
 	snapshotClient := collector.GetClient()
-	classifiers, err := snapshotClient.GetClusterResources(folder, libsveltosv1alpha1.ClassifierKind, logger)
+	classifiers, err := snapshotClient.GetClusterResources(folder, libsveltosv1beta1.ClassifierKind, logger)
 	if err != nil {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect Classifiers from folder %s", folder))
 		return err
@@ -298,7 +298,7 @@ func getAndRollbackClassifiers(ctx context.Context, folder, passedClassifier str
 
 func getAndRollbackRoleRequests(ctx context.Context, folder, passedRoleRequest string, logger logr.Logger) error {
 	snapshotClient := collector.GetClient()
-	roleRequests, err := snapshotClient.GetClusterResources(folder, libsveltosv1alpha1.RoleRequestKind, logger)
+	roleRequests, err := snapshotClient.GetClusterResources(folder, libsveltosv1beta1.RoleRequestKind, logger)
 	if err != nil {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect RoleRequests from folder %s", folder))
 		return err
@@ -409,7 +409,7 @@ func rollbackSecret(ctx context.Context, resource *unstructured.Unstructured, lo
 }
 
 func rollbackClusters(ctx context.Context, resources []*unstructured.Unstructured, passedCluster string,
-	clusterType libsveltosv1alpha1.ClusterType, logger logr.Logger) error {
+	clusterType libsveltosv1beta1.ClusterType, logger logr.Logger) error {
 
 	for i := range resources {
 		if passedCluster == "" || resources[i].GetName() == passedCluster {
@@ -427,9 +427,9 @@ func rollbackClusters(ctx context.Context, resources []*unstructured.Unstructure
 // rollbackCluster does not nothing if Cluster currently does not exist.
 // If Cluster currently exists, then it updates Cluster.Labels
 func rollbackCluster(ctx context.Context, resource *unstructured.Unstructured,
-	clusterType libsveltosv1alpha1.ClusterType, logger logr.Logger) error {
+	clusterType libsveltosv1beta1.ClusterType, logger logr.Logger) error {
 
-	if clusterType == libsveltosv1alpha1.ClusterTypeCapi {
+	if clusterType == libsveltosv1beta1.ClusterTypeCapi {
 		return rollbackCAPICluster(ctx, resource, logger)
 	}
 
@@ -469,7 +469,7 @@ func rollbackCAPICluster(ctx context.Context, resource *unstructured.Unstructure
 func rollbackSveltosCluster(ctx context.Context, resource *unstructured.Unstructured, logger logr.Logger) error {
 	instance := utils.GetAccessInstance()
 
-	currentCluster := &libsveltosv1alpha1.SveltosCluster{}
+	currentCluster := &libsveltosv1beta1.SveltosCluster{}
 	err := instance.GetResource(ctx,
 		types.NamespacedName{Namespace: resource.GetNamespace(), Name: resource.GetName()},
 		currentCluster)
@@ -482,7 +482,7 @@ func rollbackSveltosCluster(ctx context.Context, resource *unstructured.Unstruct
 		return err
 	}
 
-	passedCluster := &libsveltosv1alpha1.SveltosCluster{}
+	passedCluster := &libsveltosv1beta1.SveltosCluster{}
 	err = runtime.DefaultUnstructuredConverter.
 		FromUnstructured(resource.UnstructuredContent(), passedCluster)
 	if err != nil {
@@ -567,7 +567,7 @@ func rollbackProfile(ctx context.Context, resource *unstructured.Unstructured, l
 func rollbackClassifier(ctx context.Context, resource *unstructured.Unstructured, logger logr.Logger) error {
 	instance := utils.GetAccessInstance()
 
-	currentClassifier := &libsveltosv1alpha1.Classifier{}
+	currentClassifier := &libsveltosv1beta1.Classifier{}
 	err := instance.GetResource(ctx,
 		types.NamespacedName{Name: resource.GetName()}, currentClassifier)
 	if err != nil {
@@ -579,7 +579,7 @@ func rollbackClassifier(ctx context.Context, resource *unstructured.Unstructured
 		return err
 	}
 
-	passedClassifier := &libsveltosv1alpha1.Classifier{}
+	passedClassifier := &libsveltosv1beta1.Classifier{}
 	err = runtime.DefaultUnstructuredConverter.
 		FromUnstructured(resource.UnstructuredContent(), passedClassifier)
 	if err != nil {

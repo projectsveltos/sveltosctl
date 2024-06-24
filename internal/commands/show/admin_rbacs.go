@@ -32,7 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	libsveltosutils "github.com/projectsveltos/libsveltos/lib/utils"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
@@ -93,10 +93,10 @@ func displayAdminRbacs(ctx context.Context,
 	return nil
 }
 
-func createRoleRequestsPerClusterMap(roleRequests *libsveltosv1alpha1.RoleRequestList,
-	logger logr.Logger) map[corev1.ObjectReference][]*libsveltosv1alpha1.RoleRequest {
+func createRoleRequestsPerClusterMap(roleRequests *libsveltosv1beta1.RoleRequestList,
+	logger logr.Logger) map[corev1.ObjectReference][]*libsveltosv1beta1.RoleRequest {
 
-	clusterMap := make(map[corev1.ObjectReference][]*libsveltosv1alpha1.RoleRequest)
+	clusterMap := make(map[corev1.ObjectReference][]*libsveltosv1beta1.RoleRequest)
 
 	for i := range roleRequests.Items {
 		rr := &roleRequests.Items[i]
@@ -106,15 +106,15 @@ func createRoleRequestsPerClusterMap(roleRequests *libsveltosv1alpha1.RoleReques
 	return clusterMap
 }
 
-func parseMatchihgCluster(rr *libsveltosv1alpha1.RoleRequest,
-	clusterMap map[corev1.ObjectReference][]*libsveltosv1alpha1.RoleRequest, logger logr.Logger,
-) map[corev1.ObjectReference][]*libsveltosv1alpha1.RoleRequest {
+func parseMatchihgCluster(rr *libsveltosv1beta1.RoleRequest,
+	clusterMap map[corev1.ObjectReference][]*libsveltosv1beta1.RoleRequest, logger logr.Logger,
+) map[corev1.ObjectReference][]*libsveltosv1beta1.RoleRequest {
 
 	logger = logger.WithValues("rolerequest", rr.Name)
 	logger.V(logs.LogDebug).Info("parsing matching clusters for roleRequets")
 	for i := range rr.Status.MatchingClusterRefs {
 		if _, ok := clusterMap[rr.Status.MatchingClusterRefs[i]]; !ok {
-			clusterMap[rr.Status.MatchingClusterRefs[i]] = make([]*libsveltosv1alpha1.RoleRequest, 0)
+			clusterMap[rr.Status.MatchingClusterRefs[i]] = make([]*libsveltosv1beta1.RoleRequest, 0)
 		}
 		clusterMap[rr.Status.MatchingClusterRefs[i]] = append(clusterMap[rr.Status.MatchingClusterRefs[i]], rr)
 	}
@@ -122,7 +122,7 @@ func parseMatchihgCluster(rr *libsveltosv1alpha1.RoleRequest,
 }
 
 func parseCluster(ctx context.Context, cluster *corev1.ObjectReference,
-	roleRequests []*libsveltosv1alpha1.RoleRequest,
+	roleRequests []*libsveltosv1beta1.RoleRequest,
 	passedNamespace, passedCluster, passedServiceAccountNamespace, passedServiceAccountName string,
 	table *tablewriter.Table, logger logr.Logger) error {
 
@@ -142,7 +142,7 @@ func parseCluster(ctx context.Context, cluster *corev1.ObjectReference,
 	return nil
 }
 
-func shouldParseRoleRequest(roleRequest *libsveltosv1alpha1.RoleRequest,
+func shouldParseRoleRequest(roleRequest *libsveltosv1beta1.RoleRequest,
 	passedServiceAccountNamespace, passedServiceAccountName string) bool {
 
 	if passedServiceAccountNamespace != "" {
@@ -160,7 +160,7 @@ func shouldParseRoleRequest(roleRequest *libsveltosv1alpha1.RoleRequest,
 	return true
 }
 
-func parseRoleRequest(ctx context.Context, roleRequest *libsveltosv1alpha1.RoleRequest,
+func parseRoleRequest(ctx context.Context, roleRequest *libsveltosv1beta1.RoleRequest,
 	clusterNamespace, clusterName, clusterKind, passedServiceAccountNamespace, passedServiceAccountName string,
 	table *tablewriter.Table, logger logr.Logger) error {
 
@@ -183,7 +183,7 @@ func parseRoleRequest(ctx context.Context, roleRequest *libsveltosv1alpha1.RoleR
 
 func parseReferencedResource(ctx context.Context,
 	clusterNamespace, clusterName, clusterKind, serviceAccountNamespace, serviceAccountName string,
-	resource libsveltosv1alpha1.PolicyRef, table *tablewriter.Table, logger logr.Logger) error {
+	resource libsveltosv1beta1.PolicyRef, table *tablewriter.Table, logger logr.Logger) error {
 
 	// fetch resource
 	content, err := collectResourceContent(ctx, resource, logger)
@@ -264,14 +264,14 @@ func processClusterRole(u *unstructured.Unstructured,
 	return nil
 }
 
-func collectResourceContent(ctx context.Context, resource libsveltosv1alpha1.PolicyRef, logger logr.Logger,
+func collectResourceContent(ctx context.Context, resource libsveltosv1beta1.PolicyRef, logger logr.Logger,
 ) ([]*unstructured.Unstructured, error) {
 
 	logger = logger.WithValues("kind", resource.Kind,
 		"resource", fmt.Sprintf("%s/%s", resource.Namespace, resource.Name))
 	logger.V(logs.LogDebug).Info("collect resource")
 	instance := utils.GetAccessInstance()
-	if resource.Kind == string(libsveltosv1alpha1.ConfigMapReferencedResourceKind) {
+	if resource.Kind == string(libsveltosv1beta1.ConfigMapReferencedResourceKind) {
 		configMap := &corev1.ConfigMap{}
 		err := instance.GetResource(ctx,
 			types.NamespacedName{Namespace: resource.Namespace, Name: resource.Name}, configMap)

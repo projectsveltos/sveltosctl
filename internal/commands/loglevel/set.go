@@ -23,10 +23,10 @@ import (
 
 	docopt "github.com/docopt/docopt-go"
 
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 )
 
-func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1alpha1.LogLevel,
+func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1beta1.LogLevel,
 	component string) error {
 
 	cc, err := collectLogLevelConfiguration(ctx)
@@ -35,18 +35,18 @@ func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1a
 	}
 
 	found := false
-	spec := make([]libsveltosv1alpha1.ComponentConfiguration, len(cc))
+	spec := make([]libsveltosv1beta1.ComponentConfiguration, len(cc))
 
 	for i, c := range cc {
 		if string(c.component) == component {
-			spec[i] = libsveltosv1alpha1.ComponentConfiguration{
+			spec[i] = libsveltosv1beta1.ComponentConfiguration{
 				Component: c.component,
 				LogLevel:  logSeverity,
 			}
 			found = true
 			break
 		} else {
-			spec[i] = libsveltosv1alpha1.ComponentConfiguration{
+			spec[i] = libsveltosv1beta1.ComponentConfiguration{
 				Component: c.component,
 				LogLevel:  c.logSeverity,
 			}
@@ -55,8 +55,8 @@ func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1a
 
 	if !found {
 		spec = append(spec,
-			libsveltosv1alpha1.ComponentConfiguration{
-				Component: libsveltosv1alpha1.Component(component),
+			libsveltosv1beta1.ComponentConfiguration{
+				Component: libsveltosv1beta1.Component(component),
 				LogLevel:  logSeverity,
 			},
 		)
@@ -99,13 +99,13 @@ Description:
 	debug := parsedArgs["--debug"].(bool)
 	verbose := parsedArgs["--verbose"].(bool)
 
-	var logSeverity libsveltosv1alpha1.LogLevel
+	var logSeverity libsveltosv1beta1.LogLevel
 	if info {
-		logSeverity = libsveltosv1alpha1.LogLevelInfo
+		logSeverity = libsveltosv1beta1.LogLevelInfo
 	} else if debug {
-		logSeverity = libsveltosv1alpha1.LogLevelDebug
+		logSeverity = libsveltosv1beta1.LogLevelDebug
 	} else if verbose {
-		logSeverity = libsveltosv1alpha1.LogLevelVerbose
+		logSeverity = libsveltosv1beta1.LogLevelVerbose
 	}
 
 	return updateDebuggingConfiguration(ctx, logSeverity, component)

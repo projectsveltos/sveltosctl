@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
+	utilsv1beta1 "github.com/projectsveltos/sveltosctl/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -39,7 +39,7 @@ func SnapshotReconciler(ctx context.Context, req reconcile.Request) (reconcile.R
 
 	accessInstance := utils.GetAccessInstance()
 
-	snapshotInstance := &utilsv1alpha1.Snapshot{}
+	snapshotInstance := &utilsv1beta1.Snapshot{}
 	if err := accessInstance.GetResource(ctx, req.NamespacedName, snapshotInstance); err != nil {
 		logger.Error(err, "unable to fetch Snapshot")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -49,17 +49,17 @@ func SnapshotReconciler(ctx context.Context, req reconcile.Request) (reconcile.R
 
 	if !snapshotInstance.DeletionTimestamp.IsZero() {
 		return reconcileDelete(ctx, snapshotInstance, collector.Snapshot, snapshotInstance.Spec.Storage,
-			utilsv1alpha1.SnapshotFinalizer, logger)
+			utilsv1beta1.SnapshotFinalizer, logger)
 	}
 
 	return reconcileSnapshotNormal(ctx, snapshotInstance, logger)
 }
 
-func reconcileSnapshotNormal(ctx context.Context, snapshotInstance *utilsv1alpha1.Snapshot,
+func reconcileSnapshotNormal(ctx context.Context, snapshotInstance *utilsv1beta1.Snapshot,
 	logger logr.Logger) (reconcile.Result, error) {
 
 	logger.V(logs.LogInfo).Info("reconcileSnapshotNormal")
-	if err := addFinalizer(ctx, snapshotInstance, utilsv1alpha1.SnapshotFinalizer); err != nil {
+	if err := addFinalizer(ctx, snapshotInstance, utilsv1beta1.SnapshotFinalizer); err != nil {
 		logger.V(logs.LogInfo).Info(fmt.Sprintf("failed to add finalizer: %s", err))
 		return reconcile.Result{}, err
 	}

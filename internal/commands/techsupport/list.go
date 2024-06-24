@@ -31,7 +31,7 @@ import (
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 
-	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
+	utilsv1beta1 "github.com/projectsveltos/sveltosctl/api/v1beta1"
 )
 
 var (
@@ -46,7 +46,7 @@ var (
 	}
 )
 
-func doConsiderTechsupport(techsupportInstance *utilsv1alpha1.Techsupport, passedTechsupport string) bool {
+func doConsiderTechsupport(techsupportInstance *utilsv1beta1.Techsupport, passedTechsupport string) bool {
 	if passedTechsupport == "" {
 		return true
 	}
@@ -70,7 +70,7 @@ func listTechsupports(ctx context.Context, passedTechsupportName string, logger 
 func displayTechsupports(ctx context.Context, passedTechsupportName string,
 	table *tablewriter.Table, logger logr.Logger) error {
 
-	techsupportList := &utilsv1alpha1.TechsupportList{}
+	techsupportList := &utilsv1beta1.TechsupportList{}
 	logger.V(logs.LogDebug).Info("List all Techsupport instances")
 	instance := utils.GetAccessInstance()
 	err := instance.ListResources(ctx, techsupportList)
@@ -89,7 +89,7 @@ func displayTechsupports(ctx context.Context, passedTechsupportName string,
 	return nil
 }
 
-func displayTechsupport(techsupportInstance *utilsv1alpha1.Techsupport,
+func displayTechsupport(techsupportInstance *utilsv1beta1.Techsupport,
 	table *tablewriter.Table, logger logr.Logger) error {
 
 	logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering Techsupport instance %s", techsupportInstance.Name))

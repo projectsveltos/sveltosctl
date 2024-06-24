@@ -21,16 +21,16 @@ import (
 
 	"github.com/go-logr/logr"
 
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 )
 
 // ListClassifiers returns all current Classifiers
 func (a *k8sAccess) ListClassifiers(ctx context.Context,
-	logger logr.Logger) (*libsveltosv1alpha1.ClassifierList, error) {
+	logger logr.Logger) (*libsveltosv1beta1.ClassifierList, error) {
 
 	logger.V(logs.LogDebug).Info("Get all Classifiers")
-	classifiers := &libsveltosv1alpha1.ClassifierList{}
+	classifiers := &libsveltosv1beta1.ClassifierList{}
 	err := a.client.List(ctx, classifiers)
 	return classifiers, err
 }

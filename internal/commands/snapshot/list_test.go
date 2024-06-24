@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
+	utilsv1beta1 "github.com/projectsveltos/sveltosctl/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/commands/snapshot"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
@@ -43,11 +43,11 @@ var _ = Describe("Snapshot List", func() {
 	})
 
 	It("snapshot list displays all snapshots collected per Snapshot instance", func() {
-		snapshotInstance := &utilsv1alpha1.Snapshot{
+		snapshotInstance := &utilsv1beta1.Snapshot{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: randomString(),
 			},
-			Spec: utilsv1alpha1.SnapshotSpec{
+			Spec: utilsv1beta1.SnapshotSpec{
 				Storage: randomString(),
 			},
 		}

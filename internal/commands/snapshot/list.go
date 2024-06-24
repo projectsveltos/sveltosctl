@@ -31,7 +31,7 @@ import (
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 
-	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
+	utilsv1beta1 "github.com/projectsveltos/sveltosctl/api/v1beta1"
 )
 
 var (
@@ -46,7 +46,7 @@ var (
 	}
 )
 
-func doConsiderSnapshot(snaphostInstance *utilsv1alpha1.Snapshot, passedSnapshot string) bool {
+func doConsiderSnapshot(snaphostInstance *utilsv1beta1.Snapshot, passedSnapshot string) bool {
 	if passedSnapshot == "" {
 		return true
 	}
@@ -70,7 +70,7 @@ func listSnapshots(ctx context.Context, passedSnapshotName string, logger logr.L
 func displaySnapshots(ctx context.Context, passedSnapshotName string,
 	table *tablewriter.Table, logger logr.Logger) error {
 
-	snapshotList := &utilsv1alpha1.SnapshotList{}
+	snapshotList := &utilsv1beta1.SnapshotList{}
 	logger.V(logs.LogDebug).Info("List all Snapshot instances")
 	instance := utils.GetAccessInstance()
 	err := instance.ListResources(ctx, snapshotList)
@@ -89,7 +89,7 @@ func displaySnapshots(ctx context.Context, passedSnapshotName string,
 	return nil
 }
 
-func displaySnapshot(snapshotInstance *utilsv1alpha1.Snapshot,
+func displaySnapshot(snapshotInstance *utilsv1beta1.Snapshot,
 	table *tablewriter.Table, logger logr.Logger) error {
 
 	logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering Snapshot instance %s", snapshotInstance.Name))

@@ -39,9 +39,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
-	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
+	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
+	utilsv1beta1 "github.com/projectsveltos/sveltosctl/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/commands/snapshot"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
@@ -52,11 +52,11 @@ var _ = Describe("Snapshot Diff", func() {
 	})
 
 	It("snapshot diff displays all diff between two snapshot collections", func() {
-		snapshotInstance := &utilsv1alpha1.Snapshot{
+		snapshotInstance := &utilsv1beta1.Snapshot{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: randomString(),
 			},
-			Spec: utilsv1alpha1.SnapshotSpec{
+			Spec: utilsv1beta1.SnapshotSpec{
 				Storage: randomString(),
 			},
 		}
@@ -143,11 +143,11 @@ var _ = Describe("Snapshot Diff", func() {
 	})
 
 	It("listdiff displays all diff between Classifiers/RoleRequests", func() {
-		snapshotInstance := &utilsv1alpha1.Snapshot{
+		snapshotInstance := &utilsv1beta1.Snapshot{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: randomString(),
 			},
-			Spec: utilsv1alpha1.SnapshotSpec{
+			Spec: utilsv1beta1.SnapshotSpec{
 				Storage: randomString(),
 			},
 		}
@@ -163,36 +163,40 @@ var _ = Describe("Snapshot Diff", func() {
 		Expect(os.Mkdir(tmpDir, os.ModePerm)).To(Succeed())
 
 		classifierName := randomString()
-		classifier := &libsveltosv1alpha1.Classifier{
+		classifier := &libsveltosv1beta1.Classifier{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: classifierName,
 			},
-			Spec: libsveltosv1alpha1.ClassifierSpec{
-				ClassifierLabels: []libsveltosv1alpha1.ClassifierLabel{
+			Spec: libsveltosv1beta1.ClassifierSpec{
+				ClassifierLabels: []libsveltosv1beta1.ClassifierLabel{
 					{Key: randomString(), Value: randomString()},
 				},
 			},
 		}
 		Expect(addTypeInformationToObject(classifier)).To(Succeed())
 
-		roleRequest := &libsveltosv1alpha1.RoleRequest{
+		roleRequest := &libsveltosv1beta1.RoleRequest{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: classifierName,
 			},
-			Spec: libsveltosv1alpha1.RoleRequestSpec{
+			Spec: libsveltosv1beta1.RoleRequestSpec{
 				ServiceAccountNamespace: randomString(),
 				ServiceAccountName:      randomString(),
-				ClusterSelector:         libsveltosv1alpha1.Selector("zone:west"),
+				ClusterSelector: libsveltosv1beta1.Selector{
+					LabelSelector: metav1.LabelSelector{
+						MatchLabels: map[string]string{"zone": "west"},
+					},
+				},
 			},
 		}
 		Expect(addTypeInformationToObject(roleRequest)).To(Succeed())
 
-		classifierDeleted := &libsveltosv1alpha1.Classifier{
+		classifierDeleted := &libsveltosv1beta1.Classifier{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: randomString(),
 			},
-			Spec: libsveltosv1alpha1.ClassifierSpec{
-				ClassifierLabels: []libsveltosv1alpha1.ClassifierLabel{
+			Spec: libsveltosv1beta1.ClassifierSpec{
+				ClassifierLabels: []libsveltosv1beta1.ClassifierLabel{
 					{Key: randomString(), Value: randomString()},
 				},
 			},
@@ -205,13 +209,13 @@ var _ = Describe("Snapshot Diff", func() {
 		time.Sleep(2 * time.Second) // wait so to simulate a snapshot at a different time
 
 		classifier.Spec.ClassifierLabels =
-			append(classifier.Spec.ClassifierLabels, libsveltosv1alpha1.ClassifierLabel{Key: randomString(), Value: randomString()})
-		classifierAdded := &libsveltosv1alpha1.Classifier{
+			append(classifier.Spec.ClassifierLabels, libsveltosv1beta1.ClassifierLabel{Key: randomString(), Value: randomString()})
+		classifierAdded := &libsveltosv1beta1.Classifier{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: randomString(),
 			},
-			Spec: libsveltosv1alpha1.ClassifierSpec{
-				ClassifierLabels: []libsveltosv1alpha1.ClassifierLabel{
+			Spec: libsveltosv1beta1.ClassifierSpec{
+				ClassifierLabels: []libsveltosv1beta1.ClassifierLabel{
 					{Key: randomString(), Value: randomString()},
 				},
 			},
@@ -242,7 +246,7 @@ var _ = Describe("Snapshot Diff", func() {
 		fromFolder := filepath.Join(*artifactFolder, timeOne)
 		toFolder := filepath.Join(*artifactFolder, timeTwo)
 
-		err = snapshot.ListDiff(fromFolder, toFolder, libsveltosv1alpha1.ClassifierKind, false,
+		err = snapshot.ListDiff(fromFolder, toFolder, libsveltosv1beta1.ClassifierKind, false,
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 
@@ -286,7 +290,7 @@ var _ = Describe("Snapshot Diff", func() {
 		r, w, _ = os.Pipe()
 		os.Stdout = w
 
-		err = snapshot.ListDiff(fromFolder, toFolder, libsveltosv1alpha1.RoleRequestKind, false,
+		err = snapshot.ListDiff(fromFolder, toFolder, libsveltosv1beta1.RoleRequestKind, false,
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 
@@ -438,7 +442,7 @@ var _ = Describe("Snapshot Diff", func() {
 			Name:            clusterRole.GetName(),
 			LastAppliedTime: &metav1.Time{Time: time.Now()},
 			Owner: corev1.ObjectReference{
-				Kind:      string(libsveltosv1alpha1.ConfigMapReferencedResourceKind),
+				Kind:      string(libsveltosv1beta1.ConfigMapReferencedResourceKind),
 				Name:      oldConfigMap.Name,
 				Namespace: oldConfigMap.Namespace,
 			},
@@ -558,7 +562,7 @@ var _ = Describe("Snapshot Diff", func() {
 			Group: clusterRoleGroup,
 			Kind:  clusterRoleKind,
 			Owner: corev1.ObjectReference{
-				Kind:      string(libsveltosv1alpha1.ConfigMapReferencedResourceKind),
+				Kind:      string(libsveltosv1beta1.ConfigMapReferencedResourceKind),
 				Name:      configMap.Name,
 				Namespace: configMap.Namespace,
 			},
