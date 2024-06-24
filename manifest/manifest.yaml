@@ -46,7 +46,7 @@ spec:
       serviceAccountName: sveltosctl
       containers:
       - name: sveltosctl
-        image: projectsveltos/sveltosctl:main
+        image: projectsveltos/sveltosctl:dev
         imagePullPolicy: IfNotPresent
         command:
           - /sveltosctl
