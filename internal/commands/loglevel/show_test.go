@@ -29,7 +29,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/commands/loglevel"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -37,8 +37,8 @@ import (
 var _ = Describe("Show", func() {
 	It("show displays current log level settings", func() {
 		dc := getDebuggingConfiguration()
-		dc.Spec.Configuration = []libsveltosv1alpha1.ComponentConfiguration{
-			{Component: libsveltosv1alpha1.ComponentClassifier, LogLevel: libsveltosv1alpha1.LogLevelDebug},
+		dc.Spec.Configuration = []libsveltosv1beta1.ComponentConfiguration{
+			{Component: libsveltosv1beta1.ComponentClassifier, LogLevel: libsveltosv1beta1.LogLevelDebug},
 		}
 
 		old := os.Stdout // keep backup of the real stdout
@@ -72,8 +72,8 @@ var _ = Describe("Show", func() {
 		lines := strings.Split(buf.String(), "\n")
 		found := false
 		for i := range lines {
-			if strings.Contains(lines[i], string(libsveltosv1alpha1.ComponentClassifier)) &&
-				strings.Contains(lines[i], string(libsveltosv1alpha1.LogLevelDebug)) {
+			if strings.Contains(lines[i], string(libsveltosv1beta1.ComponentClassifier)) &&
+				strings.Contains(lines[i], string(libsveltosv1beta1.LogLevelDebug)) {
 				found = true
 				break
 			}

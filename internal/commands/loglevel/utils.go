@@ -23,13 +23,13 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
 type componentConfiguration struct {
-	component   libsveltosv1alpha1.Component
-	logSeverity libsveltosv1alpha1.LogLevel
+	component   libsveltosv1beta1.Component
+	logSeverity libsveltosv1beta1.LogLevel
 }
 
 // byComponent sorts componentConfiguration by name.
@@ -69,7 +69,7 @@ func collectLogLevelConfiguration(ctx context.Context) ([]*componentConfiguratio
 
 func updateLogLevelConfiguration(
 	ctx context.Context,
-	spec []libsveltosv1alpha1.ComponentConfiguration,
+	spec []libsveltosv1beta1.ComponentConfiguration,
 ) error {
 
 	instance := utils.GetAccessInstance()
@@ -77,7 +77,7 @@ func updateLogLevelConfiguration(
 	dc, err := instance.GetDebuggingConfiguration(ctx)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
-			dc = &libsveltosv1alpha1.DebuggingConfiguration{
+			dc = &libsveltosv1beta1.DebuggingConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "default",
 				},
@@ -87,7 +87,7 @@ func updateLogLevelConfiguration(
 		}
 	}
 
-	dc.Spec = libsveltosv1alpha1.DebuggingConfigurationSpec{
+	dc.Spec = libsveltosv1beta1.DebuggingConfigurationSpec{
 		Configuration: spec,
 	}
 

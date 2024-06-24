@@ -260,7 +260,7 @@ Define a Techsupport instance, following for instance will collect a techsupport
 from all managed clusters matching cluster selectors __env=fv__
 
 ```
-apiVersion: utils.projectsveltos.io/v1alpha1
+apiVersion: utils.projectsveltos.io/v1beta1
 kind: Techsupport
 metadata:
  name: hourly
@@ -311,7 +311,7 @@ A snapshot allows an administrator to perform the following tasks:
 Define a Snapshot instance, following for instance will take a snaphost every hour.
 
 ```
-apiVersion: utils.projectsveltos.io/v1alpha1
+apiVersion: utils.projectsveltos.io/v1beta1
 kind: Snapshot
 metadata:
   name: hourly

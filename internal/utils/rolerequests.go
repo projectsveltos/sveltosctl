@@ -21,16 +21,16 @@ import (
 
 	"github.com/go-logr/logr"
 
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 )
 
 // ListRoleRequests returns all current RoleRequests
 func (a *k8sAccess) ListRoleRequests(ctx context.Context,
-	logger logr.Logger) (*libsveltosv1alpha1.RoleRequestList, error) {
+	logger logr.Logger) (*libsveltosv1beta1.RoleRequestList, error) {
 
 	logger.V(logs.LogDebug).Info("Get all RoleRequests")
-	roleRequests := &libsveltosv1alpha1.RoleRequestList{}
+	roleRequests := &libsveltosv1beta1.RoleRequestList{}
 	err := a.client.List(ctx, roleRequests)
 	return roleRequests, err
 }

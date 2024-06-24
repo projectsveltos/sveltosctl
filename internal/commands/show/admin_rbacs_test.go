@@ -33,7 +33,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2/textlogger"
 
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/commands/show"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -85,8 +85,8 @@ var _ = Describe("Admin RBACs", func() {
 		clusterName := randomString()
 		matchingCluster := []corev1.ObjectReference{
 			{
-				Kind:       libsveltosv1alpha1.SveltosClusterKind,
-				APIVersion: libsveltosv1alpha1.GroupVersion.String(),
+				Kind:       libsveltosv1beta1.SveltosClusterKind,
+				APIVersion: libsveltosv1beta1.GroupVersion.String(),
 				Namespace:  clusterNamespace,
 				Name:       clusterName,
 			},
@@ -125,7 +125,7 @@ var _ = Describe("Admin RBACs", func() {
 			      +--------------------------------------+-------------+-----------+------------+------------+----------------+----------------+
 		*/
 
-		clusterInfo := fmt.Sprintf("%s:%s/%s", libsveltosv1alpha1.SveltosClusterKind, clusterNamespace, clusterName)
+		clusterInfo := fmt.Sprintf("%s:%s/%s", libsveltosv1beta1.SveltosClusterKind, clusterNamespace, clusterName)
 		lines := strings.Split(buf.String(), "\n")
 		clusterRoleView, clusterRoleModify, roleView := false, false, false
 		for i := range lines {
@@ -152,33 +152,33 @@ var _ = Describe("Admin RBACs", func() {
 
 func getRoleRequest(matchingClusters []corev1.ObjectReference,
 	configMaps []corev1.ConfigMap, secrets []corev1.Secret,
-	serviceAccountNamespace, serviceAccountName string) *libsveltosv1alpha1.RoleRequest {
+	serviceAccountNamespace, serviceAccountName string) *libsveltosv1beta1.RoleRequest {
 
-	roleRequest := libsveltosv1alpha1.RoleRequest{
+	roleRequest := libsveltosv1beta1.RoleRequest{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: randomString(),
 		},
-		Spec: libsveltosv1alpha1.RoleRequestSpec{
-			RoleRefs:                make([]libsveltosv1alpha1.PolicyRef, 0),
+		Spec: libsveltosv1beta1.RoleRequestSpec{
+			RoleRefs:                make([]libsveltosv1beta1.PolicyRef, 0),
 			ServiceAccountNamespace: serviceAccountNamespace,
 			ServiceAccountName:      serviceAccountName,
 		},
-		Status: libsveltosv1alpha1.RoleRequestStatus{
+		Status: libsveltosv1beta1.RoleRequestStatus{
 			MatchingClusterRefs: matchingClusters,
 		},
 	}
 
 	for i := range configMaps {
-		roleRequest.Spec.RoleRefs = append(roleRequest.Spec.RoleRefs, libsveltosv1alpha1.PolicyRef{
-			Kind:      string(libsveltosv1alpha1.ConfigMapReferencedResourceKind),
+		roleRequest.Spec.RoleRefs = append(roleRequest.Spec.RoleRefs, libsveltosv1beta1.PolicyRef{
+			Kind:      string(libsveltosv1beta1.ConfigMapReferencedResourceKind),
 			Namespace: configMaps[i].Namespace,
 			Name:      configMaps[i].Name,
 		})
 	}
 
 	for i := range secrets {
-		roleRequest.Spec.RoleRefs = append(roleRequest.Spec.RoleRefs, libsveltosv1alpha1.PolicyRef{
-			Kind:      string(libsveltosv1alpha1.SecretReferencedResourceKind),
+		roleRequest.Spec.RoleRefs = append(roleRequest.Spec.RoleRefs, libsveltosv1beta1.PolicyRef{
+			Kind:      string(libsveltosv1beta1.SecretReferencedResourceKind),
 			Namespace: secrets[i].Namespace,
 			Name:      secrets[i].Name,
 		})

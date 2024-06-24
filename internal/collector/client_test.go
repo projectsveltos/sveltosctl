@@ -27,12 +27,12 @@ import (
 	. "github.com/onsi/gomega"
 	"k8s.io/klog/v2/textlogger"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
+	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 )
 
 var (
-	clusterConfigurationInstance = `apiVersion: config.projectsveltos.io/v1alpha1
+	clusterConfigurationInstance = `apiVersion: config.projectsveltos.io/v1beta1
 kind: ClusterConfiguration
 metadata:
   creationTimestamp: "2022-10-05T22:31:43Z"
@@ -40,7 +40,7 @@ metadata:
   name: sveltos-management-workload
   namespace: default
   ownerReferences:
-  - apiVersion: config.projectsveltos.io/v1alpha1
+  - apiVersion: config.projectsveltos.io/v1beta1
     kind: ClusterProfile
     name: mgianluc
     uid: 7dbfec81-be91-4e65-a237-f314b72b292b

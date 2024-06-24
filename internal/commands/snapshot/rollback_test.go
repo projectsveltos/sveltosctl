@@ -35,8 +35,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/commands/snapshot"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
@@ -74,12 +74,14 @@ metadata:
   name: %s
 type: Opaque`
 
-	clusterProfileTemplate = `apiVersion: config.projectsveltos.io/v1alpha1
+	clusterProfileTemplate = `apiVersion: config.projectsveltos.io/v1beta1
 kind: ClusterProfile
 metadata:
   name: %s
 spec:
-  clusterSelector: env=fv
+  clusterSelector:
+    matchLabels:
+      env: fv
   policyRefs:
   - kind: ConfigMap
     name: featurei9nyv583mu
@@ -275,7 +277,7 @@ var _ = Describe("Snapshot Rollback", func() {
 
 		// Rollback
 		Expect(snapshot.RollbackClusters(context.TODO(), []*unstructured.Unstructured{cluster}, "",
-			libsveltosv1alpha1.ClusterTypeCapi,
+			libsveltosv1beta1.ClusterTypeCapi,
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		Expect(instance.GetResource(context.TODO(),

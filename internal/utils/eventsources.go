@@ -21,16 +21,16 @@ import (
 
 	"github.com/go-logr/logr"
 
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 )
 
 // ListEventSources returns all current EventSources
 func (a *k8sAccess) ListEventSources(ctx context.Context,
-	logger logr.Logger) (*libsveltosv1alpha1.EventSourceList, error) {
+	logger logr.Logger) (*libsveltosv1beta1.EventSourceList, error) {
 
 	logger.V(logs.LogDebug).Info("Get all EventSources")
-	eventSources := &libsveltosv1alpha1.EventSourceList{}
+	eventSources := &libsveltosv1beta1.EventSourceList{}
 	err := a.client.List(ctx, eventSources)
 	return eventSources, err
 }

@@ -38,10 +38,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2/textlogger"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
+	utilsv1beta1 "github.com/projectsveltos/sveltosctl/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -99,7 +99,7 @@ func listSnapshotDiffs(ctx context.Context, snapshotName, fromSample, toSample,
 
 	// Get the directory containing the collected snapshots for Snapshot instance snapshotName
 	instance := utils.GetAccessInstance()
-	snapshotInstance := &utilsv1alpha1.Snapshot{}
+	snapshotInstance := &utilsv1beta1.Snapshot{}
 	err := instance.GetResource(ctx, types.NamespacedName{Name: snapshotName}, snapshotInstance)
 	if err != nil {
 		return err
@@ -135,12 +135,12 @@ func listSnapshotDiffs(ctx context.Context, snapshotName, fromSample, toSample,
 		return err
 	}
 
-	err = listDiff(fromFolder, toFolder, libsveltosv1alpha1.ClassifierKind, rawDiff, logger)
+	err = listDiff(fromFolder, toFolder, libsveltosv1beta1.ClassifierKind, rawDiff, logger)
 	if err != nil {
 		return err
 	}
 
-	err = listDiff(fromFolder, toFolder, libsveltosv1alpha1.RoleRequestKind, rawDiff, logger)
+	err = listDiff(fromFolder, toFolder, libsveltosv1beta1.RoleRequestKind, rawDiff, logger)
 	if err != nil {
 		return err
 	}
@@ -701,7 +701,7 @@ func getResourceFromResourceOwner(folder string, resource *configv1alpha1.Resour
 	}
 
 	var data map[string]string
-	if owner.DeepCopy().GroupVersionKind().Kind == string(libsveltosv1alpha1.ConfigMapReferencedResourceKind) {
+	if owner.DeepCopy().GroupVersionKind().Kind == string(libsveltosv1beta1.ConfigMapReferencedResourceKind) {
 		var configMap corev1.ConfigMap
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(owner.UnstructuredContent(), &configMap)
 		if err != nil {

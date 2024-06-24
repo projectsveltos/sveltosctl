@@ -25,8 +25,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/cluster-api/util"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 )
 
 func TestSnapshotter(t *testing.T) {
@@ -45,8 +45,12 @@ func generateClusterProfile() *configv1alpha1.ClusterProfile {
 			Name: randomString(),
 		},
 		Spec: configv1alpha1.Spec{
-			ClusterSelector: libsveltosv1alpha1.Selector("zone:west"),
-			SyncMode:        configv1alpha1.SyncModeContinuous,
+			ClusterSelector: libsveltosv1beta1.Selector{
+				LabelSelector: metav1.LabelSelector{
+					MatchLabels: map[string]string{"zone": "west"},
+				},
+			},
+			SyncMode: configv1alpha1.SyncModeContinuous,
 		},
 	}
 }

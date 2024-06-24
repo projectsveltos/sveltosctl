@@ -23,7 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/commands/loglevel"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -36,8 +36,8 @@ var _ = Describe("Set", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).Build()
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
-		Expect(loglevel.UpdateDebuggingConfiguration(context.TODO(), libsveltosv1alpha1.LogLevelDebug,
-			string(libsveltosv1alpha1.ComponentAddonManager))).To(Succeed())
+		Expect(loglevel.UpdateDebuggingConfiguration(context.TODO(), libsveltosv1beta1.LogLevelDebug,
+			string(libsveltosv1beta1.ComponentAddonManager))).To(Succeed())
 
 		k8sAccess := utils.GetAccessInstance()
 
@@ -46,17 +46,17 @@ var _ = Describe("Set", func() {
 		Expect(currentDC).ToNot(BeNil())
 		Expect(currentDC.Spec.Configuration).ToNot(BeNil())
 		Expect(len(currentDC.Spec.Configuration)).To(Equal(1))
-		Expect(currentDC.Spec.Configuration[0].Component).To(Equal(libsveltosv1alpha1.ComponentAddonManager))
-		Expect(currentDC.Spec.Configuration[0].LogLevel).To(Equal(libsveltosv1alpha1.LogLevelDebug))
+		Expect(currentDC.Spec.Configuration[0].Component).To(Equal(libsveltosv1beta1.ComponentAddonManager))
+		Expect(currentDC.Spec.Configuration[0].LogLevel).To(Equal(libsveltosv1beta1.LogLevelDebug))
 
-		Expect(loglevel.UpdateDebuggingConfiguration(context.TODO(), libsveltosv1alpha1.LogLevelInfo,
-			string(libsveltosv1alpha1.ComponentAddonManager))).To(Succeed())
+		Expect(loglevel.UpdateDebuggingConfiguration(context.TODO(), libsveltosv1beta1.LogLevelInfo,
+			string(libsveltosv1beta1.ComponentAddonManager))).To(Succeed())
 		currentDC, err = k8sAccess.GetDebuggingConfiguration(context.TODO())
 		Expect(err).To(BeNil())
 		Expect(currentDC).ToNot(BeNil())
 		Expect(currentDC.Spec.Configuration).ToNot(BeNil())
 		Expect(len(currentDC.Spec.Configuration)).To(Equal(1))
-		Expect(currentDC.Spec.Configuration[0].Component).To(Equal(libsveltosv1alpha1.ComponentAddonManager))
-		Expect(currentDC.Spec.Configuration[0].LogLevel).To(Equal(libsveltosv1alpha1.LogLevelInfo))
+		Expect(currentDC.Spec.Configuration[0].Component).To(Equal(libsveltosv1beta1.ComponentAddonManager))
+		Expect(currentDC.Spec.Configuration[0].LogLevel).To(Equal(libsveltosv1beta1.LogLevelInfo))
 	})
 })

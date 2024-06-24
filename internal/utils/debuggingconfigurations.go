@@ -22,7 +22,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 )
 
 const (
@@ -32,9 +32,9 @@ const (
 // GetDebuggingConfiguration gets default DebuggingConfiguration
 func (a *k8sAccess) GetDebuggingConfiguration(
 	ctx context.Context,
-) (*libsveltosv1alpha1.DebuggingConfiguration, error) {
+) (*libsveltosv1beta1.DebuggingConfiguration, error) {
 
-	req := &libsveltosv1alpha1.DebuggingConfiguration{}
+	req := &libsveltosv1beta1.DebuggingConfiguration{}
 
 	reqName := client.ObjectKey{
 		Name: defaultInstanceName,
@@ -51,14 +51,14 @@ func (a *k8sAccess) GetDebuggingConfiguration(
 // updates it.
 func (a *k8sAccess) UpdateDebuggingConfiguration(
 	ctx context.Context,
-	dc *libsveltosv1alpha1.DebuggingConfiguration,
+	dc *libsveltosv1beta1.DebuggingConfiguration,
 ) error {
 
 	reqName := client.ObjectKey{
 		Name: defaultInstanceName,
 	}
 
-	tmp := &libsveltosv1alpha1.DebuggingConfiguration{}
+	tmp := &libsveltosv1beta1.DebuggingConfiguration{}
 
 	err := a.client.Get(ctx, reqName, tmp)
 	if err != nil {
