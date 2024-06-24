@@ -265,7 +265,9 @@ kind: Techsupport
 metadata:
  name: hourly
 spec:
- clusterSelector: env=fv
+ clusterSelector:
+   matchLabels:
+     env: fv
  schedule: “00 * * * *”
  storage: /techsupport
  logs:
