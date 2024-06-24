@@ -117,7 +117,9 @@ generate: ## Run all generate-manifests-*, generate-go-deepcopy-*
 	$(MAKE) generate-modules generate-manifests generate-go-deepcopy
 	cp k8s/sveltosctl.yaml manifest/manifest.yaml
 	mkdir tmp; $(KUSTOMIZE) build config/default -o tmp
+	echo "---" >> manifest/manifest.yaml
 	cat tmp/apiextensions.k8s.io_v1_customresourcedefinition_snapshots.utils.projectsveltos.io.yaml >> manifest/manifest.yaml
+	echo "---" >> manifest/manifest.yaml
 	cat tmp/apiextensions.k8s.io_v1_customresourcedefinition_techsupports.utils.projectsveltos.io.yaml >> manifest/manifest.yaml
 	rm -rf tmp
 	MANIFEST_IMG=$(SVELTOSCTL_IMG) MANIFEST_TAG=$(TAG) $(MAKE) set-manifest-image
