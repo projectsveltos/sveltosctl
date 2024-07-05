@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -37,14 +37,18 @@ var _ = Describe("RoleRequest", func() {
 		initObjects := []client.Object{}
 
 		for i := 0; i < 10; i++ {
-			rr := &libsveltosv1alpha1.RoleRequest{
+			rr := &libsveltosv1beta1.RoleRequest{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: randomString(),
 				},
-				Spec: libsveltosv1alpha1.RoleRequestSpec{
+				Spec: libsveltosv1beta1.RoleRequestSpec{
 					ServiceAccountNamespace: randomString(),
 					ServiceAccountName:      randomString(),
-					ClusterSelector:         libsveltosv1alpha1.Selector("zone:east"),
+					ClusterSelector: libsveltosv1beta1.Selector{
+						LabelSelector: metav1.LabelSelector{
+							MatchLabels: map[string]string{"zone": "east"},
+						},
+					},
 				},
 			}
 			initObjects = append(initObjects, rr)

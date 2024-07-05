@@ -23,7 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 )
 
 func TestShow(t *testing.T) {
@@ -31,8 +31,8 @@ func TestShow(t *testing.T) {
 	RunSpecs(t, "LogLevel Suite")
 }
 
-func getDebuggingConfiguration() *libsveltosv1alpha1.DebuggingConfiguration {
-	return &libsveltosv1alpha1.DebuggingConfiguration{
+func getDebuggingConfiguration() *libsveltosv1beta1.DebuggingConfiguration {
+	return &libsveltosv1beta1.DebuggingConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "default",
 		},

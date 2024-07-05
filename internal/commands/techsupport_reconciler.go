@@ -24,6 +24,7 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/klog/v2/textlogger"
@@ -33,10 +34,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	libsveltosset "github.com/projectsveltos/libsveltos/lib/set"
-	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
+	utilsv1beta1 "github.com/projectsveltos/sveltosctl/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -47,7 +48,7 @@ func TechsupportReconciler(ctx context.Context, req reconcile.Request) (reconcil
 
 	accessInstance := utils.GetAccessInstance()
 
-	techsupportInstance := &utilsv1alpha1.Techsupport{}
+	techsupportInstance := &utilsv1beta1.Techsupport{}
 	if err := accessInstance.GetResource(ctx, req.NamespacedName, techsupportInstance); err != nil {
 		logger.Error(err, "unable to fetch Techsupport")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -57,7 +58,7 @@ func TechsupportReconciler(ctx context.Context, req reconcile.Request) (reconcil
 
 	if !techsupportInstance.DeletionTimestamp.IsZero() {
 		if result, err := reconcileDelete(ctx, techsupportInstance, collector.Techsupport, techsupportInstance.Spec.Storage,
-			utilsv1alpha1.TechsupportFinalizer, logger); err != nil {
+			utilsv1beta1.TechsupportFinalizer, logger); err != nil {
 			return result, err
 		}
 		cleanMaps(techsupportInstance)
@@ -67,11 +68,11 @@ func TechsupportReconciler(ctx context.Context, req reconcile.Request) (reconcil
 	return reconcileTechsupportNormal(ctx, techsupportInstance, logger)
 }
 
-func reconcileTechsupportNormal(ctx context.Context, techsupportInstance *utilsv1alpha1.Techsupport,
+func reconcileTechsupportNormal(ctx context.Context, techsupportInstance *utilsv1beta1.Techsupport,
 	logger logr.Logger) (reconcile.Result, error) {
 
 	logger.V(logs.LogInfo).Info("reconcileTechsupportNormal")
-	if err := addFinalizer(ctx, techsupportInstance, utilsv1alpha1.TechsupportFinalizer); err != nil {
+	if err := addFinalizer(ctx, techsupportInstance, utilsv1beta1.TechsupportFinalizer); err != nil {
 		logger.V(logs.LogInfo).Info(fmt.Sprintf("failed to add finalizer: %s", err))
 		return reconcile.Result{}, err
 	}
@@ -197,7 +198,7 @@ type SveltosClusterPredicate struct {
 	Logger logr.Logger
 }
 
-func (p SveltosClusterPredicate) Create(obj event.TypedCreateEvent[*libsveltosv1alpha1.SveltosCluster]) bool {
+func (p SveltosClusterPredicate) Create(obj event.TypedCreateEvent[*libsveltosv1beta1.SveltosCluster]) bool {
 	cluster := obj.Object
 	log := p.Logger.WithValues("predicate", "createEvent",
 		"namespace", cluster.Namespace,
@@ -216,7 +217,7 @@ func (p SveltosClusterPredicate) Create(obj event.TypedCreateEvent[*libsveltosv1
 	return false
 }
 
-func (p SveltosClusterPredicate) Update(obj event.TypedUpdateEvent[*libsveltosv1alpha1.SveltosCluster]) bool {
+func (p SveltosClusterPredicate) Update(obj event.TypedUpdateEvent[*libsveltosv1beta1.SveltosCluster]) bool {
 	newCluster := obj.ObjectNew
 	oldCluster := obj.ObjectOld
 	log := p.Logger.WithValues("predicate", "updateEvent",
@@ -255,7 +256,7 @@ func (p SveltosClusterPredicate) Update(obj event.TypedUpdateEvent[*libsveltosv1
 	return false
 }
 
-func (p SveltosClusterPredicate) Delete(obj event.TypedDeleteEvent[*libsveltosv1alpha1.SveltosCluster]) bool {
+func (p SveltosClusterPredicate) Delete(obj event.TypedDeleteEvent[*libsveltosv1beta1.SveltosCluster]) bool {
 	log := p.Logger.WithValues("predicate", "deleteEvent",
 		"namespace", obj.Object.GetNamespace(),
 		"cluster", obj.Object.GetName(),
@@ -265,7 +266,7 @@ func (p SveltosClusterPredicate) Delete(obj event.TypedDeleteEvent[*libsveltosv1
 	return true
 }
 
-func (p SveltosClusterPredicate) Generic(obj event.TypedGenericEvent[*libsveltosv1alpha1.SveltosCluster]) bool {
+func (p SveltosClusterPredicate) Generic(obj event.TypedGenericEvent[*libsveltosv1beta1.SveltosCluster]) bool {
 	log := p.Logger.WithValues("predicate", "genericEvent",
 		"namespace", obj.Object.GetNamespace(),
 		"cluster", obj.Object.GetName(),
@@ -275,7 +276,7 @@ func (p SveltosClusterPredicate) Generic(obj event.TypedGenericEvent[*libsveltos
 	return false
 }
 
-func updateMaps(techsupport *utilsv1alpha1.Techsupport) {
+func updateMaps(techsupport *utilsv1beta1.Techsupport) {
 	currentClusters := &libsveltosset.Set{}
 	for i := range techsupport.Status.MatchingClusterRefs {
 		cluster := techsupport.Status.MatchingClusterRefs[i]
@@ -311,7 +312,7 @@ func updateMaps(techsupport *utilsv1alpha1.Techsupport) {
 	techsupports[*techsupportInfo] = techsupport.Spec.ClusterSelector
 }
 
-func cleanMaps(techsupport *utilsv1alpha1.Techsupport) {
+func cleanMaps(techsupport *utilsv1beta1.Techsupport) {
 	mux.Lock()
 	defer mux.Unlock()
 
@@ -367,24 +368,24 @@ func getClusterMapForEntry(entry *corev1.ObjectReference) *libsveltosset.Set {
 }
 
 // getMatchingClusters returns all Sveltos/CAPI Clusters currently matching Techsupport.Spec.ClusterSelector
-func getMatchingClusters(ctx context.Context, techsupport *utilsv1alpha1.Techsupport,
+func getMatchingClusters(ctx context.Context, techsupport *utilsv1beta1.Techsupport,
 ) ([]corev1.ObjectReference, error) {
 
 	matching := make([]corev1.ObjectReference, 0)
 
-	parsedSelector, err := labels.Parse(string(techsupport.Spec.ClusterSelector))
+	clusterSelector, err := metav1.LabelSelectorAsSelector(&techsupport.Spec.ClusterSelector.LabelSelector)
 	if err != nil {
 		return nil, err
 	}
 
-	tmpMatching, err := getMatchingCAPIClusters(ctx, parsedSelector)
+	tmpMatching, err := getMatchingCAPIClusters(ctx, clusterSelector)
 	if err != nil {
 		return nil, err
 	}
 
 	matching = append(matching, tmpMatching...)
 
-	tmpMatching, err = getMatchingSveltosClusters(ctx, parsedSelector)
+	tmpMatching, err = getMatchingSveltosClusters(ctx, clusterSelector)
 	if err != nil {
 		return nil, err
 	}
@@ -429,7 +430,7 @@ func getMatchingCAPIClusters(ctx context.Context, parsedSelector labels.Selector
 func getMatchingSveltosClusters(ctx context.Context, parsedSelector labels.Selector) ([]corev1.ObjectReference, error) {
 	instance := utils.GetAccessInstance()
 
-	clusterList := &libsveltosv1alpha1.SveltosClusterList{}
+	clusterList := &libsveltosv1beta1.SveltosClusterList{}
 	if err := instance.ListResources(ctx, clusterList); err != nil {
 		return nil, err
 	}

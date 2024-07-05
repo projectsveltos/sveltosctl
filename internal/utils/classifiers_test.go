@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -37,19 +37,19 @@ var _ = Describe("Classifier", func() {
 		initObjects := []client.Object{}
 
 		for i := 0; i < 10; i++ {
-			classifier := &libsveltosv1alpha1.Classifier{
+			classifier := &libsveltosv1beta1.Classifier{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: randomString(),
 				},
-				Spec: libsveltosv1alpha1.ClassifierSpec{
-					ClassifierLabels: []libsveltosv1alpha1.ClassifierLabel{
+				Spec: libsveltosv1beta1.ClassifierSpec{
+					ClassifierLabels: []libsveltosv1beta1.ClassifierLabel{
 						{Key: randomString(), Value: randomString()},
 					},
-					KubernetesVersionConstraints: []libsveltosv1alpha1.KubernetesVersionConstraint{
-						{Version: randomString(), Comparison: string(libsveltosv1alpha1.ComparisonEqual)},
+					KubernetesVersionConstraints: []libsveltosv1beta1.KubernetesVersionConstraint{
+						{Version: randomString(), Comparison: string(libsveltosv1beta1.ComparisonEqual)},
 					},
-					DeployedResourceConstraint: &libsveltosv1alpha1.DeployedResourceConstraint{
-						ResourceSelectors: []libsveltosv1alpha1.ResourceSelector{
+					DeployedResourceConstraint: &libsveltosv1beta1.DeployedResourceConstraint{
+						ResourceSelectors: []libsveltosv1beta1.ResourceSelector{
 							{
 								Group:   randomString(),
 								Version: randomString(),

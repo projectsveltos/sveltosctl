@@ -23,7 +23,7 @@ import (
 
 	docopt "github.com/docopt/docopt-go"
 
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 )
 
 func unsetDebuggingConfiguration(ctx context.Context, component string) error {
@@ -33,7 +33,7 @@ func unsetDebuggingConfiguration(ctx context.Context, component string) error {
 	}
 
 	found := false
-	spec := make([]libsveltosv1alpha1.ComponentConfiguration, 0)
+	spec := make([]libsveltosv1beta1.ComponentConfiguration, 0)
 
 	for _, c := range cc {
 		if string(c.component) == component {
@@ -41,7 +41,7 @@ func unsetDebuggingConfiguration(ctx context.Context, component string) error {
 			continue
 		} else {
 			spec = append(spec,
-				libsveltosv1alpha1.ComponentConfiguration{
+				libsveltosv1beta1.ComponentConfiguration{
 					Component: c.component,
 					LogLevel:  c.logSeverity,
 				},

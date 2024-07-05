@@ -32,7 +32,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
+	utilsv1beta1 "github.com/projectsveltos/sveltosctl/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/commands/techsupport"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
@@ -43,11 +43,11 @@ var _ = Describe("Techsupport List", func() {
 	})
 
 	It("techsupport list displays all techsupports collected per Techsupport instance", func() {
-		techsupportInstance := &utilsv1alpha1.Techsupport{
+		techsupportInstance := &utilsv1beta1.Techsupport{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: randomString(),
 			},
-			Spec: utilsv1alpha1.TechsupportSpec{
+			Spec: utilsv1beta1.TechsupportSpec{
 				Storage: randomString(),
 			},
 		}

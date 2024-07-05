@@ -33,8 +33,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2/textlogger"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/commands/show"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -44,13 +44,13 @@ var _ = Describe("Usage", func() {
 		configMap := configv1alpha1.PolicyRef{
 			Namespace: randomString(),
 			Name:      randomString(),
-			Kind:      string(libsveltosv1alpha1.ConfigMapReferencedResourceKind),
+			Kind:      string(libsveltosv1beta1.ConfigMapReferencedResourceKind),
 		}
 
 		secret := configv1alpha1.PolicyRef{
 			Namespace: randomString(),
 			Name:      randomString(),
-			Kind:      string(libsveltosv1alpha1.SecretReferencedResourceKind),
+			Kind:      string(libsveltosv1beta1.SecretReferencedResourceKind),
 		}
 
 		clusterProfile1 := generateClusterProfile()
@@ -103,9 +103,9 @@ var _ = Describe("Usage", func() {
 		lines := strings.Split(buf.String(), "\n")
 		verifyClusterProfileUsage(lines, clusterProfile1)
 		verifyClusterProfileUsage(lines, clusterProfile2)
-		verifyUsage(lines, string(libsveltosv1alpha1.ConfigMapReferencedResourceKind),
+		verifyUsage(lines, string(libsveltosv1beta1.ConfigMapReferencedResourceKind),
 			configMap.Namespace, configMap.Name, &clusterProfile1.Status.MatchingClusterRefs[0])
-		verifyUsage(lines, string(libsveltosv1alpha1.SecretReferencedResourceKind),
+		verifyUsage(lines, string(libsveltosv1beta1.SecretReferencedResourceKind),
 			secret.Namespace, secret.Name, &clusterProfile2.Status.MatchingClusterRefs[0])
 		os.Stdout = old
 	})
@@ -139,8 +139,12 @@ func generateClusterProfile() *configv1alpha1.ClusterProfile {
 			Name: randomString(),
 		},
 		Spec: configv1alpha1.Spec{
-			ClusterSelector: libsveltosv1alpha1.Selector("zone:west"),
-			SyncMode:        configv1alpha1.SyncModeContinuous,
+			ClusterSelector: libsveltosv1beta1.Selector{
+				LabelSelector: metav1.LabelSelector{
+					MatchLabels: map[string]string{"zone": "west"},
+				},
+			},
+			SyncMode: configv1alpha1.SyncModeContinuous,
 		},
 	}
 }
