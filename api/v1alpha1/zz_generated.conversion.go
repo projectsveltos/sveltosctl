@@ -120,16 +120,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*TechsupportSpec)(nil), (*v1beta1.TechsupportSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_TechsupportSpec_To_v1beta1_TechsupportSpec(a.(*TechsupportSpec), b.(*v1beta1.TechsupportSpec), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*v1beta1.TechsupportSpec)(nil), (*TechsupportSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1beta1_TechsupportSpec_To_v1alpha1_TechsupportSpec(a.(*v1beta1.TechsupportSpec), b.(*TechsupportSpec), scope)
-	}); err != nil {
-		return err
-	}
 	if err := s.AddGeneratedConversionFunc((*TechsupportStatus)(nil), (*v1beta1.TechsupportStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_TechsupportStatus_To_v1beta1_TechsupportStatus(a.(*TechsupportStatus), b.(*v1beta1.TechsupportStatus), scope)
 	}); err != nil {
@@ -137,6 +127,16 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*v1beta1.TechsupportStatus)(nil), (*TechsupportStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1beta1_TechsupportStatus_To_v1alpha1_TechsupportStatus(a.(*v1beta1.TechsupportStatus), b.(*TechsupportStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddConversionFunc((*TechsupportSpec)(nil), (*v1beta1.TechsupportSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_TechsupportSpec_To_v1beta1_TechsupportSpec(a.(*TechsupportSpec), b.(*v1beta1.TechsupportSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddConversionFunc((*v1beta1.TechsupportSpec)(nil), (*TechsupportSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_TechsupportSpec_To_v1alpha1_TechsupportSpec(a.(*v1beta1.TechsupportSpec), b.(*TechsupportSpec), scope)
 	}); err != nil {
 		return err
 	}
