@@ -29,7 +29,6 @@ import (
 	"github.com/olekukonko/tablewriter"
 
 	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
-	"github.com/projectsveltos/addon-controller/controllers"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -113,7 +112,7 @@ func displayDryRunInNamespace(ctx context.Context, namespace, passedCluster, pas
 
 	for i := range clusterReports.Items {
 		cr := &clusterReports.Items[i]
-		profileLabel := cr.Labels[controllers.ClusterProfileLabelName]
+		profileLabel := cr.Labels["projectsveltos.io/cluster-profile-name"]
 
 		// TODO: find a better way to identify clusterreports created by ClusterProfile
 		// vs clusterreports created by Profile
