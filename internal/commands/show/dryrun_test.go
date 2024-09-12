@@ -34,7 +34,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
-	"github.com/projectsveltos/addon-controller/controllers"
 	"github.com/projectsveltos/sveltosctl/internal/commands/show"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -67,7 +66,7 @@ var _ = Describe("DryRun", func() {
 				Namespace: ns.Name,
 				Name:      randomString(),
 				Labels: map[string]string{
-					controllers.ClusterProfileLabelName: clusterProfileName1,
+					"projectsveltos.io/cluster-profile-name": clusterProfileName1,
 				},
 			},
 			Spec: configv1alpha1.ClusterReportSpec{
@@ -91,7 +90,7 @@ var _ = Describe("DryRun", func() {
 				Namespace: ns.Name,
 				Name:      randomString(),
 				Labels: map[string]string{
-					controllers.ClusterProfileLabelName: clusterProfileName2,
+					"projectsveltos.io/cluster-profile-name": clusterProfileName2,
 				},
 			},
 			Spec: configv1alpha1.ClusterReportSpec{
@@ -162,7 +161,7 @@ var _ = Describe("DryRun", func() {
 				Namespace: ns.Name,
 				Name:      randomString(),
 				Labels: map[string]string{
-					controllers.ClusterProfileLabelName: clusterProfileName1,
+					"projectsveltos.io/cluster-profile-name": clusterProfileName1,
 				},
 			},
 			Spec: configv1alpha1.ClusterReportSpec{
@@ -187,7 +186,7 @@ var _ = Describe("DryRun", func() {
 				Namespace: ns.Name,
 				Name:      randomString(),
 				Labels: map[string]string{
-					controllers.ClusterProfileLabelName: clusterProfileName2,
+					"projectsveltos.io/cluster-profile-name": clusterProfileName2,
 				},
 			},
 			Spec: configv1alpha1.ClusterReportSpec{
