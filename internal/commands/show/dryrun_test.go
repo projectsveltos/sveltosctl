@@ -113,7 +113,7 @@ var _ = Describe("DryRun", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
-		err = show.DisplayDryRun(context.TODO(), "", "", "",
+		err = show.DisplayDryRun(context.TODO(), "", "", "", false,
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 
@@ -209,7 +209,7 @@ var _ = Describe("DryRun", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
-		err = show.DisplayDryRun(context.TODO(), "", "", "",
+		err = show.DisplayDryRun(context.TODO(), "", "", "", false,
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 
