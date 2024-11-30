@@ -9,22 +9,22 @@ require (
 	github.com/go-logr/logr v1.4.2
 	github.com/hexops/gotextdiff v1.0.3
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/onsi/ginkgo/v2 v2.21.0
-	github.com/onsi/gomega v1.35.1
+	github.com/onsi/ginkgo/v2 v2.22.0
+	github.com/onsi/gomega v1.36.0
 	github.com/pkg/errors v0.9.1
-	github.com/projectsveltos/addon-controller v0.42.0
-	github.com/projectsveltos/event-manager v0.42.0
-	github.com/projectsveltos/libsveltos v0.42.0
+	github.com/projectsveltos/addon-controller v0.38.1-0.20241130093051-67a9bcd4999c
+	github.com/projectsveltos/event-manager v0.38.1-0.20241130135738-05ad83315f36
+	github.com/projectsveltos/libsveltos v0.42.1
 	github.com/robfig/cron/v3 v3.0.1
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.31.2
-	k8s.io/apiextensions-apiserver v0.31.2
-	k8s.io/apimachinery v0.31.2
-	k8s.io/client-go v0.31.2
+	k8s.io/api v0.31.3
+	k8s.io/apiextensions-apiserver v0.31.3
+	k8s.io/apimachinery v0.31.3
+	k8s.io/client-go v0.31.3
 	k8s.io/klog/v2 v2.130.1
-	k8s.io/kubectl v0.31.2
+	k8s.io/kubectl v0.31.3
 	sigs.k8s.io/cluster-api v1.8.5
-	sigs.k8s.io/controller-runtime v0.19.1
+	sigs.k8s.io/controller-runtime v0.19.2
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -82,7 +82,7 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/cluster-bootstrap v0.31.1 // indirect
-	k8s.io/component-base v0.31.2 // indirect
+	k8s.io/component-base v0.31.3 // indirect
 	k8s.io/kube-openapi v0.0.0-20241009091222-67ed5848f094 // indirect
 	k8s.io/utils v0.0.0-20241104163129-6fe5fd82f078 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
