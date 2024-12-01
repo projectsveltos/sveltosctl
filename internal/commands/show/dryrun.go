@@ -162,7 +162,8 @@ func displayDryRunForCluster(clusterReport *configv1alpha1.ClusterReport, profil
 		if rawDiff {
 			if rawDiff && report.Message != "" && report.Action == string(configv1alpha1.UpdateResourceAction) {
 				//nolint: forbidigo // print diff
-				fmt.Println(report.Message)
+				fmt.Printf("Cluster: %s/%s\n%s\n", clusterReport.Spec.ClusterNamespace, clusterReport.Spec.ClusterName,
+					report.Message)
 			}
 		}
 	}
@@ -179,7 +180,8 @@ func displayDryRunForCluster(clusterReport *configv1alpha1.ClusterReport, profil
 		if rawDiff {
 			if rawDiff && report.Message != "" && report.Action == string(configv1alpha1.UpdateResourceAction) {
 				//nolint: forbidigo // print diff
-				fmt.Println(report.Message)
+				fmt.Printf("Cluster: %s/%s\n%s\n", clusterReport.Spec.ClusterNamespace, clusterReport.Spec.ClusterName,
+					report.Message)
 			}
 		}
 	}
