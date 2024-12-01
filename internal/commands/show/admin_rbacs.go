@@ -33,7 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
-	libsveltosutils "github.com/projectsveltos/libsveltos/lib/k8s_utils"
+	"github.com/projectsveltos/libsveltos/lib/k8s_utils"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -62,7 +62,7 @@ func displayAdminRbacs(ctx context.Context,
 	logger logr.Logger) error {
 
 	// Collect all RoleRequest
-	instance := k8s_utils.GetAccessInstance()
+	instance := utils.GetAccessInstance()
 
 	logger.V(logs.LogDebug).Info("collect all rolerequests")
 	roleRequests, err := instance.ListRoleRequests(ctx, logger)
@@ -270,7 +270,7 @@ func collectResourceContent(ctx context.Context, resource libsveltosv1beta1.Poli
 	logger = logger.WithValues("kind", resource.Kind,
 		"resource", fmt.Sprintf("%s/%s", resource.Namespace, resource.Name))
 	logger.V(logs.LogDebug).Info("collect resource")
-	instance := k8s_utils.GetAccessInstance()
+	instance := utils.GetAccessInstance()
 	if resource.Kind == string(libsveltosv1beta1.ConfigMapReferencedResourceKind) {
 		configMap := &corev1.ConfigMap{}
 		err := instance.GetResource(ctx,

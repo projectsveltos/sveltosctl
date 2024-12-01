@@ -32,6 +32,7 @@ import (
 	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	"github.com/projectsveltos/libsveltos/lib/k8s_utils"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
+	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
 var (
@@ -82,7 +83,7 @@ func displayResourcesInNamespaces(ctx context.Context,
 	passedClusterNamespace, passedCluster, passedGroup, passedKind, passedNamespace string,
 	full bool, table *tablewriter.Table, logger logr.Logger) error {
 
-	instance := k8s_utils.GetAccessInstance()
+	instance := utils.GetAccessInstance()
 
 	healthCheckReports, err := instance.ListHealthCheckReports(ctx, passedClusterNamespace, logger)
 	if err != nil {
