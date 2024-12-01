@@ -33,8 +33,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
+	libsveltosutils "github.com/projectsveltos/libsveltos/lib/k8s_utils"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	libsveltosutils "github.com/projectsveltos/libsveltos/lib/utils"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -62,7 +62,7 @@ func displayAdminRbacs(ctx context.Context,
 	logger logr.Logger) error {
 
 	// Collect all RoleRequest
-	instance := utils.GetAccessInstance()
+	instance := k8s_utils.GetAccessInstance()
 
 	logger.V(logs.LogDebug).Info("collect all rolerequests")
 	roleRequests, err := instance.ListRoleRequests(ctx, logger)
@@ -270,7 +270,7 @@ func collectResourceContent(ctx context.Context, resource libsveltosv1beta1.Poli
 	logger = logger.WithValues("kind", resource.Kind,
 		"resource", fmt.Sprintf("%s/%s", resource.Namespace, resource.Name))
 	logger.V(logs.LogDebug).Info("collect resource")
-	instance := utils.GetAccessInstance()
+	instance := k8s_utils.GetAccessInstance()
 	if resource.Kind == string(libsveltosv1beta1.ConfigMapReferencedResourceKind) {
 		configMap := &corev1.ConfigMap{}
 		err := instance.GetResource(ctx,
@@ -305,7 +305,7 @@ func collectContent(data map[string]string, logger logr.Logger) ([]*unstructured
 				continue
 			}
 
-			policy, err := libsveltosutils.GetUnstructured([]byte(elements[i]))
+			policy, err := k8s_utils.GetUnstructured([]byte(elements[i]))
 			if err != nil {
 				logger.Error(err, fmt.Sprintf("failed to get policy from Data %.100s", elements[i]))
 				return nil, err

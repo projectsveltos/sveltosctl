@@ -30,9 +30,8 @@ import (
 	"gopkg.in/yaml.v3"
 
 	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
+	"github.com/projectsveltos/libsveltos/lib/k8s_utils"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	libsveltosutils "github.com/projectsveltos/libsveltos/lib/utils"
-	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
 var (
@@ -83,7 +82,7 @@ func displayResourcesInNamespaces(ctx context.Context,
 	passedClusterNamespace, passedCluster, passedGroup, passedKind, passedNamespace string,
 	full bool, table *tablewriter.Table, logger logr.Logger) error {
 
-	instance := utils.GetAccessInstance()
+	instance := k8s_utils.GetAccessInstance()
 
 	healthCheckReports, err := instance.ListHealthCheckReports(ctx, passedClusterNamespace, logger)
 	if err != nil {
@@ -167,7 +166,7 @@ func printResource(resourceStatus *libsveltosv1beta1.ResourceStatus,
 		return nil
 	}
 
-	resource, err := libsveltosutils.GetUnstructured(resourceStatus.Resource)
+	resource, err := k8s_utils.GetUnstructured(resourceStatus.Resource)
 	if err != nil {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to get resource %s:%s/%s",
 			gvk, resourceNamespace, resourceName))

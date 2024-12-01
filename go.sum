@@ -106,8 +106,8 @@ github.com/projectsveltos/addon-controller v0.42.2-0.20241201084653-9a781f268755
 github.com/projectsveltos/addon-controller v0.42.2-0.20241201084653-9a781f268755/go.mod h1:ZQbV1ZNWwNGXA7c54rMczp7hNsrcFI2MJOTeWElLZw4=
 github.com/projectsveltos/event-manager v0.42.2-0.20241201093428-dfa4dee4f53f h1:eD2eXfCAdGy+ruK2G6TcEkld78MWTdvsWjC8qERO6go=
 github.com/projectsveltos/event-manager v0.42.2-0.20241201093428-dfa4dee4f53f/go.mod h1:WQl9cgnNGzdwYfkuojxEpdva0OZ24Jf9STU7/p8sRsA=
-github.com/projectsveltos/libsveltos v0.42.1 h1:B7c8cF+vhR5AZJT8D4h19PSJfZqWUCR3CKEDUf032JI=
-github.com/projectsveltos/libsveltos v0.42.1/go.mod h1:XPev2TKsMxVG5LwhbbMkcCs/U0730ZMmOXIvu2HEtWo=
+github.com/projectsveltos/libsveltos v0.42.2-0.20241201085419-c94a994b898c h1:x/Kg8+bSipfGhw9jpRVd05laNgRnHJofwd1qdiCqVwU=
+github.com/projectsveltos/libsveltos v0.42.2-0.20241201085419-c94a994b898c/go.mod h1:4hqQRjwZ/DZ6u0haL3zhdARZ3lpspLv57rkhpXIzbsg=
 github.com/prometheus/client_golang v1.20.5 h1:cxppBPuYhUnsO6yo/aoRol4L7q7UFfdm+bR9r+8l63Y=
 github.com/prometheus/client_golang v1.20.5/go.mod h1:PIEt8X02hGcP8JWbeHyeZ53Y/jReSnHgO035n//V5WE=
 github.com/prometheus/client_model v0.6.1 h1:ZKSh/rekM+n3CeS952MLRAdFwIKqeY8b62p8ais2e9E=
