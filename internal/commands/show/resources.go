@@ -27,7 +27,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/go-logr/logr"
 	"github.com/olekukonko/tablewriter"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"

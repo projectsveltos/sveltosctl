@@ -54,23 +54,25 @@ var (
 )
 
 func displayDryRun(ctx context.Context, passedNamespace, passedCluster, passedProfile string,
-	logger logr.Logger) error {
+	rawDiff bool, logger logr.Logger) error {
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{"CLUSTER", "RESOURCE TYPE", "NAMESPACE", "NAME", "ACTION", "MESSAGE", "PROFILE"})
 
 	if err := displayDryRunInNamespaces(ctx, passedNamespace, passedCluster,
-		passedProfile, table, logger); err != nil {
+		passedProfile, table, rawDiff, logger); err != nil {
 		return err
 	}
 
-	table.Render()
+	if !rawDiff {
+		table.Render()
+	}
 
 	return nil
 }
 
 func displayDryRunInNamespaces(ctx context.Context, passedNamespace, passedCluster, passedProfile string,
-	table *tablewriter.Table, logger logr.Logger) error {
+	table *tablewriter.Table, rawDiff bool, logger logr.Logger) error {
 
 	instance := utils.GetAccessInstance()
 
@@ -84,7 +86,7 @@ func displayDryRunInNamespaces(ctx context.Context, passedNamespace, passedClust
 		if doConsiderNamespace(ns, passedNamespace) {
 			logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering namespace: %s", ns.Name))
 			err = displayDryRunInNamespace(ctx, ns.Name, passedCluster, passedProfile,
-				table, logger)
+				table, rawDiff, logger)
 			if err != nil {
 				return err
 			}
@@ -95,7 +97,7 @@ func displayDryRunInNamespaces(ctx context.Context, passedNamespace, passedClust
 }
 
 func displayDryRunInNamespace(ctx context.Context, namespace, passedCluster, passedProfile string,
-	table *tablewriter.Table, logger logr.Logger) error {
+	table *tablewriter.Table, rawDiff bool, logger logr.Logger) error {
 
 	instance := utils.GetAccessInstance()
 
@@ -129,14 +131,16 @@ func displayDryRunInNamespace(ctx context.Context, namespace, passedCluster, pas
 			doConsiderProfile([]string{profileName}, passedProfile) {
 
 			logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering ClusterReport: %s", cr.Name))
-			displayDryRunForCluster(cr, profileName, table)
+			displayDryRunForCluster(cr, profileName, table, rawDiff)
 		}
 	}
 
 	return nil
 }
 
-func displayDryRunForCluster(clusterReport *configv1alpha1.ClusterReport, profileName string, table *tablewriter.Table) {
+func displayDryRunForCluster(clusterReport *configv1alpha1.ClusterReport, profileName string,
+	table *tablewriter.Table, rawDiff bool) {
+
 	clusterInfo := fmt.Sprintf("%s/%s", clusterReport.Spec.ClusterNamespace, clusterReport.Spec.ClusterName)
 
 	for i := range clusterReport.Status.ReleaseReports {
@@ -145,18 +149,41 @@ func displayDryRunForCluster(clusterReport *configv1alpha1.ClusterReport, profil
 			report.Action, report.Message, profileName))
 	}
 
+	updateMessage := "use --raw-diff to see full diff"
 	for i := range clusterReport.Status.ResourceReports {
 		report := &clusterReport.Status.ResourceReports[i]
 		groupKind := fmt.Sprintf("%s:%s", report.Resource.Group, report.Resource.Kind)
+		message := report.Message
+		if report.Action == string(configv1alpha1.UpdateResourceAction) {
+			message = updateMessage
+		}
 		table.Append(genDryRunRow(clusterInfo, groupKind, report.Resource.Namespace, report.Resource.Name,
-			report.Action, report.Message, profileName))
+			report.Action, message, profileName))
+		if rawDiff {
+			if rawDiff && report.Message != "" && report.Action == string(configv1alpha1.UpdateResourceAction) {
+				//nolint: forbidigo // print diff
+				fmt.Printf("Cluster: %s/%s\n%s\n", clusterReport.Spec.ClusterNamespace, clusterReport.Spec.ClusterName,
+					report.Message)
+			}
+		}
 	}
 
 	for i := range clusterReport.Status.KustomizeResourceReports {
 		report := &clusterReport.Status.KustomizeResourceReports[i]
 		groupKind := fmt.Sprintf("%s:%s", report.Resource.Group, report.Resource.Kind)
+		message := report.Message
+		if report.Action == string(configv1alpha1.UpdateResourceAction) {
+			message = updateMessage
+		}
 		table.Append(genDryRunRow(clusterInfo, groupKind, report.Resource.Namespace, report.Resource.Name,
-			report.Action, report.Message, profileName))
+			report.Action, message, profileName))
+		if rawDiff {
+			if rawDiff && report.Message != "" && report.Action == string(configv1alpha1.UpdateResourceAction) {
+				//nolint: forbidigo // print diff
+				fmt.Printf("Cluster: %s/%s\n%s\n", clusterReport.Spec.ClusterNamespace, clusterReport.Spec.ClusterName,
+					report.Message)
+			}
+		}
 	}
 }
 
@@ -164,7 +191,7 @@ func displayDryRunForCluster(clusterReport *configv1alpha1.ClusterReport, profil
 // to a ClusterProfile currently in DryRun mode,
 func DryRun(ctx context.Context, args []string, logger logr.Logger) error {
 	doc := `Usage:
-  sveltosctl show dryrun [options] [--namespace=<name>] [--cluster=<name>] [--profile=<name>] [--verbose]
+  sveltosctl show dryrun [options] [--namespace=<name>] [--cluster=<name>] [--profile=<name>] [--raw-diff] [--verbose]
 
      --namespace=<name>      Show which Kubernetes addons would change in clusters in this namespace.
                              If not specified all namespaces are considered.
@@ -172,6 +199,7 @@ func DryRun(ctx context.Context, args []string, logger logr.Logger) error {
                              If not specified all cluster names are considered.
      --profile=<kind/name>   Show which Kubernetes addons would change because of this clusterprofile/profile.
                              If not specified all clusterprofiles/profiles are considered.
+     --raw-diff              With this flag, for each resource that would be update, full diff will be displayed.
 
 Options:
   -h --help                  Show this screen.
@@ -217,5 +245,7 @@ Description:
 		profile = passedProfile.(string)
 	}
 
-	return displayDryRun(ctx, namespace, cluster, profile, logger)
+	rawDiff := parsedArgs["--raw-diff"].(bool)
+
+	return displayDryRun(ctx, namespace, cluster, profile, rawDiff, logger)
 }
