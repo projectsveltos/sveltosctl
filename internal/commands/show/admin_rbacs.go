@@ -33,8 +33,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
+	"github.com/projectsveltos/libsveltos/lib/k8s_utils"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	libsveltosutils "github.com/projectsveltos/libsveltos/lib/utils"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -305,7 +305,7 @@ func collectContent(data map[string]string, logger logr.Logger) ([]*unstructured
 				continue
 			}
 
-			policy, err := libsveltosutils.GetUnstructured([]byte(elements[i]))
+			policy, err := k8s_utils.GetUnstructured([]byte(elements[i]))
 			if err != nil {
 				logger.Error(err, fmt.Sprintf("failed to get policy from Data %.100s", elements[i]))
 				return nil, err

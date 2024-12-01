@@ -30,8 +30,8 @@ import (
 	"gopkg.in/yaml.v3"
 
 	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
+	"github.com/projectsveltos/libsveltos/lib/k8s_utils"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	libsveltosutils "github.com/projectsveltos/libsveltos/lib/utils"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -167,7 +167,7 @@ func printResource(resourceStatus *libsveltosv1beta1.ResourceStatus,
 		return nil
 	}
 
-	resource, err := libsveltosutils.GetUnstructured(resourceStatus.Resource)
+	resource, err := k8s_utils.GetUnstructured(resourceStatus.Resource)
 	if err != nil {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to get resource %s:%s/%s",
 			gvk, resourceNamespace, resourceName))
