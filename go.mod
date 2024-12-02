@@ -12,9 +12,9 @@ require (
 	github.com/onsi/ginkgo/v2 v2.22.0
 	github.com/onsi/gomega v1.36.0
 	github.com/pkg/errors v0.9.1
-	github.com/projectsveltos/addon-controller v0.42.2-0.20241201084653-9a781f268755
-	github.com/projectsveltos/event-manager v0.42.2-0.20241201093428-dfa4dee4f53f
-	github.com/projectsveltos/libsveltos v0.42.2-0.20241201085419-c94a994b898c
+	github.com/projectsveltos/addon-controller v0.43.0
+	github.com/projectsveltos/event-manager v0.43.0
+	github.com/projectsveltos/libsveltos v0.43.0
 	github.com/robfig/cron/v3 v3.0.1
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.31.3
