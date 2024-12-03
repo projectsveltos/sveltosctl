@@ -64,7 +64,14 @@ func onboardSveltosCluster(ctx context.Context, clusterNamespace, clusterName st
 		return err
 	}
 
-	return patchSecret(ctx, clusterNamespace, secretName, kubeconfigData, logger)
+	err = patchSecret(ctx, clusterNamespace, secretName, kubeconfigData, logger)
+	if err != nil {
+		return err
+	}
+
+	//nolint: forbidigo // print success message
+	fmt.Printf("cluster %s successfully registered/updated in namespace %s.", clusterName, clusterNamespace)
+	return nil
 }
 
 func patchSveltosCluster(ctx context.Context, clusterNamespace, clusterName string,
