@@ -35,8 +35,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/commands/snapshot"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
@@ -231,7 +231,7 @@ var _ = Describe("Snapshot Rollback", func() {
 
 		instance := utils.GetAccessInstance()
 
-		currentCP := &configv1alpha1.ClusterProfile{}
+		currentCP := &configv1beta1.ClusterProfile{}
 		Expect(instance.GetResource(context.TODO(),
 			types.NamespacedName{Name: name}, currentCP)).To(Succeed())
 
@@ -334,7 +334,7 @@ var _ = Describe("Snapshot Rollback", func() {
 			originalClusterLabels[k] = currentCluster.Labels[k]
 		}
 
-		currentClusterProfile := &configv1alpha1.ClusterProfile{}
+		currentClusterProfile := &configv1beta1.ClusterProfile{}
 		Expect(instance.GetResource(context.TODO(),
 			types.NamespacedName{Name: name}, currentClusterProfile)).To(Succeed())
 
@@ -415,7 +415,7 @@ var _ = Describe("Snapshot Rollback", func() {
 		Expect(snapshot.GetAndRollbackProfiles(context.TODO(), folder, "", "",
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
-		currentClusterProfile := &configv1alpha1.ClusterProfile{}
+		currentClusterProfile := &configv1beta1.ClusterProfile{}
 		Expect(c.Get(context.TODO(),
 			types.NamespacedName{Name: name}, currentClusterProfile)).To(Succeed())
 	})
@@ -488,10 +488,10 @@ func updateClusterLabels(currentCluster *clusterv1.Cluster) {
 	Expect(instance.UpdateResource(context.TODO(), currentCluster)).To(Succeed())
 }
 
-func updateClusterProfileSpec(currentClusterProfile *configv1alpha1.ClusterProfile) {
+func updateClusterProfileSpec(currentClusterProfile *configv1beta1.ClusterProfile) {
 	instance := utils.GetAccessInstance()
 
-	currentClusterProfile.Spec.SyncMode = configv1alpha1.SyncModeDryRun
+	currentClusterProfile.Spec.SyncMode = configv1beta1.SyncModeDryRun
 	currentClusterProfile.Spec.HelmCharts = nil
 	Expect(instance.UpdateResource(context.TODO(), currentClusterProfile)).To(Succeed())
 }

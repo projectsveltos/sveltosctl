@@ -33,8 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
-	"github.com/projectsveltos/addon-controller/controllers"
+	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/commands/show"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -56,49 +55,63 @@ var _ = Describe("DryRun", func() {
 		clusterNamespace := ns.Name
 		clusterName := randomString()
 
-		releaseReports1 := []configv1alpha1.ReleaseReport{
-			*generateReleaseReport(string(configv1alpha1.HelmChartActionInstall)),
-			*generateReleaseReport(string(configv1alpha1.NoHelmAction)),
+		releaseReports1 := []configv1beta1.ReleaseReport{
+			*generateReleaseReport(string(configv1beta1.HelmChartActionInstall)),
+			*generateReleaseReport(string(configv1beta1.NoHelmAction)),
 		}
 
 		clusterProfileName1 := randomString()
-		clusterReport1 := &configv1alpha1.ClusterReport{
+		clusterReport1 := &configv1beta1.ClusterReport{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: ns.Name,
 				Name:      randomString(),
 				Labels: map[string]string{
 					"projectsveltos.io/cluster-profile-name": clusterProfileName1,
 				},
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						Kind:       configv1beta1.ClusterProfileKind,
+						Name:       randomString(),
+						APIVersion: configv1beta1.GroupVersion.String(),
+					},
+				},
 			},
-			Spec: configv1alpha1.ClusterReportSpec{
+			Spec: configv1beta1.ClusterReportSpec{
 				ClusterNamespace: clusterNamespace,
 				ClusterName:      clusterName,
 			},
-			Status: configv1alpha1.ClusterReportStatus{
+			Status: configv1beta1.ClusterReportStatus{
 				ReleaseReports: releaseReports1,
 			},
 		}
 
-		releaseReports2 := []configv1alpha1.ReleaseReport{
-			*generateReleaseReport(string(configv1alpha1.HelmChartActionInstall)),
-			*generateReleaseReport(string(configv1alpha1.HelmChartActionUninstall)),
-			*generateReleaseReport(string(configv1alpha1.NoHelmAction)),
+		releaseReports2 := []configv1beta1.ReleaseReport{
+			*generateReleaseReport(string(configv1beta1.HelmChartActionInstall)),
+			*generateReleaseReport(string(configv1beta1.HelmChartActionUninstall)),
+			*generateReleaseReport(string(configv1beta1.NoHelmAction)),
 		}
 
 		clusterProfileName2 := randomString()
-		clusterReport2 := &configv1alpha1.ClusterReport{
+		clusterReport2 := &configv1beta1.ClusterReport{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: ns.Name,
 				Name:      randomString(),
 				Labels: map[string]string{
 					"projectsveltos.io/cluster-profile-name": clusterProfileName2,
 				},
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						Kind:       configv1beta1.ClusterProfileKind,
+						Name:       randomString(),
+						APIVersion: configv1beta1.GroupVersion.String(),
+					},
+				},
 			},
-			Spec: configv1alpha1.ClusterReportSpec{
+			Spec: configv1beta1.ClusterReportSpec{
 				ClusterNamespace: clusterNamespace,
 				ClusterName:      clusterName,
 			},
-			Status: configv1alpha1.ClusterReportStatus{
+			Status: configv1beta1.ClusterReportStatus{
 				ReleaseReports: releaseReports2,
 			},
 		}
@@ -151,50 +164,64 @@ var _ = Describe("DryRun", func() {
 		clusterNamespace := ns.Name
 		clusterName := randomString()
 
-		resourceReports1 := []configv1alpha1.ResourceReport{
-			*generateResourceReport(string(configv1alpha1.HelmChartActionInstall)),
-			*generateResourceReport(string(configv1alpha1.NoHelmAction)),
+		resourceReports1 := []configv1beta1.ResourceReport{
+			*generateResourceReport(string(configv1beta1.HelmChartActionInstall)),
+			*generateResourceReport(string(configv1beta1.NoHelmAction)),
 		}
 
 		clusterProfileName1 := randomString()
-		clusterReport1 := &configv1alpha1.ClusterReport{
+		clusterReport1 := &configv1beta1.ClusterReport{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: ns.Name,
 				Name:      randomString(),
 				Labels: map[string]string{
 					"projectsveltos.io/cluster-profile-name": clusterProfileName1,
 				},
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						Kind:       configv1beta1.ClusterProfileKind,
+						Name:       randomString(),
+						APIVersion: configv1beta1.GroupVersion.String(),
+					},
+				},
 			},
-			Spec: configv1alpha1.ClusterReportSpec{
+			Spec: configv1beta1.ClusterReportSpec{
 				ClusterNamespace: clusterNamespace,
 				ClusterName:      clusterName,
 			},
-			Status: configv1alpha1.ClusterReportStatus{
+			Status: configv1beta1.ClusterReportStatus{
 				ResourceReports: resourceReports1,
 			},
 		}
 
-		resourceReports2 := []configv1alpha1.ResourceReport{
-			*generateResourceReport(string(configv1alpha1.CreateResourceAction)),
-			*generateResourceReport(string(configv1alpha1.UpdateResourceAction)),
-			*generateResourceReport(string(configv1alpha1.NoResourceAction)),
-			*generateResourceReport(string(configv1alpha1.DeleteResourceAction)),
+		resourceReports2 := []configv1beta1.ResourceReport{
+			*generateResourceReport(string(configv1beta1.CreateResourceAction)),
+			*generateResourceReport(string(configv1beta1.UpdateResourceAction)),
+			*generateResourceReport(string(configv1beta1.NoResourceAction)),
+			*generateResourceReport(string(configv1beta1.DeleteResourceAction)),
 		}
 
 		clusterProfileName2 := randomString()
-		clusterReport2 := &configv1alpha1.ClusterReport{
+		clusterReport2 := &configv1beta1.ClusterReport{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: ns.Name,
 				Name:      randomString(),
 				Labels: map[string]string{
 					"projectsveltos.io/cluster-profile-name": clusterProfileName2,
 				},
+				OwnerReferences: []metav1.OwnerReference{
+					{
+						Kind:       configv1beta1.ClusterProfileKind,
+						Name:       randomString(),
+						APIVersion: configv1beta1.GroupVersion.String(),
+					},
+				},
 			},
-			Spec: configv1alpha1.ClusterReportSpec{
+			Spec: configv1beta1.ClusterReportSpec{
 				ClusterNamespace: clusterNamespace,
 				ClusterName:      clusterName,
 			},
-			Status: configv1alpha1.ClusterReportStatus{
+			Status: configv1beta1.ClusterReportStatus{
 				ResourceReports: resourceReports2,
 			},
 		}
@@ -239,7 +266,7 @@ var _ = Describe("DryRun", func() {
 })
 
 func verifyReleaseReports(lines []string, clusterInfo, clusterProfileName string,
-	releaseReports []configv1alpha1.ReleaseReport) {
+	releaseReports []configv1beta1.ReleaseReport) {
 
 	for i := range releaseReports {
 		verifyReleaseReport(lines, clusterInfo, clusterProfileName, &releaseReports[i])
@@ -247,7 +274,7 @@ func verifyReleaseReports(lines []string, clusterInfo, clusterProfileName string
 }
 
 func verifyReleaseReport(lines []string, clusterInfo, clusterProfileName string,
-	releaseReport *configv1alpha1.ReleaseReport) {
+	releaseReport *configv1beta1.ReleaseReport) {
 
 	found := false
 	for i := range lines {
@@ -270,7 +297,7 @@ func verifyReleaseReport(lines []string, clusterInfo, clusterProfileName string,
 }
 
 func verifyResourceReports(lines []string, clusterInfo, clusterProfileName string,
-	resourceReports []configv1alpha1.ResourceReport) {
+	resourceReports []configv1beta1.ResourceReport) {
 
 	for i := range resourceReports {
 		verifyResourceReport(lines, clusterInfo, clusterProfileName, &resourceReports[i])
@@ -278,7 +305,7 @@ func verifyResourceReports(lines []string, clusterInfo, clusterProfileName strin
 }
 
 func verifyResourceReport(lines []string, clusterInfo, clusterProfileName string,
-	resourceReport *configv1alpha1.ResourceReport) {
+	resourceReport *configv1beta1.ResourceReport) {
 
 	found := false
 	for i := range lines {

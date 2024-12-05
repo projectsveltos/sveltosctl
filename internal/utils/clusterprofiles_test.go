@@ -28,8 +28,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -38,13 +38,17 @@ var _ = Describe("ClusterProfile", func() {
 		initObjects := []client.Object{}
 
 		for i := 0; i < 10; i++ {
-			clusterProfile := &configv1alpha1.ClusterProfile{
+			clusterProfile := &configv1beta1.ClusterProfile{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: randomString(),
 				},
-				Spec: configv1alpha1.Spec{
-					ClusterSelector: libsveltosv1alpha1.Selector("zone:west"),
-					SyncMode:        configv1alpha1.SyncModeContinuous,
+				Spec: configv1beta1.Spec{
+					ClusterSelector: libsveltosv1beta1.Selector{
+						LabelSelector: metav1.LabelSelector{
+							MatchLabels: map[string]string{"zone": "west"},
+						},
+					},
+					SyncMode: configv1beta1.SyncModeContinuous,
 				},
 			}
 			initObjects = append(initObjects, clusterProfile)

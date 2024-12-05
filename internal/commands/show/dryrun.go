@@ -27,9 +27,11 @@ import (
 	"github.com/docopt/docopt-go"
 	"github.com/go-logr/logr"
 	"github.com/olekukonko/tablewriter"
+	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
-	"github.com/projectsveltos/addon-controller/controllers"
+	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -132,40 +134,81 @@ func displayDryRunInNamespace(ctx context.Context, namespace, passedCluster, pas
 			doConsiderProfile([]string{profileName}, passedProfile) {
 
 			logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering ClusterReport: %s", cr.Name))
-			displayDryRunForCluster(cr, profileName, table)
+			err = displayDryRunForCluster(cr, profileName, table, rawDiff)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
 	return nil
 }
 
-func displayDryRunForCluster(clusterReport *configv1alpha1.ClusterReport, profileName string, table *tablewriter.Table) {
-	clusterInfo := fmt.Sprintf("%s/%s", clusterReport.Spec.ClusterNamespace, clusterReport.Spec.ClusterName)
+func displayDryRunForCluster(clusterReport *configv1beta1.ClusterReport, profileName string,
+	table *tablewriter.Table, rawDiff bool) error {
 
-	for i := range clusterReport.Status.ReleaseReports {
-		report := &clusterReport.Status.ReleaseReports[i]
-		table.Append(genDryRunRow(clusterInfo, "helm release", report.ReleaseNamespace, report.ReleaseName,
-			report.Action, report.Message, profileName))
+	clusterInfo := fmt.Sprintf("%s/%s", clusterReport.Spec.ClusterNamespace, clusterReport.Spec.ClusterName)
+	profileOwner, err := getProfileOwnerReference(clusterReport)
+	if err != nil {
+		return err
 	}
 
-	updateMessage := "use --raw-diff to see full diff"
+	updateMessage := "use --raw-diff to see full diff for helm values"
+	for i := range clusterReport.Status.ReleaseReports {
+		report := &clusterReport.Status.ReleaseReports[i]
+		message := report.Message
+		if report.Action == string(configv1beta1.UpdateHelmValuesAction) {
+			message = updateMessage
+		}
+		table.Append(genDryRunRow(clusterInfo, "helm release", report.ReleaseNamespace, report.ReleaseName,
+			report.Action, message, profileName))
+		if rawDiff {
+			if rawDiff && report.Message != "" && report.Action == string(configv1beta1.UpdateHelmValuesAction) {
+				//nolint: forbidigo // print diff
+				fmt.Printf("Profile: %s:%s Cluster: %s/%s\n%s\n", profileOwner.Kind, profileOwner.Name,
+					clusterReport.Spec.ClusterNamespace, clusterReport.Spec.ClusterName, report.Message)
+			}
+		}
+	}
+
+	updateMessage = "use --raw-diff to see full diff"
 	for i := range clusterReport.Status.ResourceReports {
 		report := &clusterReport.Status.ResourceReports[i]
 		groupKind := fmt.Sprintf("%s:%s", report.Resource.Group, report.Resource.Kind)
 		message := report.Message
-		if report.Action == string(configv1alpha1.UpdateResourceAction) {
+		if report.Action == string(configv1beta1.UpdateResourceAction) {
 			message = updateMessage
 		}
 		table.Append(genDryRunRow(clusterInfo, groupKind, report.Resource.Namespace, report.Resource.Name,
-			report.Action, report.Message, profileName))
+			report.Action, message, profileName))
+		if rawDiff {
+			if rawDiff && report.Message != "" && report.Action == string(configv1beta1.UpdateResourceAction) {
+				//nolint: forbidigo // print diff
+				fmt.Printf("Profile: %s:%s Cluster: %s/%s\n%s\n", profileOwner.Kind, profileOwner.Name,
+					clusterReport.Spec.ClusterNamespace, clusterReport.Spec.ClusterName, report.Message)
+			}
+		}
 	}
 
 	for i := range clusterReport.Status.KustomizeResourceReports {
 		report := &clusterReport.Status.KustomizeResourceReports[i]
 		groupKind := fmt.Sprintf("%s:%s", report.Resource.Group, report.Resource.Kind)
+		message := report.Message
+		if report.Action == string(configv1beta1.UpdateResourceAction) {
+			message = updateMessage
+		}
 		table.Append(genDryRunRow(clusterInfo, groupKind, report.Resource.Namespace, report.Resource.Name,
-			report.Action, report.Message, profileName))
+			report.Action, message, profileName))
+		if rawDiff {
+			if rawDiff && report.Message != "" && report.Action == string(configv1beta1.UpdateResourceAction) {
+				//nolint: forbidigo // print diff
+				fmt.Printf("Profile: %s:%s Cluster: %s/%s\n%s\n", profileOwner.Kind, profileOwner.Name,
+					clusterReport.Spec.ClusterNamespace, clusterReport.Spec.ClusterName, report.Message)
+			}
+		}
 	}
+
+	return nil
 }
 
 // DryRun displays information about which Kubernetes addons would change in which cluster due
@@ -226,4 +269,24 @@ Description:
 	}
 
 	return displayDryRun(ctx, namespace, cluster, profile, logger)
+}
+
+// getProfileOwnerReference returns the ClusterProfile/Profile owning a given ClusterReport
+func getProfileOwnerReference(clusterReport *configv1beta1.ClusterReport) (*metav1.OwnerReference, error) {
+	for _, ref := range clusterReport.OwnerReferences {
+		if ref.Kind != configv1beta1.ClusterProfileKind &&
+			ref.Kind != configv1beta1.ProfileKind {
+
+			continue
+		}
+		gv, err := schema.ParseGroupVersion(ref.APIVersion)
+		if err != nil {
+			return nil, errors.WithStack(err)
+		}
+		if gv.Group == configv1beta1.GroupVersion.Group {
+			return &ref, nil
+		}
+	}
+
+	return nil, fmt.Errorf("(Cluster)Profile owner not found")
 }

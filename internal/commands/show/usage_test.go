@@ -33,28 +33,28 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog/v2/textlogger"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/commands/show"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
 var _ = Describe("Usage", func() {
 	It("showUsage displays per resource, associated list of CAPI clusters", func() {
-		configMap := configv1alpha1.PolicyRef{
+		configMap := configv1beta1.PolicyRef{
 			Namespace: randomString(),
 			Name:      randomString(),
 			Kind:      string(libsveltosv1beta1.ConfigMapReferencedResourceKind),
 		}
 
-		secret := configv1alpha1.PolicyRef{
+		secret := configv1beta1.PolicyRef{
 			Namespace: randomString(),
 			Name:      randomString(),
 			Kind:      string(libsveltosv1beta1.SecretReferencedResourceKind),
 		}
 
 		clusterProfile1 := generateClusterProfile()
-		clusterProfile1.Spec.PolicyRefs = []configv1alpha1.PolicyRef{
+		clusterProfile1.Spec.PolicyRefs = []configv1beta1.PolicyRef{
 			configMap,
 		}
 		clusterProfile1.Status.MatchingClusterRefs = []corev1.ObjectReference{
@@ -62,7 +62,7 @@ var _ = Describe("Usage", func() {
 		}
 
 		clusterProfile2 := generateClusterProfile()
-		clusterProfile2.Spec.PolicyRefs = []configv1alpha1.PolicyRef{
+		clusterProfile2.Spec.PolicyRefs = []configv1beta1.PolicyRef{
 			secret,
 		}
 		clusterProfile2.Status.MatchingClusterRefs = []corev1.ObjectReference{
@@ -111,9 +111,9 @@ var _ = Describe("Usage", func() {
 	})
 })
 
-func verifyClusterProfileUsage(lines []string, clusterProfile *configv1alpha1.ClusterProfile) {
+func verifyClusterProfileUsage(lines []string, clusterProfile *configv1beta1.ClusterProfile) {
 	for i := range clusterProfile.Status.MatchingClusterRefs {
-		verifyUsage(lines, configv1alpha1.ClusterProfileKind, "", clusterProfile.Name,
+		verifyUsage(lines, configv1beta1.ClusterProfileKind, "", clusterProfile.Name,
 			&clusterProfile.Status.MatchingClusterRefs[i])
 	}
 }
@@ -133,14 +133,18 @@ func verifyUsage(lines []string, kind, namespace, name string, matchingCluster *
 	Expect(found).To(BeTrue())
 }
 
-func generateClusterProfile() *configv1alpha1.ClusterProfile {
-	return &configv1alpha1.ClusterProfile{
+func generateClusterProfile() *configv1beta1.ClusterProfile {
+	return &configv1beta1.ClusterProfile{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: randomString(),
 		},
-		Spec: configv1alpha1.Spec{
-			ClusterSelector: libsveltosv1alpha1.Selector("zone:west"),
-			SyncMode:        configv1alpha1.SyncModeContinuous,
+		Spec: configv1beta1.Spec{
+			ClusterSelector: libsveltosv1beta1.Selector{
+				LabelSelector: metav1.LabelSelector{
+					MatchLabels: map[string]string{"zone": "west"},
+				},
+			},
+			SyncMode: configv1beta1.SyncModeContinuous,
 		},
 	}
 }

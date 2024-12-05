@@ -36,9 +36,9 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
-	eventv1alpha1 "github.com/projectsveltos/event-manager/api/v1alpha1"
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	eventv1beta1 "github.com/projectsveltos/event-manager/api/v1beta1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
 )
@@ -92,7 +92,7 @@ func addToScheme(scheme *runtime.Scheme) error {
 	if err := appsv1.AddToScheme(scheme); err != nil {
 		return err
 	}
-	if err := configv1alpha1.AddToScheme(scheme); err != nil {
+	if err := configv1beta1.AddToScheme(scheme); err != nil {
 		return err
 	}
 	if err := utilsv1beta1.AddToScheme(scheme); err != nil {

@@ -34,8 +34,8 @@ import (
 	"k8s.io/klog/v2/textlogger"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
-	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
+	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
@@ -221,7 +221,7 @@ func getAndRollbackSveltosClusters(ctx context.Context, folder, passedNamespace,
 
 func getAndRollbackProfiles(ctx context.Context, folder, passedNamespace, passedProfile string, logger logr.Logger) error {
 	snapshotClient := collector.GetClient()
-	clusterProfiles, err := snapshotClient.GetClusterResources(folder, configv1alpha1.ClusterProfileKind, logger)
+	clusterProfiles, err := snapshotClient.GetClusterResources(folder, configv1beta1.ClusterProfileKind, logger)
 	if err != nil {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect ClusterProfile from folder %s", folder))
 		return err
@@ -238,7 +238,7 @@ func getAndRollbackProfiles(ctx context.Context, folder, passedNamespace, passed
 		}
 	}
 
-	profiles, err := snapshotClient.GetNamespacedResources(folder, configv1alpha1.ProfileKind, logger)
+	profiles, err := snapshotClient.GetNamespacedResources(folder, configv1beta1.ProfileKind, logger)
 	if err != nil {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect Profile from folder %s", folder))
 		return err
@@ -502,7 +502,7 @@ func rollbackSveltosCluster(ctx context.Context, resource *unstructured.Unstruct
 func rollbackClusterProfile(ctx context.Context, resource *unstructured.Unstructured, logger logr.Logger) error {
 	instance := utils.GetAccessInstance()
 
-	currentClusterProfile := &configv1alpha1.ClusterProfile{}
+	currentClusterProfile := &configv1beta1.ClusterProfile{}
 	err := instance.GetResource(ctx,
 		types.NamespacedName{Name: resource.GetName()}, currentClusterProfile)
 	if err != nil {
@@ -514,7 +514,7 @@ func rollbackClusterProfile(ctx context.Context, resource *unstructured.Unstruct
 		return err
 	}
 
-	passedClusterProfile := &configv1alpha1.ClusterProfile{}
+	passedClusterProfile := &configv1beta1.ClusterProfile{}
 	err = runtime.DefaultUnstructuredConverter.
 		FromUnstructured(resource.UnstructuredContent(), passedClusterProfile)
 	if err != nil {
@@ -534,7 +534,7 @@ func rollbackClusterProfile(ctx context.Context, resource *unstructured.Unstruct
 func rollbackProfile(ctx context.Context, resource *unstructured.Unstructured, logger logr.Logger) error {
 	instance := utils.GetAccessInstance()
 
-	currentProfile := &configv1alpha1.Profile{}
+	currentProfile := &configv1beta1.Profile{}
 	err := instance.GetResource(ctx,
 		types.NamespacedName{Namespace: resource.GetNamespace(), Name: resource.GetName()},
 		currentProfile)
@@ -547,7 +547,7 @@ func rollbackProfile(ctx context.Context, resource *unstructured.Unstructured, l
 		return err
 	}
 
-	passedProfile := &configv1alpha1.Profile{}
+	passedProfile := &configv1beta1.Profile{}
 	err = runtime.DefaultUnstructuredConverter.
 		FromUnstructured(resource.UnstructuredContent(), passedProfile)
 	if err != nil {

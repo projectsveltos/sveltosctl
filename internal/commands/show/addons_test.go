@@ -33,19 +33,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1alpha1"
+	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/commands/show"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
 var _ = Describe("AddOnss", func() {
-	var clusterConfiguration *configv1alpha1.ClusterConfiguration
+	var clusterConfiguration *configv1beta1.ClusterConfiguration
 	var ns *corev1.Namespace
 
 	BeforeEach(func() {
 		namespace := namePrefix + randomString()
 
-		clusterConfiguration = &configv1alpha1.ClusterConfiguration{
+		clusterConfiguration = &configv1beta1.ClusterConfiguration{
 			ObjectMeta: metav1.ObjectMeta{
 				Namespace: namespace,
 				Name:      randomString(),
@@ -61,13 +61,13 @@ var _ = Describe("AddOnss", func() {
 
 	It("show addons displays deployed helm charts", func() {
 		clusterProfileName1 := randomString()
-		charts1 := []configv1alpha1.Chart{
+		charts1 := []configv1beta1.Chart{
 			*generateChart(), *generateChart(),
 		}
 		clusterConfiguration = addDeployedHelmCharts(clusterConfiguration, clusterProfileName1, charts1)
 
 		clusterProfileName2 := randomString()
-		charts2 := []configv1alpha1.Chart{
+		charts2 := []configv1beta1.Chart{
 			*generateChart(), *generateChart(), *generateChart(),
 		}
 		clusterConfiguration = addDeployedHelmCharts(clusterConfiguration, clusterProfileName2, charts2)
@@ -112,13 +112,13 @@ var _ = Describe("AddOnss", func() {
 
 	It("show addonss display deployed resources", func() {
 		clusterProfileName1 := randomString()
-		resource1 := []configv1alpha1.Resource{
+		resource1 := []configv1beta1.Resource{
 			*generateResource(), *generateResource(), *generateResource(),
 		}
 		clusterConfiguration = addDeployedResources(clusterConfiguration, clusterProfileName1, resource1)
 
 		clusterProfileName2 := randomString()
-		resource2 := []configv1alpha1.Resource{
+		resource2 := []configv1beta1.Resource{
 			*generateResource(), *generateResource(), *generateResource(),
 		}
 		clusterConfiguration = addDeployedResources(clusterConfiguration, clusterProfileName2, resource2)
@@ -163,7 +163,7 @@ var _ = Describe("AddOnss", func() {
 })
 
 func verifyCharts(lines []string, clusterInfo, clusterProfileName string,
-	charts []configv1alpha1.Chart) {
+	charts []configv1beta1.Chart) {
 
 	for i := range charts {
 		verifyChart(lines, clusterInfo, clusterProfileName, &charts[i])
@@ -171,7 +171,7 @@ func verifyCharts(lines []string, clusterInfo, clusterProfileName string,
 }
 
 func verifyChart(lines []string, clusterInfo, clusterProfileName string,
-	chart *configv1alpha1.Chart) {
+	chart *configv1beta1.Chart) {
 
 	found := false
 	for i := range lines {
@@ -192,7 +192,7 @@ func verifyChart(lines []string, clusterInfo, clusterProfileName string,
 }
 
 func verifyResources(lines []string, clusterInfo, clusterProfileName string,
-	resources []configv1alpha1.Resource) {
+	resources []configv1beta1.Resource) {
 
 	for i := range resources {
 		verifyResource(lines, clusterInfo, clusterProfileName, &resources[i])
@@ -200,7 +200,7 @@ func verifyResources(lines []string, clusterInfo, clusterProfileName string,
 }
 
 func verifyResource(lines []string, clusterInfo, clusterProfileName string,
-	resource *configv1alpha1.Resource) {
+	resource *configv1beta1.Resource) {
 
 	found := false
 	for i := range lines {

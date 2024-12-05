@@ -12,19 +12,19 @@ require (
 	github.com/onsi/ginkgo/v2 v2.19.0
 	github.com/onsi/gomega v1.33.1
 	github.com/pkg/errors v0.9.1
-	github.com/projectsveltos/addon-controller v0.31.1-0.20240529115954-7f7677fa9454
-	github.com/projectsveltos/event-manager v0.31.1-0.20240529121530-98bec8351274
-	github.com/projectsveltos/libsveltos v0.31.1-0.20240529102610-6e5624878b89
+	github.com/projectsveltos/addon-controller v0.43.1-0.20241205122806-925d0b3abd6d
+	github.com/projectsveltos/event-manager v0.43.1-0.20241202114051-1c0a0d0cadee
+	github.com/projectsveltos/libsveltos v0.43.1-0.20241201131544-c4c2550af4af
 	github.com/robfig/cron/v3 v3.0.1
-	gopkg.in/yaml.v2 v2.4.0
-	k8s.io/api v0.30.1
-	k8s.io/apiextensions-apiserver v0.30.1
-	k8s.io/apimachinery v0.30.1
-	k8s.io/client-go v0.30.1
-	k8s.io/klog/v2 v2.120.1
-	k8s.io/kubectl v0.30.1
-	sigs.k8s.io/cluster-api v1.7.2
-	sigs.k8s.io/controller-runtime v0.18.3
+	gopkg.in/yaml.v3 v3.0.1
+	k8s.io/api v0.31.3
+	k8s.io/apiextensions-apiserver v0.31.3
+	k8s.io/apimachinery v0.31.3
+	k8s.io/client-go v0.31.3
+	k8s.io/klog/v2 v2.130.1
+	k8s.io/kubectl v0.31.3
+	sigs.k8s.io/cluster-api v1.8.5
+	sigs.k8s.io/controller-runtime v0.19.3
 	sigs.k8s.io/yaml v1.4.0
 )
 
@@ -58,20 +58,10 @@ require (
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/evanphx/json-patch v5.7.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
-	github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d // indirect
-	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/fluxcd/pkg/apis/acl v0.3.0 // indirect
-	github.com/fluxcd/pkg/apis/meta v1.5.0 // indirect
-	github.com/fluxcd/pkg/http/fetch v0.11.0 // indirect
-	github.com/fluxcd/pkg/tar v0.7.0 // indirect
-	github.com/fluxcd/source-controller/api v1.3.0 // indirect
-	github.com/fsnotify/fsnotify v1.7.0 // indirect
-	github.com/go-errors/errors v1.4.2 // indirect
-	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
-	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/go-openapi/jsonpointer v0.19.6 // indirect
-	github.com/go-openapi/jsonreference v0.20.2 // indirect
-	github.com/go-openapi/swag v0.22.4 // indirect
+	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
+	github.com/go-openapi/jsonpointer v0.21.0 // indirect
+	github.com/go-openapi/jsonreference v0.21.0 // indirect
+	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/gobuffalo/flect v1.0.2 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
