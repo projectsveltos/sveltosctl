@@ -18,8 +18,6 @@ github.com/evanphx/json-patch/v5 v5.9.0 h1:kcBlZQbplgElYIlo/n1hJbls2z/1awpXxpRi0
 github.com/evanphx/json-patch/v5 v5.9.0/go.mod h1:VNkHZ/282BpEyt/tObQO8s5CMPmYYq14uClGH4abBuQ=
 github.com/fatih/color v1.18.0 h1:S8gINlzdQ840/4pfAwic/ZE0djQEH3wM94VfqLTZcOM=
 github.com/fatih/color v1.18.0/go.mod h1:4FelSpRwEGDpQ12mAdzqdOukCy4u8WUtOY6lkT/6HfU=
-github.com/fsnotify/fsnotify v1.7.0 h1:8JEhPFa5W2WU7YfeZzPNqzMP6Lwt7L2715Ggo0nosvA=
-github.com/fsnotify/fsnotify v1.7.0/go.mod h1:40Bi/Hjc2AVfZrqy+aj+yEI+/bRxZnMJyTJwOpGvigM=
 github.com/fxamacker/cbor/v2 v2.7.0 h1:iM5WgngdRBanHcxugY4JySA0nk1wZorNOpTgCMedv5E=
 github.com/fxamacker/cbor/v2 v2.7.0/go.mod h1:pxXPTn3joSm21Gbwsv0w9OSA2y1HFR9qXEeXQVeNoDQ=
 github.com/gdexlab/go-render v1.0.1 h1:rxqB3vo5s4n1kF0ySmoNeSPRYkEsyHgln4jFIQY7v0U=
@@ -102,8 +100,8 @@ github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINE
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/projectsveltos/addon-controller v0.43.1-0.20241202100654-55c0786240ee h1:rkbzO6c5ttqDk1KAtbr3HPSquT5AO4eaa388NNgiCRc=
-github.com/projectsveltos/addon-controller v0.43.1-0.20241202100654-55c0786240ee/go.mod h1:Mg0CsrS5NLlvKL5kIjqLznmvVE63Guj2aK+23k0kf0Y=
+github.com/projectsveltos/addon-controller v0.43.1-0.20241205122806-925d0b3abd6d h1:fVysR/pJ6ynBDcLBY4Hj9swrFiFr14+aJynGjCNu3w4=
+github.com/projectsveltos/addon-controller v0.43.1-0.20241205122806-925d0b3abd6d/go.mod h1:6iBdXE7wlecOH/c4BeLFNaoIHzk5lEvdrzD1s/w2ReE=
 github.com/projectsveltos/event-manager v0.43.1-0.20241202114051-1c0a0d0cadee h1:JtYRf4FocJZCwswqMMdB2J7+9hQITW3kYnt9ftdLOMA=
 github.com/projectsveltos/event-manager v0.43.1-0.20241202114051-1c0a0d0cadee/go.mod h1:XyJhynQqut5bUGdjGHCDpIOyf/rJv4KETlvJ7cr/V+s=
 github.com/projectsveltos/libsveltos v0.43.1-0.20241201131544-c4c2550af4af h1:rkf6H9XqWmO10dTmZIsns7Zgcw4+vvnLa1bUrURPoJA=
@@ -226,8 +224,8 @@ k8s.io/utils v0.0.0-20241104163129-6fe5fd82f078 h1:jGnCPejIetjiy2gqaJ5V0NLwTpF4w
 k8s.io/utils v0.0.0-20241104163129-6fe5fd82f078/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
 sigs.k8s.io/cluster-api v1.8.5 h1:lNA2fPN4fkXEs+oOQlnwxT/4VwRFBpv5kkSoJG8nqBA=
 sigs.k8s.io/cluster-api v1.8.5/go.mod h1:pXv5LqLxuIbhGIXykyNKiJh+KrLweSBajVHHitPLyoY=
-sigs.k8s.io/controller-runtime v0.19.2 h1:3sPrF58XQEPzbE8T81TN6selQIMGbtYwuaJ6eDssDF8=
-sigs.k8s.io/controller-runtime v0.19.2/go.mod h1:iRmWllt8IlaLjvTTDLhRBXIEtkCK6hwVBJJsYS9Ajf4=
+sigs.k8s.io/controller-runtime v0.19.3 h1:XO2GvC9OPftRst6xWCpTgBZO04S2cbp0Qqkj8bX1sPw=
+sigs.k8s.io/controller-runtime v0.19.3/go.mod h1:j4j87DqtsThvwTv5/Tc5NFRyyF/RF0ip4+62tbTSIUM=
 sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd h1:EDPBXCAspyGV4jQlpZSudPeMmr1bNJefnuqLsRAsHZo=
 sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd/go.mod h1:B8JuhiUyNFVKdsE8h686QcCxMaH6HrOAZj4vswFpcB0=
 sigs.k8s.io/structured-merge-diff/v4 v4.4.1 h1:150L+0vs/8DA78h1u02ooW1/fFq/Lwr+sGiqlzvrtq4=

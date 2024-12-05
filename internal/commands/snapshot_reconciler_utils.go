@@ -30,7 +30,7 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
 	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	utilsv1beta1 "github.com/projectsveltos/sveltosctl/api/v1beta1"
@@ -436,7 +436,7 @@ func updateSnaphotPredicate(newObject, oldObject *utilsv1beta1.Snapshot) bool {
 	return false
 }
 
-func convertConfigPolicyRefsToLibsveltosPolicyRefs(input []configv1alpha1.PolicyRef) []libsveltosv1beta1.PolicyRef {
+func convertConfigPolicyRefsToLibsveltosPolicyRefs(input []configv1beta1.PolicyRef) []libsveltosv1beta1.PolicyRef {
 	policyRefs := make([]libsveltosv1beta1.PolicyRef, len(input))
 
 	for i := range input {
