@@ -27,7 +27,7 @@ import (
 	. "github.com/onsi/gomega"
 	"k8s.io/klog/v2/textlogger"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 )
 
@@ -242,7 +242,7 @@ var _ = Describe("Client", func() {
 		u, err := instance.GetUnstructured([]byte(clusterConfigurationInstance))
 		Expect(err).To(BeNil())
 		Expect(u).ToNot(BeNil())
-		Expect(u.GetKind()).To(Equal(configv1alpha1.ClusterConfigurationKind))
+		Expect(u.GetKind()).To(Equal(configv1beta1.ClusterConfigurationKind))
 	})
 
 	It("getResourcesForKind returns all resources of a given namespaced kind", func() {
@@ -258,7 +258,7 @@ var _ = Describe("Client", func() {
 			namespaceFolder := filepath.Join(snapshotFolder, files[i].Name())
 			By(fmt.Sprintf("finding resources in folder %s", namespaceFolder))
 			instance := collector.GetClient()
-			list, err := collector.GetResourcesForKind(instance, namespaceFolder, configv1alpha1.ClusterConfigurationKind,
+			list, err := collector.GetResourcesForKind(instance, namespaceFolder, configv1beta1.ClusterConfigurationKind,
 				textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 			Expect(err).To(BeNil())
 			Expect(list).ToNot(BeNil())
@@ -277,7 +277,7 @@ var _ = Describe("Client", func() {
 
 		By(fmt.Sprintf("finding resources in folder %s", snapshotFolder))
 		instance := collector.GetClient()
-		list, err := collector.GetResourcesForKind(instance, snapshotFolder, configv1alpha1.ClusterProfileKind,
+		list, err := collector.GetResourcesForKind(instance, snapshotFolder, configv1beta1.ClusterProfileKind,
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 		Expect(list).ToNot(BeNil())
@@ -289,7 +289,7 @@ var _ = Describe("Client", func() {
 		defer os.RemoveAll(snapshotFolder)
 
 		d := collector.GetClient()
-		resourceMap, err := d.GetNamespacedResources(snapshotFolder, configv1alpha1.ClusterConfigurationKind,
+		resourceMap, err := d.GetNamespacedResources(snapshotFolder, configv1beta1.ClusterConfigurationKind,
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 		Expect(resourceMap).ToNot(BeNil())
@@ -300,7 +300,7 @@ var _ = Describe("Client", func() {
 			for j := range resources {
 				u := resources[j]
 				Expect(u.GetNamespace()).To(Equal(k))
-				Expect(u.GetKind()).To(Equal(configv1alpha1.ClusterConfigurationKind))
+				Expect(u.GetKind()).To(Equal(configv1beta1.ClusterConfigurationKind))
 			}
 		}
 	})
