@@ -12,9 +12,9 @@ require (
 	github.com/onsi/ginkgo/v2 v2.22.0
 	github.com/onsi/gomega v1.36.0
 	github.com/pkg/errors v0.9.1
-	github.com/projectsveltos/addon-controller v0.43.1-0.20241205122806-925d0b3abd6d
-	github.com/projectsveltos/event-manager v0.43.1-0.20241202114051-1c0a0d0cadee
-	github.com/projectsveltos/libsveltos v0.43.1-0.20241201131544-c4c2550af4af
+	github.com/projectsveltos/addon-controller v0.44.0
+	github.com/projectsveltos/event-manager v0.44.0
+	github.com/projectsveltos/libsveltos v0.44.0
 	github.com/robfig/cron/v3 v3.0.1
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.31.3
@@ -70,9 +70,9 @@ require (
 	golang.org/x/exp v0.0.0-20241004190924-225e2abe05e6 // indirect
 	golang.org/x/net v0.30.0 // indirect
 	golang.org/x/oauth2 v0.23.0 // indirect
-	golang.org/x/sys v0.26.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/term v0.25.0 // indirect
-	golang.org/x/text v0.20.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/time v0.7.0 // indirect
 	golang.org/x/tools v0.26.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
