@@ -61,7 +61,7 @@ type Collector struct {
 	mu *sync.Mutex
 
 	// A request represents a request to collect resources/logs (for instance
-	// a snapshot request or a techsupport request).
+	// a snapshot request).
 
 	// dirty contains all requests which are currently waiting to be served.
 	dirty []string
