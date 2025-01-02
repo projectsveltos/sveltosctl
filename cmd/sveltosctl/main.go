@@ -46,7 +46,6 @@ func main() {
                    mode was to be moved out of DryRun mode. Displays also information on which permissions each
                    tenant admin has in each managed cluster.
     snapshot       Displays collected snaphost. Visualize diffs between two collected snapshots.
-    techsupport    Displays collected techsupport.
     register       Onboard an existing non CAPI cluster by creating all necessary internal resources.
     generate       Generates a Kubeconfig that can later be used to register a cluster.
                    Run this command with sveltosctl pointing to the cluster you want Sveltos to manage.
@@ -103,8 +102,6 @@ Description:
 			err = commands.Show(ctx, args, logger)
 		case "snapshot":
 			err = commands.Snapshot(ctx, args, logger)
-		case "techsupport":
-			err = commands.Techsupport(ctx, args, logger)
 		case "register":
 			err = commands.RegisterCluster(ctx, args, logger)
 		case "generate":
