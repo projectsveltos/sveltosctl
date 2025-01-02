@@ -32,8 +32,7 @@ import (
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
-// A "request" represents the need to collect resources (for instance a snapshot request
-// or a techsupport request).
+// A "request" represents the need to collect resources (for instance a snapshot request).
 //
 // The flow is following:
 // - when a request arrives, it is first added to the dirty set or dropped if it already

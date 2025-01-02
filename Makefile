@@ -35,7 +35,7 @@ KUBECTL := $(TOOLS_BIN_DIR)/kubectl
 SETUP_ENVTEST := $(TOOLS_BIN_DIR)/setup_envs
 CONTROLLER_GEN := $(TOOLS_BIN_DIR)/controller-gen
 
-GOLANGCI_LINT_VERSION := "v1.61.0"
+GOLANGCI_LINT_VERSION := "v1.62.2"
 
 KUSTOMIZE_VER := v5.3.0
 KUSTOMIZE_BIN := kustomize
@@ -44,7 +44,7 @@ KUSTOMIZE_PKG := sigs.k8s.io/kustomize/kustomize/v5
 $(KUSTOMIZE): # Build kustomize from tools folder.
 	CGO_ENABLED=0 GOBIN=$(TOOLS_BIN_DIR) $(GO_INSTALL) $(KUSTOMIZE_PKG) $(KUSTOMIZE_BIN) $(KUSTOMIZE_VER)
 
-CONVERSION_GEN_VER := v0.31.0
+CONVERSION_GEN_VER := v0.32.0
 CONVERSION_GEN_BIN := conversion-gen
 # We are intentionally using the binary without version suffix, to avoid the version
 # in generated files.
@@ -120,7 +120,6 @@ generate: ## Run all generate-manifests-*, generate-go-deepcopy-*
 	echo "---" >> manifest/manifest.yaml
 	cat tmp/apiextensions.k8s.io_v1_customresourcedefinition_snapshots.utils.projectsveltos.io.yaml >> manifest/manifest.yaml
 	echo "---" >> manifest/manifest.yaml
-	cat tmp/apiextensions.k8s.io_v1_customresourcedefinition_techsupports.utils.projectsveltos.io.yaml >> manifest/manifest.yaml
 	rm -rf tmp
 	MANIFEST_IMG=$(SVELTOSCTL_IMG) MANIFEST_TAG=$(TAG) $(MAKE) set-manifest-image
 	$(MAKE) fmt
