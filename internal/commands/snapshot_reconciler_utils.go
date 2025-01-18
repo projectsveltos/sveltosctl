@@ -30,16 +30,16 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
 	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	utilsv1beta1 "github.com/projectsveltos/sveltosctl/api/v1beta1"
+	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
 type collectionSnapshot struct {
-	snapshotInstance *utilsv1beta1.Snapshot
+	snapshotInstance *utilsv1alpha1.Snapshot
 }
 
 func (c *collectionSnapshot) getCreationTimestamp() *metav1.Time {
@@ -70,7 +70,7 @@ func (c *collectionSnapshot) getStartingDeadlineSeconds() *int64 {
 	return c.snapshotInstance.Spec.StartingDeadlineSeconds
 }
 
-func (c *collectionSnapshot) setLastRunStatus(s utilsv1beta1.CollectionStatus) {
+func (c *collectionSnapshot) setLastRunStatus(s utilsv1alpha1.CollectionStatus) {
 	c.snapshotInstance.Status.LastRunStatus = &s
 }
 
@@ -83,7 +83,7 @@ func collectSnapshot(ctx context.Context, c client.Client, snapshotName string, 
 	logger.V(logs.LogInfo).Info("collect snapshot")
 
 	// Get Snapshot instance
-	snapshotInstance := &utilsv1beta1.Snapshot{}
+	snapshotInstance := &utilsv1alpha1.Snapshot{}
 	err := c.Get(ctx, types.NamespacedName{Name: snapshotName}, snapshotInstance)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -317,13 +317,13 @@ func dumpProfiles(collectorClient *collector.Collector, ctx context.Context, fol
 }
 
 func dumpReferencedObjects(collectorClient *collector.Collector, ctx context.Context,
-	referencedObjects []libsveltosv1beta1.PolicyRef, folder string, logger logr.Logger) error {
+	referencedObjects []libsveltosv1alpha1.PolicyRef, folder string, logger logr.Logger) error {
 
 	logger.V(logs.LogDebug).Info("storing ClusterProfiles's referenced resources")
 	var object client.Object
 	for i := range referencedObjects {
 		ref := &referencedObjects[i]
-		if ref.Kind == string(libsveltosv1beta1.ConfigMapReferencedResourceKind) {
+		if ref.Kind == string(libsveltosv1alpha1.ConfigMapReferencedResourceKind) {
 			configMap := &corev1.ConfigMap{}
 			err := utils.GetAccessInstance().GetResource(ctx,
 				types.NamespacedName{Namespace: ref.Namespace, Name: ref.Name}, configMap)
@@ -397,7 +397,7 @@ func dumpCAPIClusters(collectorClient *collector.Collector, ctx context.Context,
 
 func dumpSveltosClusters(collectorClient *collector.Collector, ctx context.Context, folder string, logger logr.Logger) error {
 	logger.V(logs.LogDebug).Info("storing Sveltos Clusters")
-	clusterList := &libsveltosv1beta1.SveltosClusterList{}
+	clusterList := &libsveltosv1alpha1.SveltosClusterList{}
 	err := utils.GetAccessInstance().ListResources(ctx, clusterList)
 	if err != nil {
 		return err
@@ -426,7 +426,7 @@ func dumpClusters(collectorClient *collector.Collector, ctx context.Context, fol
 	return nil
 }
 
-func updateSnaphotPredicate(newObject, oldObject *utilsv1beta1.Snapshot) bool {
+func updateSnaphotPredicate(newObject, oldObject *utilsv1alpha1.Snapshot) bool {
 	if oldObject == nil ||
 		!reflect.DeepEqual(newObject.Spec, oldObject.Spec) {
 
@@ -436,11 +436,11 @@ func updateSnaphotPredicate(newObject, oldObject *utilsv1beta1.Snapshot) bool {
 	return false
 }
 
-func convertConfigPolicyRefsToLibsveltosPolicyRefs(input []configv1alpha1.PolicyRef) []libsveltosv1beta1.PolicyRef {
+func convertConfigPolicyRefsToLibsveltosPolicyRefs(input []configv1beta1.PolicyRef) []libsveltosv1beta1.PolicyRef {
 	policyRefs := make([]libsveltosv1beta1.PolicyRef, len(input))
 
 	for i := range input {
-		policyRefs[i] = libsveltosv1beta1.PolicyRef{
+		policyRefs[i] = libsveltosv1alpha1.PolicyRef{
 			Kind:      input[i].Kind,
 			Namespace: input[i].Namespace,
 			Name:      input[i].Name,

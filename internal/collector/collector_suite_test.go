@@ -25,7 +25,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/cluster-api/util"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
 	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 )
 
@@ -39,30 +39,30 @@ func randomString() string {
 	return util.RandomString(length)
 }
 
-func generateClusterProfile() *configv1alpha1.ClusterProfile {
-	return &configv1alpha1.ClusterProfile{
+func generateClusterProfile() *configv1beta1.ClusterProfile {
+	return &configv1beta1.ClusterProfile{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: randomString(),
 		},
-		Spec: configv1alpha1.Spec{
+		Spec: configv1beta1.Spec{
 			ClusterSelector: libsveltosv1beta1.Selector{
 				LabelSelector: metav1.LabelSelector{
 					MatchLabels: map[string]string{"zone": "west"},
 				},
 			},
-			SyncMode: configv1alpha1.SyncModeContinuous,
+			SyncMode: configv1beta1.SyncModeContinuous,
 		},
 	}
 }
 
-func generateClusterConfiguration() *configv1alpha1.ClusterConfiguration {
-	return &configv1alpha1.ClusterConfiguration{
+func generateClusterConfiguration() *configv1beta1.ClusterConfiguration {
+	return &configv1beta1.ClusterConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      randomString(),
 			Namespace: randomString(),
 		},
-		Status: configv1alpha1.ClusterConfigurationStatus{
-			ClusterProfileResources: []configv1alpha1.ClusterProfileResource{
+		Status: configv1beta1.ClusterConfigurationStatus{
+			ClusterProfileResources: []configv1beta1.ClusterProfileResource{
 				{
 					ClusterProfileName: randomString(),
 				},

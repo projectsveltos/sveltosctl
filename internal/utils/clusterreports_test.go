@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -38,7 +38,7 @@ var _ = Describe("ClusterReport", func() {
 		initObjects := []client.Object{}
 
 		for i := 0; i < 5; i++ {
-			clusterReport := &configv1alpha1.ClusterReport{
+			clusterReport := &configv1beta1.ClusterReport{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      randomString(),
 					Namespace: randomString(),
@@ -47,7 +47,7 @@ var _ = Describe("ClusterReport", func() {
 			initObjects = append(initObjects, clusterReport)
 		}
 
-		clusterReport := &configv1alpha1.ClusterReport{
+		clusterReport := &configv1beta1.ClusterReport{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      randomString(),
 				Namespace: randomString(),
@@ -72,29 +72,29 @@ var _ = Describe("ClusterReport", func() {
 	})
 
 	It("SortClusterReports sorts clusterReports by Cluster Namespace/Name", func() {
-		clusterReports := []configv1alpha1.ClusterReport{}
+		clusterReports := []configv1beta1.ClusterReport{}
 
 		firstNamespace := "namespace-a"
 		secondNamespace := "namespace-b"
 
-		clusterReport := &configv1alpha1.ClusterReport{
+		clusterReport := &configv1beta1.ClusterReport{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      randomString(),
 				Namespace: randomString(),
 			},
-			Spec: configv1alpha1.ClusterReportSpec{
+			Spec: configv1beta1.ClusterReportSpec{
 				ClusterName:      randomString(),
 				ClusterNamespace: secondNamespace,
 			},
 		}
 		clusterReports = append(clusterReports, *clusterReport)
 
-		clusterReport = &configv1alpha1.ClusterReport{
+		clusterReport = &configv1beta1.ClusterReport{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      randomString(),
 				Namespace: randomString(),
 			},
-			Spec: configv1alpha1.ClusterReportSpec{
+			Spec: configv1beta1.ClusterReportSpec{
 				ClusterName:      randomString(),
 				ClusterNamespace: firstNamespace,
 			},

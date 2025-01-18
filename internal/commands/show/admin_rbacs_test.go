@@ -152,14 +152,14 @@ var _ = Describe("Admin RBACs", func() {
 
 func getRoleRequest(matchingClusters []corev1.ObjectReference,
 	configMaps []corev1.ConfigMap, secrets []corev1.Secret,
-	serviceAccountNamespace, serviceAccountName string) *libsveltosv1beta1.RoleRequest {
+	serviceAccountNamespace, serviceAccountName string) *libsveltosv1alpha1.RoleRequest {
 
 	roleRequest := libsveltosv1beta1.RoleRequest{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: randomString(),
 		},
-		Spec: libsveltosv1beta1.RoleRequestSpec{
-			RoleRefs:                make([]libsveltosv1beta1.PolicyRef, 0),
+		Spec: libsveltosv1alpha1.RoleRequestSpec{
+			RoleRefs:                make([]libsveltosv1alpha1.PolicyRef, 0),
 			ServiceAccountNamespace: serviceAccountNamespace,
 			ServiceAccountName:      serviceAccountName,
 		},

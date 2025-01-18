@@ -30,7 +30,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -40,7 +40,7 @@ var _ = Describe("ClusterConfiguration", func() {
 		initObjects := []client.Object{}
 
 		for i := 0; i < 10; i++ {
-			clusterConfiguration := &configv1alpha1.ClusterConfiguration{
+			clusterConfiguration := &configv1beta1.ClusterConfiguration{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      randomString(),
 					Namespace: randomString(),
@@ -49,7 +49,7 @@ var _ = Describe("ClusterConfiguration", func() {
 			initObjects = append(initObjects, clusterConfiguration)
 		}
 
-		clusterConfiguration := &configv1alpha1.ClusterConfiguration{
+		clusterConfiguration := &configv1beta1.ClusterConfiguration{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      randomString(),
 				Namespace: randomString(),
@@ -74,7 +74,7 @@ var _ = Describe("ClusterConfiguration", func() {
 	})
 
 	It("GetClusterConfiguration returns ClusterConfiguration for a given cluster ", func() {
-		clusterConfiguration := &configv1alpha1.ClusterConfiguration{
+		clusterConfiguration := &configv1beta1.ClusterConfiguration{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      randomString(),
 				Namespace: randomString(),
@@ -102,7 +102,7 @@ var _ = Describe("ClusterConfiguration", func() {
 	})
 
 	It("GetHelmReleases returns deployed helm releases", func() {
-		chart1 := &configv1alpha1.Chart{
+		chart1 := &configv1beta1.Chart{
 			RepoURL:         randomString(),
 			ReleaseName:     randomString(),
 			Namespace:       randomString(),
@@ -110,7 +110,7 @@ var _ = Describe("ClusterConfiguration", func() {
 			LastAppliedTime: &metav1.Time{Time: time.Now()},
 		}
 
-		chart2 := &configv1alpha1.Chart{
+		chart2 := &configv1beta1.Chart{
 			RepoURL:         randomString(),
 			ReleaseName:     randomString(),
 			Namespace:       randomString(),
@@ -119,7 +119,7 @@ var _ = Describe("ClusterConfiguration", func() {
 		}
 
 		clusterConfiguration := createClusterConfiguration(nil, nil,
-			[]configv1alpha1.Chart{*chart1}, []configv1alpha1.Chart{*chart1, *chart2})
+			[]configv1beta1.Chart{*chart1}, []configv1beta1.Chart{*chart1, *chart2})
 		initObjects := []client.Object{clusterConfiguration}
 
 		scheme := runtime.NewScheme()
@@ -136,7 +136,7 @@ var _ = Describe("ClusterConfiguration", func() {
 	})
 
 	It("GetResources returns deployed resources", func() {
-		resource1 := &configv1alpha1.Resource{
+		resource1 := &configv1beta1.Resource{
 			Name:            randomString(),
 			Namespace:       randomString(),
 			Group:           randomString(),
@@ -144,7 +144,7 @@ var _ = Describe("ClusterConfiguration", func() {
 			LastAppliedTime: &metav1.Time{Time: time.Now()},
 		}
 
-		resource2 := &configv1alpha1.Resource{
+		resource2 := &configv1beta1.Resource{
 			Name:            randomString(),
 			Namespace:       randomString(),
 			Group:           randomString(),
@@ -153,7 +153,7 @@ var _ = Describe("ClusterConfiguration", func() {
 		}
 
 		clusterConfiguration := createClusterConfiguration(
-			[]configv1alpha1.Resource{*resource1}, []configv1alpha1.Resource{*resource1, *resource2},
+			[]configv1beta1.Resource{*resource1}, []configv1beta1.Resource{*resource1, *resource2},
 			nil, nil)
 		initObjects := []client.Object{clusterConfiguration}
 
@@ -171,38 +171,38 @@ var _ = Describe("ClusterConfiguration", func() {
 	})
 })
 
-func createClusterConfiguration(clusterProfile1Resources, clusterProfile2Resources []configv1alpha1.Resource,
-	clusterProfile1Charts, clusterProfile2Charts []configv1alpha1.Chart) *configv1alpha1.ClusterConfiguration {
+func createClusterConfiguration(clusterProfile1Resources, clusterProfile2Resources []configv1beta1.Resource,
+	clusterProfile1Charts, clusterProfile2Charts []configv1beta1.Chart) *configv1beta1.ClusterConfiguration {
 
-	cfr1 := &configv1alpha1.ClusterProfileResource{
+	cfr1 := &configv1beta1.ClusterProfileResource{
 		ClusterProfileName: randomString(),
-		Features: []configv1alpha1.Feature{
+		Features: []configv1beta1.Feature{
 			{
-				FeatureID: configv1alpha1.FeatureHelm,
+				FeatureID: configv1beta1.FeatureHelm,
 				Resources: clusterProfile1Resources,
 				Charts:    clusterProfile1Charts,
 			},
 		},
 	}
 
-	cfr2 := &configv1alpha1.ClusterProfileResource{
+	cfr2 := &configv1beta1.ClusterProfileResource{
 		ClusterProfileName: randomString(),
-		Features: []configv1alpha1.Feature{
+		Features: []configv1beta1.Feature{
 			{
-				FeatureID: configv1alpha1.FeatureHelm,
+				FeatureID: configv1beta1.FeatureHelm,
 				Resources: clusterProfile2Resources,
 				Charts:    clusterProfile2Charts,
 			},
 		},
 	}
 
-	return &configv1alpha1.ClusterConfiguration{
+	return &configv1beta1.ClusterConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      randomString(),
 			Namespace: randomString(),
 		},
-		Status: configv1alpha1.ClusterConfigurationStatus{
-			ClusterProfileResources: []configv1alpha1.ClusterProfileResource{
+		Status: configv1beta1.ClusterConfigurationStatus{
+			ClusterProfileResources: []configv1beta1.ClusterProfileResource{
 				*cfr1,
 				*cfr2,
 			},

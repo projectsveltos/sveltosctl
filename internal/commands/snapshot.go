@@ -76,7 +76,6 @@ See 'sveltosctl snapshot <subcommand> --help' to read about a specific subcomman
 		select {}
 	} else if opts["<subcommand>"] != nil {
 		switch command {
-		//nolint: goconst // same command name
 		case "list":
 			err = snapshot.List(ctx, arguments, logger)
 		case "diff":

@@ -21,16 +21,16 @@ import (
 
 	"github.com/go-logr/logr"
 
-	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 )
 
 // ListHealthChecks returns all current HealthChecks
 func (a *k8sAccess) ListHealthChecks(ctx context.Context,
-	logger logr.Logger) (*libsveltosv1beta1.HealthCheckList, error) {
+	logger logr.Logger) (*libsveltosv1alpha1.HealthCheckList, error) {
 
 	logger.V(logs.LogDebug).Info("Get all HealthChecks")
-	healthCheck := &libsveltosv1beta1.HealthCheckList{}
+	healthCheck := &libsveltosv1alpha1.HealthCheckList{}
 	err := a.client.List(ctx, healthCheck)
 	return healthCheck, err
 }

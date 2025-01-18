@@ -20,20 +20,13 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"sync"
-	"syscall"
 	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/robfig/cron/v3"
-	corev1 "k8s.io/api/core/v1"
-	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2/textlogger"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -44,11 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
-	"github.com/projectsveltos/libsveltos/lib/crd"
-	"github.com/projectsveltos/libsveltos/lib/logsettings"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	libsveltosset "github.com/projectsveltos/libsveltos/lib/set"
 	utilsv1beta1 "github.com/projectsveltos/sveltosctl/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
@@ -69,7 +58,7 @@ type collection interface {
 
 	getStartingDeadlineSeconds() *int64
 
-	setLastRunStatus(utilsv1beta1.CollectionStatus)
+	setLastRunStatus(utilsv1alpha1.CollectionStatus)
 
 	setFailureMessage(string)
 }
@@ -79,25 +68,7 @@ const (
 	requeueAfter = 20 * time.Second
 )
 
-var (
-	mux sync.Mutex
-
-	// key: Sveltos/CAPI Cluster; value: set of all Techsupport matching the Cluster
-	clusterMap map[corev1.ObjectReference]*libsveltosset.Set
-
-	// key: Techsupport; value: set of Sveltos/CAPI Clusters matched
-	techsupportMap map[corev1.ObjectReference]*libsveltosset.Set
-
-	// key: techsupport; value techsupport's Selector
-	techsupports map[corev1.ObjectReference]libsveltosv1beta1.Selector
-)
-
 func watchResources(ctx context.Context, logger logr.Logger) error {
-	mux = sync.Mutex{}
-	clusterMap = make(map[corev1.ObjectReference]*libsveltosset.Set)
-	techsupportMap = make(map[corev1.ObjectReference]*libsveltosset.Set)
-	techsupports = make(map[corev1.ObjectReference]libsveltosv1beta1.Selector)
-
 	scheme, _ := utils.GetScheme()
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:         scheme,
@@ -116,14 +87,6 @@ func watchResources(ctx context.Context, logger logr.Logger) error {
 	if err != nil {
 		logger.Error(err, "failed to start snapshot reconciler")
 	}
-
-	var techsupportController controller.Controller
-	techsupportController, err = startTechsupportReconciler(ctx, mgr, logger)
-	if err != nil {
-		logger.Error(err, "failed to start snapshot reconciler")
-	}
-
-	go capiWatchers(ctx, mgr, techsupportController, logger)
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		logger.Error(err, "unable to continue running manager")
@@ -145,9 +108,9 @@ func startSnapshotReconciler(ctx context.Context, mgr manager.Manager, logger lo
 		return err
 	}
 
-	sourceSnapshot := source.Kind[*utilsv1beta1.Snapshot](
+	sourceSnapshot := source.Kind[*utilsv1alpha1.Snapshot](
 		mgr.GetCache(),
-		&utilsv1beta1.Snapshot{},
+		&utilsv1alpha1.Snapshot{},
 		handler.TypedEnqueueRequestsFromMapFunc(handlerSnapshotMapFun),
 		SnapshotPredicate{Logger: mgr.GetLogger().WithValues("predicate", "clusterpredicate")},
 	)
@@ -166,71 +129,6 @@ func startSnapshotReconciler(ctx context.Context, mgr manager.Manager, logger lo
 			panic(1)
 		}
 	}()
-
-	return nil
-}
-
-func startTechsupportReconciler(ctx context.Context, mgr manager.Manager, logger logr.Logger) (controller.Controller, error) {
-	// Create an un-managed controller
-	c, err := controller.NewUnmanaged("techsupport-watcher", mgr, controller.Options{
-		Reconciler:              reconcile.Func(TechsupportReconciler),
-		MaxConcurrentReconciles: 1,
-	})
-
-	if err != nil {
-		logger.Error(err, "unable to create techsupport watcher")
-		return nil, err
-	}
-
-	sourceTechsupport := source.Kind[*utilsv1beta1.Techsupport](
-		mgr.GetCache(),
-		&utilsv1beta1.Techsupport{},
-		handler.TypedEnqueueRequestsFromMapFunc(handlerTechsupportMapFun),
-		TechsupportPredicate{Logger: mgr.GetLogger().WithValues("predicate", "techsupportpredicate")},
-	)
-
-	if err := c.Watch(sourceTechsupport); err != nil {
-		return nil, err
-	}
-
-	sourceSveltosCluster := source.Kind[*libsveltosv1beta1.SveltosCluster](
-		mgr.GetCache(),
-		&libsveltosv1beta1.SveltosCluster{},
-		handler.TypedEnqueueRequestsFromMapFunc(requeueTechsupportForSveltosCluster),
-		SveltosClusterPredicate{Logger: mgr.GetLogger().WithValues("predicate", "sveltosclusterpredicate")},
-	)
-
-	if err := c.Watch(sourceSveltosCluster); err != nil {
-		return nil, err
-	}
-
-	// Start controller in a goroutine so not to block.
-	go func() {
-		// Start controller. This will block until the context is
-		// closed, or the controller returns an error.
-		logger.Info("Starting watcher controller")
-		if err := c.Start(ctx); err != nil {
-			logger.Error(err, "cannot run controller")
-			panic(1)
-		}
-	}()
-
-	return c, nil
-}
-
-func watchForCAPI(mgr ctrl.Manager, c controller.Controller) error {
-	sourceCluster := source.Kind[*clusterv1.Cluster](
-		mgr.GetCache(),
-		&clusterv1.Cluster{},
-		handler.TypedEnqueueRequestsFromMapFunc(requeueTechsupportForCluster),
-		ClusterPredicate{Logger: mgr.GetLogger().WithValues("predicate", "clusterpredicate")},
-	)
-
-	// When cluster-api cluster changes, according to ClusterPredicates,
-	// one or more ClusterProfiles need to be reconciled.
-	if err := c.Watch(sourceCluster); err != nil {
-		return err
-	}
 
 	return nil
 }
@@ -312,12 +210,8 @@ func addFinalizer(ctx context.Context, instance client.Object, finalizer string)
 		types.NamespacedName{Name: instance.GetName()}, instance)
 }
 
-func handlerSnapshotMapFun(ctx context.Context, snapshot *utilsv1beta1.Snapshot) []reconcile.Request {
+func handlerSnapshotMapFun(ctx context.Context, snapshot *utilsv1alpha1.Snapshot) []reconcile.Request {
 	return handlerMapFun(snapshot)
-}
-
-func handlerTechsupportMapFun(ctx context.Context, techsupport *utilsv1beta1.Techsupport) []reconcile.Request {
-	return handlerMapFun(techsupport)
 }
 
 func handlerMapFun(o client.Object) []reconcile.Request {
@@ -340,16 +234,16 @@ func handlerMapFun(o client.Object) []reconcile.Request {
 }
 
 func updateStatus(result collector.Result, collectionInstance collection) {
-	var status utilsv1beta1.CollectionStatus
+	var status utilsv1alpha1.CollectionStatus
 	var message string
 
 	switch result.ResultStatus {
 	case collector.Collected:
-		status = utilsv1beta1.CollectionStatusCollected
+		status = utilsv1alpha1.CollectionStatusCollected
 	case collector.InProgress:
-		status = utilsv1beta1.CollectionStatusInProgress
+		status = utilsv1alpha1.CollectionStatusInProgress
 	case collector.Failed:
-		status = utilsv1beta1.CollectionStatusFailed
+		status = utilsv1alpha1.CollectionStatusFailed
 		message = result.Err.Error()
 	case collector.Unavailable:
 		return
@@ -359,9 +253,9 @@ func updateStatus(result collector.Result, collectionInstance collection) {
 	collectionInstance.setFailureMessage(message)
 }
 
-func isCollectionInProgress(lastRunStatus *utilsv1beta1.CollectionStatus) bool {
+func isCollectionInProgress(lastRunStatus *utilsv1alpha1.CollectionStatus) bool {
 	return lastRunStatus != nil &&
-		*lastRunStatus == utilsv1beta1.CollectionStatusInProgress
+		*lastRunStatus == utilsv1alpha1.CollectionStatusInProgress
 }
 
 func removeQueuedJobsAndFinalizer(c *collector.Collector, instance client.Object, collectionType collector.CollectionType,
@@ -404,7 +298,7 @@ type SnapshotPredicate struct {
 	Logger logr.Logger
 }
 
-func (p SnapshotPredicate) Create(obj event.TypedCreateEvent[*utilsv1beta1.Snapshot]) bool {
+func (p SnapshotPredicate) Create(obj event.TypedCreateEvent[*utilsv1alpha1.Snapshot]) bool {
 	o := obj.Object
 	p.Logger.Info(fmt.Sprintf("Create kind: %s Info: %s/%s",
 		o.GetObjectKind().GroupVersionKind().Kind,
@@ -412,11 +306,11 @@ func (p SnapshotPredicate) Create(obj event.TypedCreateEvent[*utilsv1beta1.Snaps
 	return true
 }
 
-func (p SnapshotPredicate) Update(obj event.TypedUpdateEvent[*utilsv1beta1.Snapshot]) bool {
+func (p SnapshotPredicate) Update(obj event.TypedUpdateEvent[*utilsv1alpha1.Snapshot]) bool {
 	return updateSnaphotPredicate(obj.ObjectNew, obj.ObjectOld)
 }
 
-func (p SnapshotPredicate) Delete(obj event.TypedDeleteEvent[*utilsv1beta1.Snapshot]) bool {
+func (p SnapshotPredicate) Delete(obj event.TypedDeleteEvent[*utilsv1alpha1.Snapshot]) bool {
 	o := obj.Object
 	p.Logger.Info(fmt.Sprintf("Delete kind: %s Info: %s/%s",
 		o.GetObjectKind().GroupVersionKind().Kind,
@@ -424,35 +318,7 @@ func (p SnapshotPredicate) Delete(obj event.TypedDeleteEvent[*utilsv1beta1.Snaps
 	return true
 }
 
-func (p SnapshotPredicate) Generic(obj event.TypedGenericEvent[*utilsv1beta1.Snapshot]) bool {
-	return false
-}
-
-type TechsupportPredicate struct {
-	Logger logr.Logger
-}
-
-func (p TechsupportPredicate) Create(obj event.TypedCreateEvent[*utilsv1beta1.Techsupport]) bool {
-	o := obj.Object
-	p.Logger.Info(fmt.Sprintf("Create kind: %s Info: %s/%s",
-		o.GetObjectKind().GroupVersionKind().Kind,
-		o.GetNamespace(), o.GetName()))
-	return true
-}
-
-func (p TechsupportPredicate) Update(obj event.TypedUpdateEvent[*utilsv1beta1.Techsupport]) bool {
-	return updateTechsupportPredicate(obj.ObjectNew, obj.ObjectOld)
-}
-
-func (p TechsupportPredicate) Delete(obj event.TypedDeleteEvent[*utilsv1beta1.Techsupport]) bool {
-	o := obj.Object
-	p.Logger.Info(fmt.Sprintf("Delete kind: %s Info: %s/%s",
-		o.GetObjectKind().GroupVersionKind().Kind,
-		o.GetNamespace(), o.GetName()))
-	return true
-}
-
-func (p TechsupportPredicate) Generic(obj event.TypedGenericEvent[*utilsv1beta1.Techsupport]) bool {
+func (p SnapshotPredicate) Generic(obj event.TypedGenericEvent[*utilsv1alpha1.Snapshot]) bool {
 	return false
 }
 
@@ -490,57 +356,4 @@ func schedule(ctx context.Context, instance client.Object, collectionType collec
 	collectionInstance.setNextScheduleTime(newNextScheduleTime)
 
 	return nextRun, nil
-}
-
-// isCAPIInstalled returns true if CAPI is installed, false otherwise
-func isCAPIInstalled(ctx context.Context, c client.Client) (bool, error) {
-	clusterCRD := &apiextensionsv1.CustomResourceDefinition{}
-
-	err := c.Get(ctx, types.NamespacedName{Name: "clusters.cluster.x-k8s.io"}, clusterCRD)
-	if err != nil {
-		if apierrors.IsNotFound(err) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	return true, nil
-}
-
-func capiWatchers(ctx context.Context, mgr ctrl.Manager, techsupportController controller.Controller,
-	logger logr.Logger) {
-
-	const maxRetries = 20
-	retries := 0
-	for {
-		capiPresent, err := isCAPIInstalled(ctx, mgr.GetClient())
-		if err != nil {
-			if retries < maxRetries {
-				logger.Info(fmt.Sprintf("failed to verify if CAPI is present: %v", err))
-				time.Sleep(time.Second)
-			}
-			retries++
-		} else {
-			if !capiPresent {
-				logger.V(logs.LogDebug).Info("CAPI currently not present. Starting CRD watcher")
-				go crd.WatchCustomResourceDefinition(ctx, mgr.GetConfig(), capiCRDHandler, logger)
-			} else {
-				logger.V(logsettings.LogInfo).Info("CAPI present.")
-				err = watchForCAPI(mgr, techsupportController)
-				if err != nil {
-					continue
-				}
-			}
-			return
-		}
-	}
-}
-
-// capiCRDHandler restarts process if a CAPI CRD is updated
-func capiCRDHandler(gvk *schema.GroupVersionKind) {
-	if gvk.Group == clusterv1.GroupVersion.Group {
-		if killErr := syscall.Kill(syscall.Getpid(), syscall.SIGTERM); killErr != nil {
-			panic("kill -TERM failed")
-		}
-	}
 }

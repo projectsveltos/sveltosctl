@@ -32,15 +32,12 @@ type CollectionType int64
 
 const (
 	Snapshot CollectionType = iota
-	Techsupport
 )
 
 func (c CollectionType) string() string {
 	switch c {
 	case Snapshot:
 		return "snapshot"
-	case Techsupport:
-		return "techsupport"
 	default:
 		panic(1)
 	}

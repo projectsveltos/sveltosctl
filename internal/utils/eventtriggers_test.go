@@ -28,8 +28,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	eventv1beta1 "github.com/projectsveltos/event-manager/api/v1beta1"
-	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
+	eventv1alpha1 "github.com/projectsveltos/event-manager/api/v1alpha1"
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -38,17 +38,13 @@ var _ = Describe("EventTriggers", func() {
 		initObjects := []client.Object{}
 
 		for i := 0; i < 10; i++ {
-			resource := &eventv1beta1.EventTrigger{
+			resource := &eventv1alpha1.EventTrigger{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: randomString(),
 				},
-				Spec: eventv1beta1.EventTriggerSpec{
-					EventSourceName: randomString(),
-					SourceClusterSelector: libsveltosv1beta1.Selector{
-						LabelSelector: metav1.LabelSelector{
-							MatchLabels: map[string]string{randomString(): randomString()},
-						},
-					},
+				Spec: eventv1alpha1.EventTriggerSpec{
+					EventSourceName:       randomString(),
+					SourceClusterSelector: libsveltosv1alpha1.Selector(randomString()),
 				},
 			}
 			initObjects = append(initObjects, resource)

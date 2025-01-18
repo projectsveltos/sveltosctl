@@ -38,10 +38,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog/v2/textlogger"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
 	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
-	utilsv1beta1 "github.com/projectsveltos/sveltosctl/api/v1beta1"
+	utilsv1alpha1 "github.com/projectsveltos/sveltosctl/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -252,7 +252,7 @@ func listSnapshotDiffsBewteenSamples(fromFolder, toFolder, passedNamespace, pass
 	// There is one ClusterConfigurations per Cluster
 	snapshotClient := collector.GetClient()
 	fromClusterConfigurationMap, err := snapshotClient.GetNamespacedResources(fromFolder,
-		configv1alpha1.ClusterConfigurationKind, logger)
+		configv1beta1.ClusterConfigurationKind, logger)
 	if err != nil {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect ClusterConfigurations from folder %s", fromFolder))
 		return err
@@ -261,7 +261,7 @@ func listSnapshotDiffsBewteenSamples(fromFolder, toFolder, passedNamespace, pass
 		len(fromClusterConfigurationMap), fromFolder))
 
 	toClusterConfigurationMap, err := snapshotClient.GetNamespacedResources(toFolder,
-		configv1alpha1.ClusterConfigurationKind, logger)
+		configv1beta1.ClusterConfigurationKind, logger)
 	if err != nil {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect ClusterConfigurations from folder %s", toFolder))
 		return err
@@ -337,17 +337,17 @@ func listFeatureDiffInNamespace(fromFolder, toFolder, namespace string,
 }
 
 func getClusterConfigurationsInNamespace(namespace, passedCluster string, clusterConfigurationMap map[string][]*unstructured.Unstructured,
-	logger logr.Logger) ([]*configv1alpha1.ClusterConfiguration, error) {
+	logger logr.Logger) ([]*configv1beta1.ClusterConfiguration, error) {
 
 	resources, ok := clusterConfigurationMap[namespace]
 	if !ok {
 		return nil, nil
 	}
 
-	results := make([]*configv1alpha1.ClusterConfiguration, 0)
+	results := make([]*configv1beta1.ClusterConfiguration, 0)
 	for i := range resources {
 		resource := resources[i]
-		var clusterConfiguration configv1alpha1.ClusterConfiguration
+		var clusterConfiguration configv1beta1.ClusterConfiguration
 		err := runtime.DefaultUnstructuredConverter.
 			FromUnstructured(resource.UnstructuredContent(), &clusterConfiguration)
 		if err != nil {
@@ -362,17 +362,17 @@ func getClusterConfigurationsInNamespace(namespace, passedCluster string, cluste
 	return results, nil
 }
 
-func listDiffInClusterConfigurations(fromFolder, toFolder string, fromClusterConfigurations, toClusterConfigurations []*configv1alpha1.ClusterConfiguration,
+func listDiffInClusterConfigurations(fromFolder, toFolder string, fromClusterConfigurations, toClusterConfigurations []*configv1beta1.ClusterConfiguration,
 	rawDiff bool, table *tablewriter.Table, logger logr.Logger) error {
 
 	// Create maps
-	fromClusterConfigurationMaps := make(map[string]*configv1alpha1.ClusterConfiguration)
+	fromClusterConfigurationMaps := make(map[string]*configv1beta1.ClusterConfiguration)
 	for i := range fromClusterConfigurations {
 		cc := fromClusterConfigurations[i]
 		fromClusterConfigurationMaps[cc.Name] = cc
 	}
 
-	toClusterConfigurationMaps := make(map[string]*configv1alpha1.ClusterConfiguration)
+	toClusterConfigurationMaps := make(map[string]*configv1beta1.ClusterConfiguration)
 	for i := range toClusterConfigurations {
 		cc := toClusterConfigurations[i]
 		toClusterConfigurationMaps[cc.Name] = cc
@@ -397,11 +397,11 @@ func listDiffInClusterConfigurations(fromFolder, toFolder string, fromClusterCon
 	return nil
 }
 
-func listClusterConfigurationDiff(fromFolder, toFolder string, fromClusterConfiguration, toClusterConfiguration *configv1alpha1.ClusterConfiguration,
+func listClusterConfigurationDiff(fromFolder, toFolder string, fromClusterConfiguration, toClusterConfiguration *configv1beta1.ClusterConfiguration,
 	rawDiff bool, table *tablewriter.Table, logger logr.Logger) error {
 
-	toCharts := make([]configv1alpha1.Chart, 0)
-	toResources := make([]configv1alpha1.Resource, 0)
+	toCharts := make([]configv1beta1.Chart, 0)
+	toResources := make([]configv1beta1.Resource, 0)
 	if toClusterConfiguration != nil {
 		for i := range toClusterConfiguration.Status.ClusterProfileResources {
 			cpr := &toClusterConfiguration.Status.ClusterProfileResources[i]
@@ -413,8 +413,8 @@ func listClusterConfigurationDiff(fromFolder, toFolder string, fromClusterConfig
 		}
 	}
 
-	fromCharts := make([]configv1alpha1.Chart, 0)
-	fromResources := make([]configv1alpha1.Resource, 0)
+	fromCharts := make([]configv1beta1.Chart, 0)
+	fromResources := make([]configv1beta1.Resource, 0)
 	if fromClusterConfiguration != nil {
 		for i := range fromClusterConfiguration.Status.ClusterProfileResources {
 			cpr := &fromClusterConfiguration.Status.ClusterProfileResources[i]
@@ -446,11 +446,11 @@ func listClusterConfigurationDiff(fromFolder, toFolder string, fromClusterConfig
 	return nil
 }
 
-func addChartEntry(fromClusterConfiguration, toClusterConfiguration *configv1alpha1.ClusterConfiguration,
-	charts []*configv1alpha1.Chart, action string, message map[configv1alpha1.Chart]string, table *tablewriter.Table) {
+func addChartEntry(fromClusterConfiguration, toClusterConfiguration *configv1beta1.ClusterConfiguration,
+	charts []*configv1beta1.Chart, action string, message map[configv1beta1.Chart]string, table *tablewriter.Table) {
 
 	instance := utils.GetAccessInstance()
-	clusterInfo := func(fromClusterConfiguration, toClusterConfiguration *configv1alpha1.ClusterConfiguration) string {
+	clusterInfo := func(fromClusterConfiguration, toClusterConfiguration *configv1beta1.ClusterConfiguration) string {
 		if toClusterConfiguration != nil {
 			clusterName := instance.GetClusterNameFromClusterConfiguration(toClusterConfiguration)
 			return fmt.Sprintf("%s/%s", toClusterConfiguration.Namespace, clusterName)
@@ -473,11 +473,11 @@ func addChartEntry(fromClusterConfiguration, toClusterConfiguration *configv1alp
 	}
 }
 
-func addResourceEntry(fromClusterConfiguration, toClusterConfiguration *configv1alpha1.ClusterConfiguration,
-	resources []*configv1alpha1.Resource, action, msg string,
+func addResourceEntry(fromClusterConfiguration, toClusterConfiguration *configv1beta1.ClusterConfiguration,
+	resources []*configv1beta1.Resource, action, msg string,
 	table *tablewriter.Table) {
 
-	clusterInfo := func(fromClusterConfiguration, toClusterConfiguration *configv1alpha1.ClusterConfiguration) string {
+	clusterInfo := func(fromClusterConfiguration, toClusterConfiguration *configv1beta1.ClusterConfiguration) string {
 		if toClusterConfiguration != nil {
 			return fmt.Sprintf("%s/%s", toClusterConfiguration.Namespace, toClusterConfiguration.Name)
 		}
@@ -494,22 +494,22 @@ func addResourceEntry(fromClusterConfiguration, toClusterConfiguration *configv1
 }
 
 // chartDifference returns differences between from and to
-func chartDifference(from, to []configv1alpha1.Chart) (added, modified, deleted []*configv1alpha1.Chart,
-	modifiedMessage map[configv1alpha1.Chart]string) {
+func chartDifference(from, to []configv1beta1.Chart) (added, modified, deleted []*configv1beta1.Chart,
+	modifiedMessage map[configv1beta1.Chart]string) {
 
-	modifiedMessage = make(map[configv1alpha1.Chart]string)
+	modifiedMessage = make(map[configv1beta1.Chart]string)
 
-	chartInfo := func(chart *configv1alpha1.Chart) string {
+	chartInfo := func(chart *configv1beta1.Chart) string {
 		return fmt.Sprintf("%s/%s", chart.Namespace, chart.ReleaseName)
 	}
 
-	toChartMap := make(map[string]*configv1alpha1.Chart, len(to))
+	toChartMap := make(map[string]*configv1beta1.Chart, len(to))
 	for i := range to {
 		chart := &to[i]
 		toChartMap[chartInfo(chart)] = chart
 	}
 
-	fromChartMap := make(map[string]*configv1alpha1.Chart, len(from))
+	fromChartMap := make(map[string]*configv1beta1.Chart, len(from))
 	for i := range from {
 		chart := &from[i]
 		fromChartMap[chartInfo(chart)] = chart
@@ -538,28 +538,28 @@ func chartDifference(from, to []configv1alpha1.Chart) (added, modified, deleted 
 }
 
 // resourceDifference returns differences between from and to
-func resourceDifference(fromFolder, toFolder string, from, to []configv1alpha1.Resource, rawDiff bool,
-	logger logr.Logger) (added, modified, deleted []*configv1alpha1.Resource, err error) {
+func resourceDifference(fromFolder, toFolder string, from, to []configv1beta1.Resource, rawDiff bool,
+	logger logr.Logger) (added, modified, deleted []*configv1beta1.Resource, err error) {
 
-	resourceInfo := func(resource *configv1alpha1.Resource) string {
+	resourceInfo := func(resource *configv1beta1.Resource) string {
 		return fmt.Sprintf("%s:%s:%s/%s", resource.Group, resource.Kind, resource.Namespace, resource.Name)
 	}
 
-	toResourceMap := make(map[string]*configv1alpha1.Resource, len(to))
+	toResourceMap := make(map[string]*configv1beta1.Resource, len(to))
 	for i := range to {
 		resource := &to[i]
 		toResourceMap[resourceInfo(resource)] = resource
 	}
 
-	fromResourceMap := make(map[string]*configv1alpha1.Resource, len(from))
+	fromResourceMap := make(map[string]*configv1beta1.Resource, len(from))
 	for i := range from {
 		resource := &from[i]
 		fromResourceMap[resourceInfo(resource)] = resource
 	}
 
-	var addedResources []*configv1alpha1.Resource
-	var deletedResources []*configv1alpha1.Resource
-	var modifiedResources []*configv1alpha1.Resource
+	var addedResources []*configv1beta1.Resource
+	var deletedResources []*configv1beta1.Resource
+	var modifiedResources []*configv1beta1.Resource
 
 	for k := range toResourceMap {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("analyzing resource %s/%s %s/%s",
@@ -591,8 +591,8 @@ func resourceDifference(fromFolder, toFolder string, from, to []configv1alpha1.R
 	return addedResources, modifiedResources, deletedResources, nil
 }
 
-func appendChartsAndResourcesForClusterProfiles(cpr *configv1alpha1.ClusterProfileResource, charts []configv1alpha1.Chart,
-	resources []configv1alpha1.Resource) ([]configv1alpha1.Chart, []configv1alpha1.Resource) {
+func appendChartsAndResourcesForClusterProfiles(cpr *configv1beta1.ClusterProfileResource, charts []configv1beta1.Chart,
+	resources []configv1beta1.Resource) ([]configv1beta1.Chart, []configv1beta1.Resource) {
 
 	for i := range cpr.Features {
 		for j := range cpr.Features[i].Charts {
@@ -606,8 +606,8 @@ func appendChartsAndResourcesForClusterProfiles(cpr *configv1alpha1.ClusterProfi
 	return charts, resources
 }
 
-func appendChartsAndResourcesForProfiles(pr *configv1alpha1.ProfileResource, charts []configv1alpha1.Chart,
-	resources []configv1alpha1.Resource) ([]configv1alpha1.Chart, []configv1alpha1.Resource) {
+func appendChartsAndResourcesForProfiles(pr *configv1beta1.ProfileResource, charts []configv1beta1.Chart,
+	resources []configv1beta1.Resource) ([]configv1beta1.Chart, []configv1beta1.Resource) {
 
 	for i := range pr.Features {
 		for j := range pr.Features[i].Charts {
@@ -622,7 +622,7 @@ func appendChartsAndResourcesForProfiles(pr *configv1alpha1.ProfileResource, cha
 }
 
 // hasDiff returns true if any diff exist
-func hasDiff(fromFolder, toFolder string, from, to *configv1alpha1.Resource, rawDiff bool) (bool, error) {
+func hasDiff(fromFolder, toFolder string, from, to *configv1beta1.Resource, rawDiff bool) (bool, error) {
 	fromResource, err := getResourceFromResourceOwner(fromFolder, from)
 	if err != nil {
 		return false, err
@@ -692,7 +692,7 @@ func hasResourceDiff(from, to *unstructured.Unstructured, rawDiff bool, logger l
 	return false, nil
 }
 
-func getResourceFromResourceOwner(folder string, resource *configv1alpha1.Resource) (string, error) {
+func getResourceFromResourceOwner(folder string, resource *configv1beta1.Resource) (string, error) {
 	ownerPath := buildOwnerPath(folder, resource)
 
 	owner, err := getResourceOwner(ownerPath)
@@ -745,7 +745,7 @@ func getResourceFromResourceOwner(folder string, resource *configv1alpha1.Resour
 		resource.Kind, resource.Namespace, resource.Name, ownerPath)
 }
 
-func buildOwnerPath(folder string, resource *configv1alpha1.Resource) string {
+func buildOwnerPath(folder string, resource *configv1beta1.Resource) string {
 	return filepath.Join(folder,
 		resource.Owner.Namespace,
 		resource.Owner.Kind,

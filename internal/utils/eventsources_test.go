@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
+	libsveltosv1alpha1 "github.com/projectsveltos/libsveltos/api/v1alpha1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -37,12 +37,12 @@ var _ = Describe("EventSource", func() {
 		initObjects := []client.Object{}
 
 		for i := 0; i < 10; i++ {
-			es := &libsveltosv1beta1.EventSource{
+			es := &libsveltosv1alpha1.EventSource{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: randomString(),
 				},
-				Spec: libsveltosv1beta1.EventSourceSpec{
-					ResourceSelectors: []libsveltosv1beta1.ResourceSelector{
+				Spec: libsveltosv1alpha1.EventSourceSpec{
+					ResourceSelectors: []libsveltosv1alpha1.ResourceSelector{
 						{
 							Group:    randomString(),
 							Version:  randomString(),

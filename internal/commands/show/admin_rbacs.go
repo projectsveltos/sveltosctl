@@ -106,9 +106,9 @@ func createRoleRequestsPerClusterMap(roleRequests *libsveltosv1beta1.RoleRequest
 	return clusterMap
 }
 
-func parseMatchihgCluster(rr *libsveltosv1beta1.RoleRequest,
-	clusterMap map[corev1.ObjectReference][]*libsveltosv1beta1.RoleRequest, logger logr.Logger,
-) map[corev1.ObjectReference][]*libsveltosv1beta1.RoleRequest {
+func parseMatchihgCluster(rr *libsveltosv1alpha1.RoleRequest,
+	clusterMap map[corev1.ObjectReference][]*libsveltosv1alpha1.RoleRequest, logger logr.Logger,
+) map[corev1.ObjectReference][]*libsveltosv1alpha1.RoleRequest {
 
 	logger = logger.WithValues("rolerequest", rr.Name)
 	logger.V(logs.LogDebug).Info("parsing matching clusters for roleRequets")
@@ -122,7 +122,7 @@ func parseMatchihgCluster(rr *libsveltosv1beta1.RoleRequest,
 }
 
 func parseCluster(ctx context.Context, cluster *corev1.ObjectReference,
-	roleRequests []*libsveltosv1beta1.RoleRequest,
+	roleRequests []*libsveltosv1alpha1.RoleRequest,
 	passedNamespace, passedCluster, passedServiceAccountNamespace, passedServiceAccountName string,
 	table *tablewriter.Table, logger logr.Logger) error {
 
@@ -142,7 +142,7 @@ func parseCluster(ctx context.Context, cluster *corev1.ObjectReference,
 	return nil
 }
 
-func shouldParseRoleRequest(roleRequest *libsveltosv1beta1.RoleRequest,
+func shouldParseRoleRequest(roleRequest *libsveltosv1alpha1.RoleRequest,
 	passedServiceAccountNamespace, passedServiceAccountName string) bool {
 
 	if passedServiceAccountNamespace != "" {
@@ -160,7 +160,7 @@ func shouldParseRoleRequest(roleRequest *libsveltosv1beta1.RoleRequest,
 	return true
 }
 
-func parseRoleRequest(ctx context.Context, roleRequest *libsveltosv1beta1.RoleRequest,
+func parseRoleRequest(ctx context.Context, roleRequest *libsveltosv1alpha1.RoleRequest,
 	clusterNamespace, clusterName, clusterKind, passedServiceAccountNamespace, passedServiceAccountName string,
 	table *tablewriter.Table, logger logr.Logger) error {
 
@@ -183,7 +183,7 @@ func parseRoleRequest(ctx context.Context, roleRequest *libsveltosv1beta1.RoleRe
 
 func parseReferencedResource(ctx context.Context,
 	clusterNamespace, clusterName, clusterKind, serviceAccountNamespace, serviceAccountName string,
-	resource libsveltosv1beta1.PolicyRef, table *tablewriter.Table, logger logr.Logger) error {
+	resource libsveltosv1alpha1.PolicyRef, table *tablewriter.Table, logger logr.Logger) error {
 
 	// fetch resource
 	content, err := collectResourceContent(ctx, resource, logger)

@@ -39,7 +39,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
 	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	utilsv1beta1 "github.com/projectsveltos/sveltosctl/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
@@ -179,14 +179,10 @@ var _ = Describe("Snapshot Diff", func() {
 			ObjectMeta: metav1.ObjectMeta{
 				Name: classifierName,
 			},
-			Spec: libsveltosv1beta1.RoleRequestSpec{
+			Spec: libsveltosv1alpha1.RoleRequestSpec{
 				ServiceAccountNamespace: randomString(),
 				ServiceAccountName:      randomString(),
-				ClusterSelector: libsveltosv1beta1.Selector{
-					LabelSelector: metav1.LabelSelector{
-						MatchLabels: map[string]string{"zone": "west"},
-					},
-				},
+				ClusterSelector:         libsveltosv1alpha1.Selector("zone:west"),
 			},
 		}
 		Expect(addTypeInformationToObject(roleRequest)).To(Succeed())
@@ -246,7 +242,7 @@ var _ = Describe("Snapshot Diff", func() {
 		fromFolder := filepath.Join(*artifactFolder, timeOne)
 		toFolder := filepath.Join(*artifactFolder, timeTwo)
 
-		err = snapshot.ListDiff(fromFolder, toFolder, libsveltosv1beta1.ClassifierKind, false,
+		err = snapshot.ListDiff(fromFolder, toFolder, libsveltosv1alpha1.ClassifierKind, false,
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 
@@ -290,7 +286,7 @@ var _ = Describe("Snapshot Diff", func() {
 		r, w, _ = os.Pipe()
 		os.Stdout = w
 
-		err = snapshot.ListDiff(fromFolder, toFolder, libsveltosv1beta1.RoleRequestKind, false,
+		err = snapshot.ListDiff(fromFolder, toFolder, libsveltosv1alpha1.RoleRequestKind, false,
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 
@@ -325,7 +321,7 @@ var _ = Describe("Snapshot Diff", func() {
 
 	It("listFeaturesDiffInCluster list differences in collected ClusterConfigurations", func() {
 		newClusterConfiguration := generateClusterConfiguration()
-		oldClusterConfiguration := &configv1alpha1.ClusterConfiguration{
+		oldClusterConfiguration := &configv1beta1.ClusterConfiguration{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      newClusterConfiguration.Name,
 				Namespace: newClusterConfiguration.Namespace,
@@ -333,8 +329,8 @@ var _ = Describe("Snapshot Diff", func() {
 		}
 		table := tablewriter.NewWriter(os.Stdout)
 		Expect(snapshot.ListDiffInClusterConfigurations("", "",
-			[]*configv1alpha1.ClusterConfiguration{oldClusterConfiguration},
-			[]*configv1alpha1.ClusterConfiguration{newClusterConfiguration},
+			[]*configv1beta1.ClusterConfiguration{oldClusterConfiguration},
+			[]*configv1beta1.ClusterConfiguration{newClusterConfiguration},
 			false, table, textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		result := fmt.Sprintf("table: %v\n", table)
@@ -346,12 +342,12 @@ var _ = Describe("Snapshot Diff", func() {
 	It("listClusterConfigurationDiff list differences between two ClusterConfigurations", func() {
 		newClusterConfiguration := generateClusterConfiguration()
 		newClusterConfiguration.Status.ClusterProfileResources =
-			[]configv1alpha1.ClusterProfileResource{
+			[]configv1beta1.ClusterProfileResource{
 				*generateClusterProfileResource(),
 				*generateClusterProfileResource(),
 			}
 
-		oldClusterConfiguration := &configv1alpha1.ClusterConfiguration{
+		oldClusterConfiguration := &configv1beta1.ClusterConfiguration{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      newClusterConfiguration.Name,
 				Namespace: newClusterConfiguration.Namespace,
@@ -369,8 +365,8 @@ var _ = Describe("Snapshot Diff", func() {
 	})
 
 	It("chartDifference lists added and deleted charts between two slices of charts", func() {
-		oldCharts := []configv1alpha1.Chart{*generateChart()}
-		newCharts := []configv1alpha1.Chart{*generateChart()}
+		oldCharts := []configv1beta1.Chart{*generateChart()}
+		newCharts := []configv1beta1.Chart{*generateChart()}
 
 		added, modified, deleted, message := snapshot.ChartDifference(oldCharts, newCharts)
 		Expect(len(added)).To(Equal(1))
@@ -381,10 +377,10 @@ var _ = Describe("Snapshot Diff", func() {
 
 	It("chartDifference lists modifed charts between two slices of charts", func() {
 		chart := generateChart()
-		oldCharts := []configv1alpha1.Chart{*chart}
+		oldCharts := []configv1beta1.Chart{*chart}
 		newChart := *chart
 		newChart.ChartVersion = randomString()
-		newCharts := []configv1alpha1.Chart{newChart}
+		newCharts := []configv1beta1.Chart{newChart}
 
 		added, modified, deleted, message := snapshot.ChartDifference(oldCharts, newCharts)
 		Expect(len(added)).To(Equal(0))
@@ -397,8 +393,8 @@ var _ = Describe("Snapshot Diff", func() {
 	})
 
 	It("resourceDifference lists added and delete resources between two slices of resources", func() {
-		oldResources := []configv1alpha1.Resource{*generateResource()}
-		newResources := []configv1alpha1.Resource{*generateResource(), *generateResource()}
+		oldResources := []configv1beta1.Resource{*generateResource()}
+		newResources := []configv1beta1.Resource{*generateResource(), *generateResource()}
 
 		added, modified, deleted, err :=
 			snapshot.ResourceDifference("", "", oldResources, newResources, false,
@@ -437,7 +433,7 @@ var _ = Describe("Snapshot Diff", func() {
 		Expect(collectorClient.DumpObject(newConfigMap, newFolder,
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
-		oldResource := &configv1alpha1.Resource{
+		oldResource := &configv1beta1.Resource{
 			Kind:            "ClusterRole",
 			Name:            clusterRole.GetName(),
 			LastAppliedTime: &metav1.Time{Time: time.Now()},
@@ -452,8 +448,8 @@ var _ = Describe("Snapshot Diff", func() {
 		newResource.LastAppliedTime = &metav1.Time{Time: time.Now().Add(time.Second * time.Duration(2))}
 
 		added, modified, deleted, err :=
-			snapshot.ResourceDifference(oldFolder, newFolder, []configv1alpha1.Resource{*oldResource},
-				[]configv1alpha1.Resource{newResource}, false,
+			snapshot.ResourceDifference(oldFolder, newFolder, []configv1beta1.Resource{*oldResource},
+				[]configv1beta1.Resource{newResource}, false,
 				textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 		Expect(len(added)).To(Equal(0))
@@ -462,14 +458,14 @@ var _ = Describe("Snapshot Diff", func() {
 	})
 
 	It("addChartEntry adds chart entries to table", func() {
-		clusterConfiguration := &configv1alpha1.ClusterConfiguration{
+		clusterConfiguration := &configv1beta1.ClusterConfiguration{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      randomString(),
 				Namespace: randomString(),
 			},
 		}
 
-		charts := make([]*configv1alpha1.Chart, 0)
+		charts := make([]*configv1beta1.Chart, 0)
 		charts = append(charts, generateChart())
 		charts = append(charts, generateChart())
 
@@ -485,14 +481,14 @@ var _ = Describe("Snapshot Diff", func() {
 	})
 
 	It("addResourceEntry adds resource entries to table", func() {
-		clusterConfiguration := &configv1alpha1.ClusterConfiguration{
+		clusterConfiguration := &configv1beta1.ClusterConfiguration{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      randomString(),
 				Namespace: randomString(),
 			},
 		}
 
-		resources := make([]*configv1alpha1.Resource, 0)
+		resources := make([]*configv1beta1.Resource, 0)
 		resources = append(resources, generateResource())
 		resources = append(resources, generateResource())
 
@@ -525,8 +521,8 @@ var _ = Describe("Snapshot Diff", func() {
 		Expect(chartNumber).ToNot(BeZero())
 		Expect(resourceNumber).ToNot(BeZero())
 
-		charts := make([]configv1alpha1.Chart, 0)
-		resources := make([]configv1alpha1.Resource, 0)
+		charts := make([]configv1beta1.Chart, 0)
+		resources := make([]configv1beta1.Resource, 0)
 		charts, resources = snapshot.AppendChartsAndResourcesForClusterProfiles(cpr, charts, resources)
 
 		Expect(len(charts)).To(Equal(chartNumber))
@@ -557,7 +553,7 @@ var _ = Describe("Snapshot Diff", func() {
 
 		clusterRoleGroup := "rbac.authorization.k8s.io/v1"
 		clusterRoleKind := "ClusterRole"
-		resource := &configv1alpha1.Resource{
+		resource := &configv1beta1.Resource{
 			Name:  clusterRole.Name,
 			Group: clusterRoleGroup,
 			Kind:  clusterRoleKind,
@@ -576,9 +572,9 @@ var _ = Describe("Snapshot Diff", func() {
 	})
 })
 
-func generateChart() *configv1alpha1.Chart {
+func generateChart() *configv1beta1.Chart {
 	t := metav1.Time{Time: time.Now()}
-	return &configv1alpha1.Chart{
+	return &configv1beta1.Chart{
 		RepoURL:         randomString(),
 		ReleaseName:     randomString(),
 		Namespace:       randomString(),
@@ -587,9 +583,9 @@ func generateChart() *configv1alpha1.Chart {
 	}
 }
 
-func generateResource() *configv1alpha1.Resource {
+func generateResource() *configv1beta1.Resource {
 	t := metav1.Time{Time: time.Now()}
-	return &configv1alpha1.Resource{
+	return &configv1beta1.Resource{
 		Name:            randomString(),
 		Namespace:       randomString(),
 		Group:           randomString(),
@@ -603,36 +599,36 @@ func generateResource() *configv1alpha1.Resource {
 	}
 }
 
-func generateClusterConfiguration() *configv1alpha1.ClusterConfiguration {
-	return &configv1alpha1.ClusterConfiguration{
+func generateClusterConfiguration() *configv1beta1.ClusterConfiguration {
+	return &configv1beta1.ClusterConfiguration{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      randomString(),
 			Namespace: randomString(),
 		},
-		Status: configv1alpha1.ClusterConfigurationStatus{
-			ClusterProfileResources: []configv1alpha1.ClusterProfileResource{
+		Status: configv1beta1.ClusterConfigurationStatus{
+			ClusterProfileResources: []configv1beta1.ClusterProfileResource{
 				*generateClusterProfileResource(),
 			},
-			ProfileResources: []configv1alpha1.ProfileResource{
+			ProfileResources: []configv1beta1.ProfileResource{
 				*generateProfileResource(),
 			},
 		},
 	}
 }
 
-func generateClusterProfileResource() *configv1alpha1.ClusterProfileResource {
-	return &configv1alpha1.ClusterProfileResource{
+func generateClusterProfileResource() *configv1beta1.ClusterProfileResource {
+	return &configv1beta1.ClusterProfileResource{
 		ClusterProfileName: randomString(),
-		Features: []configv1alpha1.Feature{
+		Features: []configv1beta1.Feature{
 			{
-				FeatureID: configv1alpha1.FeatureHelm,
-				Charts: []configv1alpha1.Chart{
+				FeatureID: configv1beta1.FeatureHelm,
+				Charts: []configv1beta1.Chart{
 					*generateChart(), *generateChart(),
 				},
 			},
 			{
-				FeatureID: configv1alpha1.FeatureResources,
-				Resources: []configv1alpha1.Resource{
+				FeatureID: configv1beta1.FeatureResources,
+				Resources: []configv1beta1.Resource{
 					*generateResource(), *generateResource(),
 				},
 			},
@@ -640,19 +636,19 @@ func generateClusterProfileResource() *configv1alpha1.ClusterProfileResource {
 	}
 }
 
-func generateProfileResource() *configv1alpha1.ProfileResource {
-	return &configv1alpha1.ProfileResource{
+func generateProfileResource() *configv1beta1.ProfileResource {
+	return &configv1beta1.ProfileResource{
 		ProfileName: randomString(),
-		Features: []configv1alpha1.Feature{
+		Features: []configv1beta1.Feature{
 			{
-				FeatureID: configv1alpha1.FeatureHelm,
-				Charts: []configv1alpha1.Chart{
+				FeatureID: configv1beta1.FeatureHelm,
+				Charts: []configv1beta1.Chart{
 					*generateChart(), *generateChart(),
 				},
 			},
 			{
-				FeatureID: configv1alpha1.FeatureResources,
-				Resources: []configv1alpha1.Resource{
+				FeatureID: configv1beta1.FeatureResources,
+				Resources: []configv1beta1.Resource{
 					*generateResource(), *generateResource(),
 				},
 			},
@@ -660,7 +656,7 @@ func generateProfileResource() *configv1alpha1.ProfileResource {
 	}
 }
 
-func verifyChartAndResources(result string, cpr configv1alpha1.ClusterProfileResource) {
+func verifyChartAndResources(result string, cpr configv1beta1.ClusterProfileResource) {
 	for i := range cpr.Features {
 		if cpr.Features[i].Charts != nil {
 			verifyCharts(result, cpr.Features[i].Charts)
@@ -671,13 +667,13 @@ func verifyChartAndResources(result string, cpr configv1alpha1.ClusterProfileRes
 	}
 }
 
-func verifyCharts(result string, charts []configv1alpha1.Chart) {
+func verifyCharts(result string, charts []configv1beta1.Chart) {
 	for i := range charts {
 		verifyChart(result, &charts[i])
 	}
 }
 
-func verifyChart(result string, chart *configv1alpha1.Chart) {
+func verifyChart(result string, chart *configv1beta1.Chart) {
 	found := false
 	lines := strings.Split(result, "\n")
 	for i := range lines {
@@ -692,13 +688,13 @@ func verifyChart(result string, chart *configv1alpha1.Chart) {
 	Expect(found).To(BeTrue())
 }
 
-func verifyResources(result string, resources []configv1alpha1.Resource) {
+func verifyResources(result string, resources []configv1beta1.Resource) {
 	for i := range resources {
 		verifyResource(result, &resources[i])
 	}
 }
 
-func verifyResource(result string, resources *configv1alpha1.Resource) {
+func verifyResource(result string, resources *configv1beta1.Resource) {
 	found := false
 	lines := strings.Split(result, "\n")
 	for i := range lines {
