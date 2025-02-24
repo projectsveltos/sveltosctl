@@ -14,7 +14,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/projectsveltos/addon-controller v0.48.1
 	github.com/projectsveltos/event-manager v0.48.1
-	github.com/projectsveltos/libsveltos v0.48.1
+	github.com/projectsveltos/libsveltos v0.48.2-0.20250224110739-f8a50667ac1f
 	github.com/robfig/cron/v3 v3.0.1
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.32.2
