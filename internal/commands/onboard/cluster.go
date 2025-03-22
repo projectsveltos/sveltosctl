@@ -59,12 +59,12 @@ func onboardSveltosCluster(ctx context.Context, clusterNamespace, clusterName st
 		return err
 	}
 
-	err = patchSveltosCluster(ctx, clusterNamespace, clusterName, labels, renew, logger)
+	err = patchSecret(ctx, clusterNamespace, secretName, kubeconfigData, logger)
 	if err != nil {
 		return err
 	}
 
-	err = patchSecret(ctx, clusterNamespace, secretName, kubeconfigData, logger)
+	err = patchSveltosCluster(ctx, clusterNamespace, clusterName, labels, renew, logger)
 	if err != nil {
 		return err
 	}
