@@ -12,7 +12,7 @@ GO_INSTALL := ./scripts/go_install.sh
 REGISTRY ?= projectsveltos
 IMAGE_NAME ?= sveltosctl
 export SVELTOSCTL_IMG ?= $(REGISTRY)/$(IMAGE_NAME)
-TAG ?= v0.52.2
+TAG ?= v0.52.3
 ARCH ?= $(shell go env GOARCH)
 
 # Directories.
