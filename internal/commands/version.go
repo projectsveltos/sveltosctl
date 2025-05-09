@@ -39,10 +39,11 @@ func Version(args []string, logger logr.Logger) error {
 
 Options:
   -h --help             Show this screen.
- 
+
 Description:
   Display the version of sveltosctl.
 `
+
 	parser := &docopt.Parser{
 		HelpHandler:   docopt.PrintHelpAndExit,
 		OptionsFirst:  true,
