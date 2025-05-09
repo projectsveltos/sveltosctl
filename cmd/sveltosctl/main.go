@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -36,6 +35,13 @@ import (
 	"github.com/projectsveltos/sveltosctl/internal/commands"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
+
+type clusterAccess struct {
+	scheme     *runtime.Scheme
+	restConfig *rest.Config
+	clientSet  *kubernetes.Clientset
+	client     client.Client
+}
 
 func main() {
 	doc := `Usage:
@@ -59,7 +65,7 @@ Description:
   The sveltosctl command line tool is used to display various type of information
   regarding policies deployed in each cluster.
   See 'sveltosctl <command> --help' to read about a specific subcommand.
- 
+
   To reach cluster:
   - KUBECONFIG environment variable pointing at a file
   - In-cluster config if running in cluster
@@ -68,8 +74,18 @@ Description:
 	klog.InitFlags(nil)
 
 	ctx := context.Background()
-	scheme, restConfig, clientSet, c := initializeManagementClusterAccess()
-	utils.InitalizeManagementClusterAcces(scheme, restConfig, clientSet, c)
+
+	ctrl.SetLogger(klog.Background())
+	logger := klog.FromContext(ctx)
+
+	access, err := initializeManagementClusterAccess()
+	if err != nil {
+		_ = commands.Version(nil, logger)
+		return
+	}
+
+	utils.InitalizeManagementClusterAcces(access.scheme, access.restConfig,
+		access.clientSet, access.client)
 
 	parser := &docopt.Parser{
 		HelpHandler:   docopt.PrintHelpOnly,
@@ -77,9 +93,6 @@ Description:
 		SkipHelpFlags: false,
 	}
 
-	ctrl.SetLogger(klog.Background())
-
-	logger := klog.FromContext(ctx)
 	opts, err := parser.ParseArgs(doc, nil, "")
 	if err != nil {
 		var userError docopt.UserError
@@ -120,28 +133,39 @@ Description:
 	}
 }
 
-func initializeManagementClusterAccess() (*runtime.Scheme, *rest.Config, *kubernetes.Clientset, client.Client) {
+func initializeManagementClusterAccess() (*clusterAccess, error) {
 	scheme, err := utils.GetScheme()
 	if err != nil {
 		werr := fmt.Errorf("failed to get scheme %w", err)
-		log.Fatal(werr)
+		return nil, werr
 	}
 
-	restConfig := ctrl.GetConfigOrDie()
+	restConfig, err := ctrl.GetConfig()
+	if err != nil {
+		werr := fmt.Errorf("failed to get config %w", err)
+		return nil, werr
+	}
 	restConfig.QPS = 100
 	restConfig.Burst = 100
 
 	cs, err := kubernetes.NewForConfig(restConfig)
 	if err != nil {
 		werr := fmt.Errorf("error in getting access to K8S: %w", err)
-		log.Fatal(werr)
+		return nil, werr
 	}
 
 	c, err := client.New(restConfig, client.Options{Scheme: scheme})
 	if err != nil {
 		werr := fmt.Errorf("failed to connect: %w", err)
-		log.Fatal(werr)
+		return nil, werr
 	}
 
-	return scheme, restConfig, cs, c
+	access := clusterAccess{
+		scheme:     scheme,
+		restConfig: restConfig,
+		clientSet:  cs,
+		client:     c,
+	}
+
+	return &access, nil
 }
