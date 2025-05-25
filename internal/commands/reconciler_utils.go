@@ -98,7 +98,7 @@ func watchResources(ctx context.Context, logger logr.Logger) error {
 
 func startSnapshotReconciler(ctx context.Context, mgr manager.Manager, logger logr.Logger) error {
 	// Create an un-managed controller
-	c, err := controller.NewUnmanaged("snapshot-watcher", mgr, controller.Options{
+	c, err := controller.NewUnmanaged("snapshot-watcher", controller.Options{
 		Reconciler:              reconcile.Func(SnapshotReconciler),
 		MaxConcurrentReconciles: 1,
 	})
