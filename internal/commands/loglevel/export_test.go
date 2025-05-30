@@ -17,7 +17,10 @@ limitations under the License.
 package loglevel
 
 var (
-	ShowLogSettings              = showLogSettings
-	UpdateDebuggingConfiguration = updateDebuggingConfiguration
-	UnsetDebuggingConfiguration  = unsetDebuggingConfiguration
+	ShowLogSettings                            = showLogSettings
+	UpdateDebuggingConfiguration               = updateDebuggingConfiguration
+	UnsetDebuggingConfiguration                = unsetDebuggingConfiguration
+	UpdateDebuggingConfigurationInManaged      = updateDebuggingConfigurationInManaged
+	CollectLogLevelConfigurationFromClient     = collectLogLevelConfigurationFromClient
+	UpdateLogLevelConfigurationWithClient      = updateLogLevelConfigurationWithClient
 )
