@@ -23,4 +23,6 @@ var (
 	UpdateDebuggingConfigurationInManaged      = updateDebuggingConfigurationInManaged
 	CollectLogLevelConfigurationFromClient     = collectLogLevelConfigurationFromClient
 	UpdateLogLevelConfigurationWithClient      = updateLogLevelConfigurationWithClient
+	ShowLogSettingsInManaged                   = showLogSettingsInManaged
+	UnsetDebuggingConfigurationInManaged       = unsetDebuggingConfigurationInManaged
 )
