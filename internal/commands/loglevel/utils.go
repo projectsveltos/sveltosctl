@@ -22,6 +22,7 @@ import (
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
@@ -92,4 +93,61 @@ func updateLogLevelConfiguration(
 	}
 
 	return instance.UpdateDebuggingConfiguration(ctx, dc)
+}
+
+// Collects configuration from a specific client
+func collectLogLevelConfigurationFromClient(ctx context.Context, c client.Client) ([]*componentConfiguration, error) {
+	dc := &libsveltosv1beta1.DebuggingConfiguration{}
+	err := c.Get(ctx, client.ObjectKey{Name: "default"}, dc)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			return make([]*componentConfiguration, 0), nil
+		}
+		return nil, err
+	}
+
+	configurationSettings := make([]*componentConfiguration, len(dc.Spec.Configuration))
+
+	for i, c := range dc.Spec.Configuration {
+		configurationSettings[i] = &componentConfiguration{
+			component:   c.Component,
+			logSeverity: c.LogLevel,
+		}
+	}
+
+	// Sorting this by component name first. Component/node is higher priority than Component
+	sort.Sort(byComponent(configurationSettings))
+
+	return configurationSettings, nil
+}
+
+// Updates configuration using a specific client
+func updateLogLevelConfigurationWithClient(
+	ctx context.Context,
+	c client.Client,
+	spec []libsveltosv1beta1.ComponentConfiguration,
+) error {
+	dc := &libsveltosv1beta1.DebuggingConfiguration{}
+	err := c.Get(ctx, client.ObjectKey{Name: "default"}, dc)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			dc = &libsveltosv1beta1.DebuggingConfiguration{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "default",
+				},
+			}
+			dc.Spec = libsveltosv1beta1.DebuggingConfigurationSpec{
+				Configuration: spec,
+			}
+			return c.Create(ctx, dc)
+		} else {
+			return err
+		}
+	}
+
+	dc.Spec = libsveltosv1beta1.DebuggingConfigurationSpec{
+		Configuration: spec,
+	}
+
+	return c.Update(ctx, dc)
 }
