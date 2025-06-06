@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/docopt/docopt-go"
 	"github.com/go-logr/logr"
@@ -46,8 +47,9 @@ const (
 	Projectsveltos = "projectsveltos"
 )
 
-func GenerateKubeconfigForServiceAccount(ctx context.Context, remoteRestConfig *rest.Config, namespace, serviceAccountName string,
-	expirationSeconds int, create, display bool, logger logr.Logger) (string, error) {
+func GenerateKubeconfigForServiceAccount(ctx context.Context, remoteRestConfig *rest.Config,
+	namespace, serviceAccountName string, expirationSeconds int, create, display, satoken bool,
+	logger logr.Logger) (string, error) {
 
 	s := runtime.NewScheme()
 	err := clientgoscheme.AddToScheme(s)
@@ -90,20 +92,88 @@ func GenerateKubeconfigForServiceAccount(ctx context.Context, remoteRestConfig *
 		}
 	}
 
-	tokenRequest, err := getServiceAccountTokenRequest(ctx, remoteRestConfig, namespace, serviceAccountName,
-		expirationSeconds, logger)
-	if err != nil {
-		return "", err
+	var token string
+	if satoken {
+		if err := createSecret(ctx, remoteClient, namespace, serviceAccountName, logger); err != nil {
+			return "", err
+		}
+		var err error
+		token, err = getToken(ctx, remoteClient, namespace, serviceAccountName)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		tokenRequest, err := getServiceAccountTokenRequest(ctx, remoteRestConfig, namespace, serviceAccountName,
+			expirationSeconds, logger)
+		if err != nil {
+			return "", err
+		}
+		token = tokenRequest.Token
 	}
 
 	logger.V(logs.LogDebug).Info("Get Kubeconfig from TokenRequest")
-	data := getKubeconfigFromToken(remoteRestConfig, namespace, serviceAccountName, tokenRequest.Token)
+	data := getKubeconfigFromToken(remoteRestConfig, namespace, serviceAccountName, token)
 	if display {
 		//nolint: forbidigo // print kubeconfig
 		fmt.Println(data)
 	}
 
 	return data, nil
+}
+
+func createSecret(ctx context.Context, c client.Client, namespace, saName string,
+	logger logr.Logger) error {
+
+	logger.V(logs.LogInfo).Info(fmt.Sprintf("Create Secret %s/%s", namespace, saName))
+	currentSecret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      saName,
+			Annotations: map[string]string{
+				corev1.ServiceAccountNameKey: saName,
+			},
+		},
+		Type: corev1.SecretTypeServiceAccountToken,
+	}
+
+	err := c.Create(ctx, currentSecret)
+	if err != nil && !apierrors.IsAlreadyExists(err) {
+		logger.V(logs.LogInfo).Info(fmt.Sprintf("Failed to create Secret %s/%s: %v",
+			namespace, saName, err))
+		return err
+	}
+
+	return nil
+}
+
+func getToken(ctx context.Context, c client.Client, namespace, secretName string) (string, error) {
+	retries := 0
+	const maxRetries = 5
+	for {
+		secret := &corev1.Secret{}
+		err := c.Get(ctx, types.NamespacedName{Namespace: namespace, Name: secretName},
+			secret)
+		if err != nil {
+			if retries < maxRetries {
+				time.Sleep(time.Second)
+				continue
+			}
+			return "", err
+		}
+
+		if secret.Data == nil {
+			time.Sleep(time.Second)
+			continue
+		}
+
+		v, ok := secret.Data["token"]
+		if !ok {
+			time.Sleep(time.Second)
+			continue
+		}
+
+		return string(v), nil
+	}
 }
 
 func getNamespace(ctx context.Context, remoteClient client.Client, name string) error {
@@ -286,7 +356,8 @@ current-context: sveltos-context`
 // GenerateKubeconfig creates a TokenRequest and a Kubeconfig associated with it
 func GenerateKubeconfig(ctx context.Context, args []string, logger logr.Logger) error {
 	doc := `Usage:
-  sveltosctl generate kubeconfig [options] [--namespace=<name>] [--serviceaccount=<name>] [--create] [--expirationSeconds=<value>] [--verbose]
+  sveltosctl generate kubeconfig [options] [--namespace=<name>] [--serviceaccount=<name>] [--create]
+                                  [--expirationSeconds=<value>] [--service-account-token] [--verbose]
 
      --namespace=<name>           (Optional) Specifies the namespace of the ServiceAccount to use. If not provided,
                                   the "projectsveltos" namespace will be used.
@@ -297,29 +368,36 @@ func GenerateKubeconfig(ctx context.Context, args []string, logger logr.Logger) 
                                   - The specified ServiceAccount (if not already present)
                                   - A ClusterRole with cluster-admin permissions
                                   - A ClusterRoleBinding granting the ServiceAccount cluster-admin permissions
-     --expirationSeconds=<value>  - (Optional) This option allows you to specify the desired validity period 
-                                  (in seconds) for the token requested when generating a kubeconfig. Minimum value is 600 (10 minutes).
+     --expirationSeconds=<value>  - (Optional) This option allows you to specify the desired validity period
+                                  (in seconds) for the token requested when generating a kubeconfig.
+                                  Minimum value is 600 (10 minutes).
                                   If you don't provide this option, the issuer (where the kubeconfig points)
                                   will use its default expiration time for the token.
                                   Once you register a cluster using the kubeconfig generated by this command,
                                   you can manage automatic token renewal through the
                                   SveltosCluster.Spec.TokenRequestRenewalOption setting within the registered
-                                  SveltosCluster resource. This provides more control over token expiration and renewal behavior. 
+                                  SveltosCluster resource. This provides more control over token expiration and
+                                  renewal behavior.
+    --service-account-token       (Optional) Use a non-expiring ServiceAccount token for management cluster registration.
+                                  When enabled, Sveltos will automatically create the necessary ServiceAccount infrastructure
+                                  (ServiceAccount, ClusterRole, and ClusterRoleBinding) in the managed cluster and
+                                  generate a long-lived token by also creating a Secret of type kubernetes.io/service-account-token.
+
 
 Process:
 
-Sveltos will either use an existing ServiceAccount with sufficient permissions (if --create is not set) or create a new one with 
+Sveltos will either use an existing ServiceAccount with sufficient permissions (if --create is not set) or create a new one with
 cluster-admin permissions (if --create is set).
-Sveltos will generate a TokenRequest for the chosen ServiceAccount. Based on the TokenRequest, Sveltos will generate a kubeconfig 
+Sveltos will generate a TokenRequest for the chosen ServiceAccount. Based on the TokenRequest, Sveltos will generate a kubeconfig
 file and output it.
 The Kubeconfig can then be used with "sveltosctl register cluster" command.
 
 Options:
   -h --help                  Show this screen.
-     --verbose               Verbose mode. Print each step.  
+     --verbose               Verbose mode. Print each step.
 
 Description:
-This command helps you set up credentials (kubeconfig) to access a Kubernetes cluster using Sveltos. It allows you to specify a ServiceAccount 
+This command helps you set up credentials (kubeconfig) to access a Kubernetes cluster using Sveltos. It allows you to specify a ServiceAccount
 or create a new one with the necessary permissions.
 `
 	parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
@@ -362,9 +440,11 @@ or create a new one with the necessary permissions.
 		}
 	}
 
+	satoken := parsedArgs["--service-account-token"].(bool)
+
 	create := parsedArgs["--create"].(bool)
 
 	_, err = GenerateKubeconfigForServiceAccount(ctx, utils.GetAccessInstance().GetConfig(),
-		namespace, serviceAccount, expirationSeconds, create, true, logger)
+		namespace, serviceAccount, expirationSeconds, create, true, satoken, logger)
 	return err
 }

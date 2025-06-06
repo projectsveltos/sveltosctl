@@ -129,34 +129,42 @@ func patchSecret(ctx context.Context, clusterNamespace, secretName string, kubec
 }
 
 // RegisterCluster takes care of creating all necessary internal resources to import a cluster
-func RegisterCluster(ctx context.Context, args []string, logger logr.Logger) error {
+func RegisterCluster(ctx context.Context, args []string, logger logr.Logger) error { //nolint: funlen // command description
 	doc := `Usage:
-  sveltosctl register cluster [options] --namespace=<name> --cluster=<name> [--kubeconfig=<file>] [--fleet-cluster-context=<value>] [--labels=<value>] 
-                              [--verbose]
+  sveltosctl register cluster [options] --namespace=<name> --cluster=<name> [--kubeconfig=<file>] [--fleet-cluster-context=<value>]
+                                [--labels=<value>] [--service-account-token] [--verbose]
 
-     --namespace=<name>                  Specifies the namespace where Sveltos will create a resource (SveltosCluster) to represent the registered cluster.
+     --namespace=<name>                  Specifies the namespace where Sveltos will create a resource (SveltosCluster) to represent
+                                         the registered cluster.
      --cluster=<name>                    Defines a name for the registered cluster within Sveltos.
-     --kubeconfig=<file>                 (Optional) Provides the path to a file containing the kubeconfig for the Kubernetes cluster you want to register.
-                                         If you don't have a kubeconfig file yet, you can use the "sveltosctl generate kubeconfig" command. Be sure 
-                                         to point that command to the specific cluster you want to manage. This will help you create the necessary 
-                                         kubeconfig file before registering the cluster with Sveltos.
+     --kubeconfig=<file>                 (Optional) Provides the path to a file containing the kubeconfig for the Kubernetes cluster
+                                         you want to register.
+                                         If you don't have a kubeconfig file yet, you can use the "sveltosctl generate kubeconfig"
+                                         command.
+                                         Be sure to point that command to the specific cluster you want to manage.
+                                         This will help you create the necessary kubeconfig file before registering the cluster
+                                         with Sveltos.
                                          Either --kubeconfig or --fleet-cluster-context must be provided.
      --fleet-cluster-context=<value>     (Optional) If your kubeconfig has multiple contexts:
                                          - One context points to the management cluster (default one)
                                          - Another context points to the cluster you actually want to manage;
-                                         In this case, you can specify the context name with the --fleet-cluster-context flag. This tells
-                                         the command to use the specific context to generate a Kubeconfig Sveltos can use and then create
-                                         a SveltosCluster with it so you don't have to provide kubeconfig
+                                         In this case, you can specify the context name with the --fleet-cluster-context flag.
+                                         This tells the command to use the specific context to generate a Kubeconfig Sveltos
+                                         can use and then create a SveltosCluster with it so you don't have to provide kubeconfig
                                          Either --kubeconfig or --fleet-cluster-context must be provided.
-     --labels=<key1=value1,key2=value2>  (Optional) This option allows you to specify labels for the SveltosCluster resource being created.
-                                         The format for labels is <key1=value1,key2=value2>, where each key-value pair is separated by a comma (,) and 
-                                         the key and value are separated by an equal sign (=). You can define multiple labels by adding more key-value pairs
-                                         separated by commas.
+     --labels=<key1=value1,key2=value2>  (Optional) This option allows you to specify labels for the SveltosCluster resource
+                                         being created. The format for labels is <key1=value1,key2=value2>, where each key-value
+                                         pair is separated by a comma (,) and the key and value are separated by an equal sign (=).
+                                         You can define multiple labels by adding more key-value pairs separated by commas.
+    --service-account-token              (Optional) Use a non-expiring ServiceAccount token for management cluster registration.
+                                         When enabled, Sveltos will automatically create the necessary ServiceAccount infrastructure
+                                         (ServiceAccount, ClusterRole, and ClusterRoleBinding) in the managed cluster and
+                                         generate a long-lived token by also creating a Secret of type kubernetes.io/service-account-token.
 
 
 Options:
   -h --help                  Show this screen.
-     --verbose               Verbose mode. Print each step.  
+     --verbose               Verbose mode. Print each step.
 
 Description:
   The register cluster command registers a cluster to be managed by Sveltos.
@@ -201,23 +209,31 @@ Description:
 		}
 	}
 
+	renew := true
+
+	satoken := parsedArgs["--service-account-token"].(bool)
+	if satoken {
+		renew = false
+	}
+
 	kubeconfig := ""
 	if passedKubeconfig := parsedArgs["--kubeconfig"]; passedKubeconfig != nil {
 		kubeconfig = passedKubeconfig.(string)
+		// If Kubeconfig is passed, dont try to renew it
+		renew = false
+		satoken = false
 	}
 
-	renew := false
 	fleetClusterContext := ""
 	if passedContext := parsedArgs["--fleet-cluster-context"]; passedContext != nil {
 		fleetClusterContext = passedContext.(string)
-		renew = true
 	}
 
 	if kubeconfig == "" && fleetClusterContext == "" {
 		return fmt.Errorf("either kubeconfig or fleet-cluster-context must be specified")
 	}
 
-	data, err := getKubeconfigData(ctx, kubeconfig, fleetClusterContext, logger)
+	data, err := getKubeconfigData(ctx, kubeconfig, fleetClusterContext, satoken, logger)
 	if err != nil {
 		return err
 	}
@@ -225,14 +241,16 @@ Description:
 	return onboardSveltosCluster(ctx, namespace, cluster, data, labels, renew, logger)
 }
 
-func getKubeconfigData(ctx context.Context, kubeconfigFile, fleetClusterContext string, logger logr.Logger) ([]byte, error) {
+func getKubeconfigData(ctx context.Context, kubeconfigFile, fleetClusterContext string,
+	satoken bool, logger logr.Logger) ([]byte, error) {
+
 	var data []byte
 	if fleetClusterContext != "" {
 		currentContext, err := getCurrentContext()
 		if err != nil {
 			return nil, err
 		}
-		kubeconfigData, err := createKubeconfig(ctx, fleetClusterContext, logger)
+		kubeconfigData, err := createKubeconfig(ctx, fleetClusterContext, satoken, logger)
 		if err != nil {
 			return nil, err
 		}
@@ -267,7 +285,9 @@ func stringToMap(data string) (map[string]string, error) {
 	return result, nil
 }
 
-func createKubeconfig(ctx context.Context, fleetClusterContext string, logger logr.Logger) (string, error) {
+func createKubeconfig(ctx context.Context, fleetClusterContext string, satoken bool,
+	logger logr.Logger) (string, error) {
+
 	logger.V(logs.LogDebug).Info("Get current context")
 	currentContext, err := getCurrentContext()
 	if err != nil {
@@ -290,8 +310,8 @@ func createKubeconfig(ctx context.Context, fleetClusterContext string, logger lo
 
 	logger.V(logs.LogDebug).Info("Generate Kubeconfig")
 	var data string
-	data, err = generate.GenerateKubeconfigForServiceAccount(ctx, remoteRestConfig, generate.Projectsveltos, generate.Projectsveltos,
-		0, true, false, logger)
+	data, err = generate.GenerateKubeconfigForServiceAccount(ctx, remoteRestConfig, generate.Projectsveltos,
+		generate.Projectsveltos, 0, true, false, satoken, logger)
 	if err != nil {
 		return "", err
 	}
