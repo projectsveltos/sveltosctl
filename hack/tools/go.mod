@@ -1,6 +1,6 @@
 module github.com/projectsveltos/sveltosctl/hack/tools
 
-go 1.24.1
+go 1.24.4
 
 require (
 	github.com/onsi/ginkgo/v2 v2.23.4
