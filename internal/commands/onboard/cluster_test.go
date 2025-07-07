@@ -30,9 +30,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
-	"github.com/projectsveltos/sveltosctl/internal/utils"
-
 	"github.com/projectsveltos/sveltosctl/internal/commands/onboard"
+	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
 var _ = Describe("OnboardCluster", func() {

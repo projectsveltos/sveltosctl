@@ -24,3 +24,4 @@ hack/tools/bin/
 bin/
 
 manifest/manifest.yaml-e
+internal/agent/sveltos-applier.yaml-e

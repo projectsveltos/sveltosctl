@@ -1,5 +1,5 @@
 /*
-Copyright 2022. projectsveltos.io. All rights reserved.
+Copyright 2025. projectsveltos.io. All rights reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,14 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package onboard
+package agent
 
-var (
-	OnboardSveltosCluster = onboardSveltosCluster
-	PrepareApplierYAML    = prepareApplierYAML
-)
+//go:generate go run ../../generator.go
 
-const (
-	SveltosKubeconfigSecretNamePostfix = sveltosKubeconfigSecretNamePostfix
-	Kubeconfig                         = kubeconfig
-)
+func GetSveltosAgentYAML() []byte {
+	return sveltosApplierYAML
+}

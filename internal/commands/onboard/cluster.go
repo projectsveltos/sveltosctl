@@ -131,7 +131,7 @@ func patchSecret(ctx context.Context, clusterNamespace, secretName string, kubec
 // RegisterCluster takes care of creating all necessary internal resources to import a cluster
 func RegisterCluster(ctx context.Context, args []string, logger logr.Logger) error { //nolint: funlen // command description
 	doc := `Usage:
-  sveltosctl register cluster [options] --namespace=<name> --cluster=<name> [--kubeconfig=<file>] [--fleet-cluster-context=<value>]
+  sveltosctl register cluster [options] --namespace=<name> --cluster=<name> [--kubeconfig=<file>] [--fleet-cluster-context=<value>] [--pullmode]
                                 [--labels=<value>] [--service-account-token] [--verbose]
 
      --namespace=<name>                  Specifies the namespace where Sveltos will create a resource (SveltosCluster) to represent
@@ -152,6 +152,11 @@ func RegisterCluster(ctx context.Context, args []string, logger logr.Logger) err
                                          This tells the command to use the specific context to generate a Kubeconfig Sveltos
                                          can use and then create a SveltosCluster with it so you don't have to provide kubeconfig
                                          Either --kubeconfig or --fleet-cluster-context must be provided.
+     --pullmode                          (Optional) this registers a cluster in pull mode. When enabled, the managed cluster will actively
+                                         fetch its configurations from the management cluster, which is ideal for scenarios with
+                                         firewall restrictions or when direct inbound access to the managed cluster is undesirable.
+                                         This flag outputs the specialized YAML configuration that needs to be applied to the managed
+                                         cluster to complete its setup.
      --labels=<key1=value1,key2=value2>  (Optional) This option allows you to specify labels for the SveltosCluster resource
                                          being created. The format for labels is <key1=value1,key2=value2>, where each key-value
                                          pair is separated by a comma (,) and the key and value are separated by an equal sign (=).
@@ -160,7 +165,6 @@ func RegisterCluster(ctx context.Context, args []string, logger logr.Logger) err
                                          When enabled, Sveltos will automatically create the necessary ServiceAccount infrastructure
                                          (ServiceAccount, ClusterRole, and ClusterRoleBinding) in the managed cluster and
                                          generate a long-lived token by also creating a Secret of type kubernetes.io/service-account-token.
-
 
 Options:
   -h --help                  Show this screen.
@@ -209,6 +213,9 @@ Description:
 		}
 	}
 
+	_ = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogInfo))
+	pullMode := parsedArgs["--pullmode"].(bool)
+
 	renew := true
 
 	satoken := parsedArgs["--service-account-token"].(bool)
@@ -227,6 +234,10 @@ Description:
 	fleetClusterContext := ""
 	if passedContext := parsedArgs["--fleet-cluster-context"]; passedContext != nil {
 		fleetClusterContext = passedContext.(string)
+	}
+
+	if pullMode {
+		return onboardSveltosClusterInPullMode(ctx, namespace, cluster, labels, logger)
 	}
 
 	if kubeconfig == "" && fleetClusterContext == "" {
