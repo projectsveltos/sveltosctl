@@ -112,7 +112,7 @@ generate-modules: ## Run go mod tidy to ensure modules are up to date
 	go mod tidy
 	cd $(TOOLS_DIR); go mod tidy
 
-.PHONY: generate
+.PHONY: generate sveltos-applier
 generate: ## Run all generate-manifests-*, generate-go-deepcopy-*
 	$(MAKE) generate-modules generate-manifests generate-go-deepcopy
 	cp k8s/sveltosctl.yaml manifest/manifest.yaml
@@ -147,7 +147,7 @@ PKEY ?= id_rsa
 
 .PHONY: docker-build
 docker-build: ## Build the docker image for sveltosctl
-	docker build --build-arg BUILDOS=linux --build-arg TARGETARCH=amd64 --build-arg LDFLAGS="$(LDFLAGS)" --build-arg ARCH=$(ARCH) -t $(REGISTRY)/$(IMAGE_NAME)-$(ARCH):$(TAG) -f Dockerfile . 
+	docker build --build-arg BUILDOS=linux --build-arg TARGETARCH=amd64 --build-arg LDFLAGS="$(LDFLAGS)" --build-arg ARCH=$(ARCH) -t $(REGISTRY)/$(IMAGE_NAME)-$(ARCH):$(TAG) -f Dockerfile .
 
 .PHONY: docker-buildx
 docker-buildx: ## docker build for multiple arch and push to docker hub
@@ -165,7 +165,7 @@ fmt goimports: $(GOIMPORTS) ## Format and adjust import modules.
 
 .PHONY: lint
 lint: $(GOLANGCI_LINT) ## Lint codebase
-	$(GOLANGCI_LINT) run -v --fast=false --max-issues-per-linter 0 --max-same-issues 0 --timeout 5m	
+	$(GOLANGCI_LINT) run -v --fast=false --max-issues-per-linter 0 --max-same-issues 0 --timeout 5m
 
 .PHONY: check-manifests
 check-manifests: generate ## Verify manifests file is up to date
@@ -195,4 +195,17 @@ endif
 
 .PHONY: test
 test: | check-manifests fmt vet $(SETUP_ENVTEST) ## Run uts.
-	KUBEBUILDER_ASSETS="$(KUBEBUILDER_ASSETS)" go test $(shell go list ./... |grep -v test/fv |grep -v pkg/deployer/fake |grep -v test/helpers) $(TEST_ARGS) -coverprofile cover.out 
+	KUBEBUILDER_ASSETS="$(KUBEBUILDER_ASSETS)" go test $(shell go list ./... |grep -v test/fv |grep -v pkg/deployer/fake |grep -v test/helpers) $(TEST_ARGS) -coverprofile cover.out
+
+define get-digest
+$(shell skopeo inspect --format '{{.Digest}}' "docker://projectsveltos/sveltos-applier:${TAG}" --override-os="linux" --override-arch="amd64" --override-variant="v8" 2>/dev/null)
+endef
+
+
+sveltos-applier:
+	@echo "Downloading sveltos applier yaml"
+	$(eval digest :=$(call get-digest))
+	@echo "image digest is $(digest)"
+	curl -L -H "Authorization: token $$GITHUB_PAT" https://raw.githubusercontent.com/projectsveltos/sveltos-applier/$(TAG)/manifest/manifest.yaml -o ./internal/agent/sveltos-applier.yaml
+	sed -i'' -e "s#image: docker.io/projectsveltos/sveltos-applier:${TAG}#image: docker.io/projectsveltos/sveltos-applier@${digest}#g" ./internal/agent/sveltos-applier.yaml
+	cd internal/agent; go generate
