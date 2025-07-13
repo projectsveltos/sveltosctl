@@ -581,6 +581,7 @@ rules:
   resources:
   - classifierreports
   - eventreports
+  - healthcheckreports
   verbs:
   - create
   - get
@@ -599,6 +600,7 @@ rules:
   resources:
   - classifiers
   - eventsources
+  - healthchecks
   verbs:
   - get
   - list
