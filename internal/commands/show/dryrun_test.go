@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/commands/show"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -164,7 +165,7 @@ var _ = Describe("DryRun", func() {
 		clusterNamespace := ns.Name
 		clusterName := randomString()
 
-		resourceReports1 := []configv1beta1.ResourceReport{
+		resourceReports1 := []libsveltosv1beta1.ResourceReport{
 			*generateResourceReport(string(configv1beta1.HelmChartActionInstall)),
 			*generateResourceReport(string(configv1beta1.NoHelmAction)),
 		}
@@ -194,11 +195,11 @@ var _ = Describe("DryRun", func() {
 			},
 		}
 
-		resourceReports2 := []configv1beta1.ResourceReport{
-			*generateResourceReport(string(configv1beta1.CreateResourceAction)),
-			*generateResourceReport(string(configv1beta1.UpdateResourceAction)),
-			*generateResourceReport(string(configv1beta1.NoResourceAction)),
-			*generateResourceReport(string(configv1beta1.DeleteResourceAction)),
+		resourceReports2 := []libsveltosv1beta1.ResourceReport{
+			*generateResourceReport(string(libsveltosv1beta1.CreateResourceAction)),
+			*generateResourceReport(string(libsveltosv1beta1.UpdateResourceAction)),
+			*generateResourceReport(string(libsveltosv1beta1.NoResourceAction)),
+			*generateResourceReport(string(libsveltosv1beta1.DeleteResourceAction)),
 		}
 
 		clusterProfileName2 := randomString()
@@ -297,7 +298,7 @@ func verifyReleaseReport(lines []string, clusterInfo, clusterProfileName string,
 }
 
 func verifyResourceReports(lines []string, clusterInfo, clusterProfileName string,
-	resourceReports []configv1beta1.ResourceReport) {
+	resourceReports []libsveltosv1beta1.ResourceReport) {
 
 	for i := range resourceReports {
 		verifyResourceReport(lines, clusterInfo, clusterProfileName, &resourceReports[i])
@@ -305,7 +306,7 @@ func verifyResourceReports(lines []string, clusterInfo, clusterProfileName strin
 }
 
 func verifyResourceReport(lines []string, clusterInfo, clusterProfileName string,
-	resourceReport *configv1beta1.ResourceReport) {
+	resourceReport *libsveltosv1beta1.ResourceReport) {
 
 	found := false
 	for i := range lines {

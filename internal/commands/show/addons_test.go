@@ -34,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/commands/show"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -112,13 +113,13 @@ var _ = Describe("AddOnss", func() {
 
 	It("show addonss display deployed resources", func() {
 		clusterProfileName1 := randomString()
-		resource1 := []configv1beta1.Resource{
+		resource1 := []libsveltosv1beta1.Resource{
 			*generateResource(), *generateResource(), *generateResource(),
 		}
 		clusterConfiguration = addDeployedResources(clusterConfiguration, clusterProfileName1, resource1)
 
 		clusterProfileName2 := randomString()
-		resource2 := []configv1beta1.Resource{
+		resource2 := []libsveltosv1beta1.Resource{
 			*generateResource(), *generateResource(), *generateResource(),
 		}
 		clusterConfiguration = addDeployedResources(clusterConfiguration, clusterProfileName2, resource2)
@@ -192,7 +193,7 @@ func verifyChart(lines []string, clusterInfo, clusterProfileName string,
 }
 
 func verifyResources(lines []string, clusterInfo, clusterProfileName string,
-	resources []configv1beta1.Resource) {
+	resources []libsveltosv1beta1.Resource) {
 
 	for i := range resources {
 		verifyResource(lines, clusterInfo, clusterProfileName, &resources[i])
@@ -200,7 +201,7 @@ func verifyResources(lines []string, clusterInfo, clusterProfileName string,
 }
 
 func verifyResource(lines []string, clusterInfo, clusterProfileName string,
-	resource *configv1beta1.Resource) {
+	resource *libsveltosv1beta1.Resource) {
 
 	found := false
 	for i := range lines {

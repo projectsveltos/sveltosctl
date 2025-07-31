@@ -31,6 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -136,7 +137,7 @@ var _ = Describe("ClusterConfiguration", func() {
 	})
 
 	It("GetResources returns deployed resources", func() {
-		resource1 := &configv1beta1.Resource{
+		resource1 := &libsveltosv1beta1.Resource{
 			Name:            randomString(),
 			Namespace:       randomString(),
 			Group:           randomString(),
@@ -144,7 +145,7 @@ var _ = Describe("ClusterConfiguration", func() {
 			LastAppliedTime: &metav1.Time{Time: time.Now()},
 		}
 
-		resource2 := &configv1beta1.Resource{
+		resource2 := &libsveltosv1beta1.Resource{
 			Name:            randomString(),
 			Namespace:       randomString(),
 			Group:           randomString(),
@@ -153,7 +154,8 @@ var _ = Describe("ClusterConfiguration", func() {
 		}
 
 		clusterConfiguration := createClusterConfiguration(
-			[]configv1beta1.Resource{*resource1}, []configv1beta1.Resource{*resource1, *resource2},
+			[]libsveltosv1beta1.Resource{*resource1},
+			[]libsveltosv1beta1.Resource{*resource1, *resource2},
 			nil, nil)
 		initObjects := []client.Object{clusterConfiguration}
 
@@ -171,14 +173,14 @@ var _ = Describe("ClusterConfiguration", func() {
 	})
 })
 
-func createClusterConfiguration(clusterProfile1Resources, clusterProfile2Resources []configv1beta1.Resource,
+func createClusterConfiguration(clusterProfile1Resources, clusterProfile2Resources []libsveltosv1beta1.Resource,
 	clusterProfile1Charts, clusterProfile2Charts []configv1beta1.Chart) *configv1beta1.ClusterConfiguration {
 
 	cfr1 := &configv1beta1.ClusterProfileResource{
 		ClusterProfileName: randomString(),
 		Features: []configv1beta1.Feature{
 			{
-				FeatureID: configv1beta1.FeatureHelm,
+				FeatureID: libsveltosv1beta1.FeatureHelm,
 				Resources: clusterProfile1Resources,
 				Charts:    clusterProfile1Charts,
 			},
@@ -189,7 +191,7 @@ func createClusterConfiguration(clusterProfile1Resources, clusterProfile2Resourc
 		ClusterProfileName: randomString(),
 		Features: []configv1beta1.Feature{
 			{
-				FeatureID: configv1beta1.FeatureHelm,
+				FeatureID: libsveltosv1beta1.FeatureHelm,
 				Resources: clusterProfile2Resources,
 				Charts:    clusterProfile2Charts,
 			},
