@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 )
 
@@ -88,12 +89,12 @@ func (a *k8sAccess) GetHelmReleases(clusterConfiguration *configv1beta1.ClusterC
 
 // GetResources returns list of resources deployed in a given cluster
 func (a *k8sAccess) GetResources(clusterConfiguration *configv1beta1.ClusterConfiguration,
-	logger logr.Logger) map[configv1beta1.Resource][]string {
+	logger logr.Logger) map[libsveltosv1beta1.Resource][]string {
 
 	logger = logger.WithValues("namespace", clusterConfiguration.Namespace,
 		"clusterConfiguration", clusterConfiguration.Name)
 
-	results := make(map[configv1beta1.Resource][]string)
+	results := make(map[libsveltosv1beta1.Resource][]string)
 
 	logger.V(logs.LogDebug).Info("Get resources deployed in the cluster")
 	for i := range clusterConfiguration.Status.ClusterProfileResources {
@@ -133,7 +134,7 @@ func (a *k8sAccess) addDeployedChartsForFeature(clusterProfilesName string,
 }
 
 func (a *k8sAccess) addDeployedResources(profilesKind, profileName string,
-	features []configv1beta1.Feature, results map[configv1beta1.Resource][]string) {
+	features []configv1beta1.Feature, results map[libsveltosv1beta1.Resource][]string) {
 
 	for i := range features {
 		a.addDeployedResourcesForFeature(
@@ -143,7 +144,7 @@ func (a *k8sAccess) addDeployedResources(profilesKind, profileName string,
 }
 
 func (a *k8sAccess) addDeployedResourcesForFeature(profileName string,
-	resources []configv1beta1.Resource, results map[configv1beta1.Resource][]string) {
+	resources []libsveltosv1beta1.Resource, results map[libsveltosv1beta1.Resource][]string) {
 
 	for i := range resources {
 		resource := &resources[i]

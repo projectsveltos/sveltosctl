@@ -32,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
@@ -176,13 +177,13 @@ func displayDryRunForCluster(clusterReport *configv1beta1.ClusterReport, profile
 		report := &clusterReport.Status.ResourceReports[i]
 		groupKind := fmt.Sprintf("%s:%s", report.Resource.Group, report.Resource.Kind)
 		message := report.Message
-		if report.Action == string(configv1beta1.UpdateResourceAction) {
+		if report.Action == string(libsveltosv1beta1.UpdateResourceAction) {
 			message = updateMessage
 		}
 		table.Append(genDryRunRow(clusterInfo, groupKind, report.Resource.Namespace, report.Resource.Name,
 			report.Action, message, profileName))
 		if rawDiff {
-			if rawDiff && report.Message != "" && report.Action == string(configv1beta1.UpdateResourceAction) {
+			if rawDiff && report.Message != "" && report.Action == string(libsveltosv1beta1.UpdateResourceAction) {
 				//nolint: forbidigo // print diff
 				fmt.Printf("Profile: %s:%s Cluster: %s/%s\n%s\n", profileOwner.Kind, profileOwner.Name,
 					clusterReport.Spec.ClusterNamespace, clusterReport.Spec.ClusterName, report.Message)
@@ -194,13 +195,13 @@ func displayDryRunForCluster(clusterReport *configv1beta1.ClusterReport, profile
 		report := &clusterReport.Status.KustomizeResourceReports[i]
 		groupKind := fmt.Sprintf("%s:%s", report.Resource.Group, report.Resource.Kind)
 		message := report.Message
-		if report.Action == string(configv1beta1.UpdateResourceAction) {
+		if report.Action == string(libsveltosv1beta1.UpdateResourceAction) {
 			message = updateMessage
 		}
 		table.Append(genDryRunRow(clusterInfo, groupKind, report.Resource.Namespace, report.Resource.Name,
 			report.Action, message, profileName))
 		if rawDiff {
-			if rawDiff && report.Message != "" && report.Action == string(configv1beta1.UpdateResourceAction) {
+			if rawDiff && report.Message != "" && report.Action == string(libsveltosv1beta1.UpdateResourceAction) {
 				//nolint: forbidigo // print diff
 				fmt.Printf("Profile: %s:%s Cluster: %s/%s\n%s\n", profileOwner.Kind, profileOwner.Name,
 					clusterReport.Spec.ClusterNamespace, clusterReport.Spec.ClusterName, report.Message)
@@ -227,7 +228,7 @@ func DryRun(ctx context.Context, args []string, logger logr.Logger) error {
 
 Options:
   -h --help                  Show this screen.
-     --verbose               Verbose mode. Print each step.  
+     --verbose               Verbose mode. Print each step.
 
 Description:
   The show dryrun command shows information about which Kubernetes addons would change in a cluster due to ClusterProfiles in DryRun mode.

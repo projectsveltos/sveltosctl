@@ -26,11 +26,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
@@ -50,7 +50,7 @@ func addDeployedHelmCharts(clusterConfiguration *configv1beta1.ClusterConfigurat
 			}
 			cfr.Features = append(cfr.Features,
 				configv1beta1.Feature{
-					FeatureID: configv1beta1.FeatureHelm,
+					FeatureID: libsveltosv1beta1.FeatureHelm,
 					Charts:    charts,
 				})
 
@@ -61,7 +61,7 @@ func addDeployedHelmCharts(clusterConfiguration *configv1beta1.ClusterConfigurat
 	cfr := &configv1beta1.ClusterProfileResource{
 		ClusterProfileName: clusterProfileName,
 		Features: []configv1beta1.Feature{
-			{FeatureID: configv1beta1.FeatureHelm, Charts: charts},
+			{FeatureID: libsveltosv1beta1.FeatureHelm, Charts: charts},
 		},
 	}
 	clusterConfiguration.Status.ClusterProfileResources = append(clusterConfiguration.Status.ClusterProfileResources, *cfr)
@@ -71,7 +71,7 @@ func addDeployedHelmCharts(clusterConfiguration *configv1beta1.ClusterConfigurat
 
 // addDeployedResources adds provided resources as deployed in clusterConfiguration status
 func addDeployedResources(clusterConfiguration *configv1beta1.ClusterConfiguration,
-	clusterProfileName string, resources []configv1beta1.Resource) *configv1beta1.ClusterConfiguration {
+	clusterProfileName string, resources []libsveltosv1beta1.Resource) *configv1beta1.ClusterConfiguration {
 
 	if clusterConfiguration.Status.ClusterProfileResources == nil {
 		clusterConfiguration.Status.ClusterProfileResources = make([]configv1beta1.ClusterProfileResource, 0)
@@ -85,7 +85,7 @@ func addDeployedResources(clusterConfiguration *configv1beta1.ClusterConfigurati
 			}
 			cfr.Features = append(cfr.Features,
 				configv1beta1.Feature{
-					FeatureID: configv1beta1.FeatureResources,
+					FeatureID: libsveltosv1beta1.FeatureResources,
 					Resources: resources,
 				})
 
@@ -96,7 +96,7 @@ func addDeployedResources(clusterConfiguration *configv1beta1.ClusterConfigurati
 	cfr := &configv1beta1.ClusterProfileResource{
 		ClusterProfileName: clusterProfileName,
 		Features: []configv1beta1.Feature{
-			{FeatureID: configv1beta1.FeatureResources, Resources: resources},
+			{FeatureID: libsveltosv1beta1.FeatureResources, Resources: resources},
 		},
 	}
 	clusterConfiguration.Status.ClusterProfileResources = append(clusterConfiguration.Status.ClusterProfileResources, *cfr)
@@ -115,9 +115,9 @@ func generateChart() *configv1beta1.Chart {
 	}
 }
 
-func generateResource() *configv1beta1.Resource {
+func generateResource() *libsveltosv1beta1.Resource {
 	t := metav1.Time{Time: time.Now()}
-	return &configv1beta1.Resource{
+	return &libsveltosv1beta1.Resource{
 		Name:            randomString(),
 		Namespace:       randomString(),
 		Group:           randomString(),
@@ -135,9 +135,9 @@ func generateReleaseReport(action string) *configv1beta1.ReleaseReport {
 	}
 }
 
-func generateResourceReport(action string) *configv1beta1.ResourceReport {
-	return &configv1beta1.ResourceReport{
-		Resource: configv1beta1.Resource{
+func generateResourceReport(action string) *libsveltosv1beta1.ResourceReport {
+	return &libsveltosv1beta1.ResourceReport{
+		Resource: libsveltosv1beta1.Resource{
 			Name:      randomString(),
 			Namespace: randomString(),
 			Group:     randomString(),
