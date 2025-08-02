@@ -101,7 +101,7 @@ spec:
         - --cluster-type=
         - --secret-with-kubeconfig=
         - --v=5
-        - --version=main
+        - --version=v1.0.0-beta.0
         command:
         - /manager
         env:
@@ -117,7 +117,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        image: docker.io/projectsveltos/sveltos-applier@sha256:0089358c6e0b309b0bbba677dd08e20771c1e7762dfe725cc5c7758ba0754efb
+        image: docker.io/projectsveltos/sveltos-applier@sha256:70bd749f6760072e705c000e1b566d0fefc255271b0be3bcc5652bcf5f9ab0dd
         livenessProbe:
           failureThreshold: 3
           httpGet:
@@ -147,8 +147,8 @@ spec:
             cpu: 500m
             memory: 512Mi
           requests:
-            cpu: 100m
-            memory: 128Mi
+            cpu: 200m
+            memory: 512Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
