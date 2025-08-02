@@ -10,12 +10,12 @@
 
 Please refere to sveltos [documentation](https://projectsveltos.github.io/sveltos/).
 
-**sveltosctl** is the command line client for Sveltos. **sveltosctl** nicely displays resources and helm charts info in custer deployed using [ClusterProfile/Profile](https://github.com/projectsveltos/addon-controller). It also provides the ability to generate configuration snapshots and rollback system to a previously taken configuration snapshot.
+**sveltosctl** is the command line client for Sveltos. **sveltosctl** nicely displays resources and helm charts info in custer deployed using [ClusterProfile/Profile](https://github.com/projectsveltos/addon-controller).
 
 It assumes:
 1. [ClusterProfile/Profile](https://github.com/projectsveltos/addon-controller) is used to programmatically define which resources/helm charts need to be deployed in which CAPI Clusters;
-2. management cluster can be accessed 
- 
+2. management cluster can be accessed
+
 > Note: sveltosctl can run as binary though it is advised to run it as pod in a management cluster to get access to all of its features.
 
 ## Quick start
@@ -25,43 +25,6 @@ If you decide to run it as a binary:
 1. make sure management cluster can be accessed;
 2. run`make build`
 3. Use `./bin/sveltosctl --help` to see help message
-
-### Run sveltosctl as a pod
-If you decide to run it as a pod in the management cluster, YAML is in manifest subdirectory.
-This assumes you have already [installed Sveltos](https://projectsveltos.github.io/sveltos/install).
-
-```
-kubectl create -f  https://raw.githubusercontent.com/projectsveltos/sveltosctl/main/manifest/manifest.yaml
-```
-
-Please keep in mind it requires a PersistentVolume. So modify this section accordingly before posting the YAML.
-
-```
-  volumeClaimTemplates:
-  - metadata:
-      name: snapshot
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: "standard"
-      resources:
-        requests:
-          storage: 1Gi
-```
-
-Once the pod is running,
-```
- kubectl exec -it -n projectsveltos sveltosctl-0   -- ./sveltosctl
-```
-
-You might also want to change the timezone of sveltosctl pod by using specific timezone config and hostPath volume to set specific timezone. Currently:
-
-```
-  volumes:
-  - hostPath:
-      path: /usr/share/zoneinfo/America/Los_Angeles
-      type: File
-    name: tz-config
-```
 
 - [sveltosctl](#sveltosctl)
   - [Quick start](#quick-start)
@@ -73,10 +36,6 @@ You might also want to change the timezone of sveltosctl pod by using specific t
   - [Multi-tenancy: display admin permissions](#multi-tenancy-display-admin-permissions)
   - [Log severity settings](#log-severity-settings)
   - [Display outcome of ClusterProfile/Profile in DryRun mode](#display-outcome-of-clusterprofile-in-dryrun-mode)
-  - [Snapshot](#snapshot)
-    - [list](#list-1)
-    - [diff](#diff)
-    - [rollback](#rollback)
   - [Admin RBACs](#admin-rbacs)
   - [Contributing](#contributing)
   - [License](#license)
@@ -133,7 +92,7 @@ sveltosctl register cluster --namespace=gcp --cluster=cluster-1 --fleet-cluster-
 ## Display information about resources in managed cluster
 
 **show resources** looks at all the HealthCheckReport instances and display information about those.
-Defining ClusterHealthCheck/HealthCheck you can define which information to collect from which managed clusters. 
+Defining ClusterHealthCheck/HealthCheck you can define which information to collect from which managed clusters.
 Please see [documentation](https://projectsveltos.github.io/sveltos/)
 
 For instance:
@@ -176,7 +135,7 @@ If we have two clusters, a ClusterAPI powered one and a SveltosCluster, both mat
 ```env=internal``` and we post [RoleRequests](https://raw.githubusercontent.com/projectsveltos/access-manager/main/examples/shared_access.yaml), we get:
 
 ```
-./bin/sveltosctl show admin-rbac       
+./bin/sveltosctl show admin-rbac
 +---------------------------------------------+-------+----------------+------------+-----------+----------------+-------+
 |                   CLUSTER                   | ADMIN |   NAMESPACE    | API GROUPS | RESOURCES | RESOURCE NAMES | VERBS |
 +---------------------------------------------+-------+----------------+------------+-----------+----------------+-------+
@@ -201,7 +160,7 @@ Following for instance change log severity for the Classifier POD to debug
 Show can be used to display current log severity settings
 
 ```
-./bin/sveltosctl log-level show                              
+./bin/sveltosctl log-level show
 +------------+---------------+
 | COMPONENT  |   VERBOSITY   |
 +------------+---------------+
@@ -234,10 +193,10 @@ Here is an example of outcome
 **show dryrun** command has some argurments which allow filtering by:
 1. clusters' namespace
 2. clusters' name
-3. ClusterProfile 
+3. ClusterProfile
 
 ```
-./bin/sveltosctl show dryrun --help  
+./bin/sveltosctl show dryrun --help
 Usage:
   sveltosctl show dryrun [options] [--namespace=<name>] [--cluster=<name>] [--profile=<name>] [--verbose]
 
@@ -246,100 +205,12 @@ Usage:
      --profile=<name>   Show which Kubernetes addons would change because of this clusterprofile/profile. If not specified all clusterprofiles/profiles are considered.
 ```
 
-## Snapshot
-
-When running sveltosctl as pod in the management cluster, it can take configuration snapshot.
-
-A snapshot allows an administrator to perform the following tasks:
-1. Live snapshots of the running configuration deployed by ClusterProfiles in each CAPI cluster;
-2. Recurring snapshots;
-3. Versioned storage of the configuration
-4. Full viewing of any snapshot configuration including the differences between snapshots
-5. Rollback to any previous configuration snapshot.
-
-Define a Snapshot instance, following for instance will take a snaphost every hour.
-
-```
-apiVersion: utils.projectsveltos.io/v1beta1
-kind: Snapshot
-metadata:
-  name: hourly
-spec:
-  schedule: "00 * * * *"
-  storage: /snapshot
-```
-
-where field _schedule_ is defined in [Cron format](https://en.wikipedia.org/wiki/Cron).
-
-The configuration snapshots consist of text files containing:
-1. ClusterProfiles;
-2. All ConfigMaps/Secrets referenced by at least one ClusterProfile;
-3. CAPI Cluster labels;
-4. few other internal `config.projectsveltos.io` CRD instances.
-   
-The snapshot contains the configuration at the time of the snapshot stored. Each snapshot is stored with a version identifier. The version identifier is automatically generated by concatenating the date with the time of the snapshot.
-
-### list
-  
-**snapshot list** can be used to display all available snapshots:
-
-```
-kubectl exec -it -n projectsveltos sveltosctl-0 -- ./sveltosctl snapshot list --snapshot=hourly 
-+-----------------+---------------------+
-| SNAPSHOT POLICY |        DATE         |
-+-----------------+---------------------+
-| hourly          | 2022-10-10:22:00:00 |
-| hourly          | 2022-10-10:23:00:00 |
-+-----------------+---------------------+
-```
-
-### diff
-
-**snapshot diff** can be used to display all the configuration changes between two snapshots:
-
-```
-kubectl exec -it -n projectsveltos sveltosctl-0 -- ./sveltosctl snapshot diff --snapshot=hourly  --from-sample=2022-10-10:22:00:00 --to-sample=2022-10-10:23:00:00 
-+-------------------------------------+--------------------------+-----------+----------------+----------+------------------------------------+
-|               CLUSTER               |      RESOURCE TYPE       | NAMESPACE |      NAME      |  ACTION  |              MESSAGE               |
-+-------------------------------------+--------------------------+-----------+----------------+----------+------------------------------------+
-| default/sveltos-management-workload | helm release             | mysql     | mysql          | added    |                                    |
-| default/sveltos-management-workload | helm release             | nginx     | nginx-latest   | added    |                                    |
-| default/sveltos-management-workload | helm release             | kyverno   | kyverno-latest | modified | To version: v2.5.0 From            |
-|                                     |                          |           |                |          | version v2.5.3                     |
-| default/sveltos-management-workload | /Pod                     | default   | nginx          | added    |                                    |
-| default/sveltos-management-workload | kyverno.io/ClusterPolicy |           | no-gateway     | modified | To see diff compare ConfigMap      |
-|                                     |                          |           |                |          | default/kyverno-disallow-gateway-2 |
-|                                     |                          |           |                |          | in the from folderwith ConfigMap   |
-|                                     |                          |           |                |          | default/kyverno-disallow-gateway-2 |
-|                                     |                          |           |                |          | in the to folder                   |
-+-------------------------------------+--------------------------+-----------+----------------+----------+------------------------------------+
-```
-
-To see Sveltos CLI for snapshot in action, have a look at this [video](https://youtu.be/ALcp1_Nj9r4)
-
-### rollback
-
-Rollback is when a previous configuration snapshot is used to replace the current configuration deployed by ClusterProfiles. This can be done on the granularity of:. 
-1. namespace: Rollbacks only ConfigMaps/Secrets and Cluster labels in this namespace. If not specified all namespaces are considered;
-2. cluster: Rollback only labels for cluster with this name. If not specified all cluster's labels are updated;
-3. clusterprofile: Rollback only clusterprofile with this name. If not specified all clusterprofiles are updated
-
-When all of the configuration files for a particular version are used to replace the current configuration, this is referred to as a full rollback.
-
-Following for instance will bring system back to the state it had at 22:00
-
-```
-kubectl exec -it -n projectsveltos sveltosctl-0 -- ./sveltosctl snapshot rollback --snapshot=hourly  --sample=2022-10-10:22:00:00
-```
-
-To see Sveltos CLI for snapshot in action, have a look at this [video](https://youtu.be/sTo6RcWP1BQ)
-
 ## Admin RBACs
 
-**snapshot show admin-rbac** can be used to display admin's RBACs per cluster:
+**sveltosctl show admin-rbac** can be used to display admin's RBACs per cluster:
 
 ```
-./bin/sveltosctl show admin-rbac                                                                           
+./bin/sveltosctl show admin-rbac
 +---------------------------------------------+-------------+-----------+------------+-----------+----------------+----------------+
 |                   CLUSTER                   |  ADMIN      | NAMESPACE | API GROUPS | RESOURCES | RESOURCE NAMES |     VERBS      |
 +---------------------------------------------+-------------+-----------+------------+-----------+----------------+----------------+
@@ -347,7 +218,7 @@ To see Sveltos CLI for snapshot in action, have a look at this [video](https://y
 +---------------------------------------------+-------------+-----------+------------+-----------+----------------+----------------+
 ```
 
-## Contributing 
+## Contributing
 
 ❤️ Your contributions are always welcome! If you want to contribute, have questions, noticed any bug or want to get the latest project news, you can connect with us in the following ways:
 

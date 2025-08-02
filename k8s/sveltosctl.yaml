@@ -50,17 +50,11 @@ spec:
         imagePullPolicy: IfNotPresent
         command:
           - /sveltosctl
-        args:
-          - snapshot
-          - reconciler
-          - v=5
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: true
           runAsUser: 0
         volumeMounts:
-        - mountPath: /collection
-          name: collection
         - mountPath: /etc/localtime
           name: tz-config
         - mountPath: /tmp
@@ -71,15 +65,6 @@ spec:
       - hostPath:
           path: /usr/share/zoneinfo/America/Los_Angeles
         name: tz-config
-  volumeClaimTemplates:
-  - metadata:
-      name: collection
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: "standard"
-      resources:
-        requests:
-          storage: 1Gi
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
@@ -131,34 +116,6 @@ rules:
       - list
       - update
       - watch
-  - apiGroups: ["utils.projectsveltos.io"]
-    resources:
-      - snapshots
-    verbs:
-      - get
-      - list
-      - watch
-      - update
-  - apiGroups: ["utils.projectsveltos.io"]
-    resources:
-    - snapshots/finalizers
-    verbs:
-    - patch
-    - update      
-  - apiGroups: ["utils.projectsveltos.io"]
-    resources:
-      - snapshots/status
-    verbs:
-      - '*'
-  - apiGroups: ["cluster.x-k8s.io"]
-    resources:
-      - clusters
-      - machines
-    verbs:
-      - get
-      - list
-      - watch
-      - update
   - apiGroups: ["lib.projectsveltos.io"]
     resources:
       - rolerequests
@@ -187,4 +144,4 @@ roleRef:
 subjects:
 - kind: ServiceAccount
   name: sveltosctl
-  namespace: projectsveltos 
+  namespace: projectsveltos
