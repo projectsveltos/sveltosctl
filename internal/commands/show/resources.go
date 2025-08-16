@@ -27,6 +27,8 @@ import (
 	"github.com/fatih/color"
 	"github.com/go-logr/logr"
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/renderer"
+	"github.com/olekukonko/tablewriter/tw"
 	"gopkg.in/yaml.v3"
 
 	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
@@ -54,17 +56,30 @@ func displayResources(ctx context.Context,
 	passedClusterNamespace, passedCluster, passedGroup, passedKind, passedNamespace string,
 	full bool, logger logr.Logger) error {
 
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetBorder(true)
+	colorCfg := renderer.ColorizedConfig{
+		Header: renderer.Tint{
+			FG: renderer.Colors{color.Bold, color.FgBlack},
+		},
+		Column: renderer.Tint{
+			Columns: []renderer.Tint{
+				{FG: renderer.Colors{color.Bold, color.FgBlack}}, // CLUSTER
+				{FG: renderer.Colors{color.Bold, color.FgBlack}}, // GVK
+				{FG: renderer.Colors{color.Bold, color.FgBlack}}, // NAMESPACE
+				{FG: renderer.Colors{color.Bold, color.FgBlack}}, // NAME
+				{FG: renderer.Colors{color.Bold, color.FgBlack}}, // MESSAGE
+			},
+		},
+	}
+
+	table := tablewriter.NewTable(os.Stdout,
+		tablewriter.WithRenderer(renderer.NewColorized(colorCfg)),
+	)
 
 	if !full {
-		table.SetHeader([]string{"CLUSTER", "GVK", "NAMESPACE", "NAME", "MESSAGE"})
-		table.SetAutoMergeCellsByColumnIndex([]int{0, 1})
-		table.SetColumnColor(tablewriter.Colors{tablewriter.Bold, tablewriter.FgBlackColor},
-			tablewriter.Colors{tablewriter.Bold, tablewriter.FgBlackColor},
-			tablewriter.Colors{tablewriter.Bold, tablewriter.FgBlackColor},
-			tablewriter.Colors{tablewriter.Bold, tablewriter.FgBlackColor},
-			tablewriter.Colors{tablewriter.Bold, tablewriter.FgBlackColor})
+		table.Header("CLUSTER", "GVK", "NAMESPACE", "NAME", "MESSAGE")
+		table.Configure(func(config *tablewriter.Config) {
+			config.Row.Formatting.MergeMode = tw.MergeHorizontal
+		})
 	}
 
 	if err := displayResourcesInNamespaces(ctx, passedClusterNamespace, passedCluster,
@@ -73,7 +88,7 @@ func displayResources(ctx context.Context,
 	}
 
 	if !full {
-		table.Render()
+		return table.Render()
 	}
 
 	return nil
@@ -81,7 +96,8 @@ func displayResources(ctx context.Context,
 
 func displayResourcesInNamespaces(ctx context.Context,
 	passedClusterNamespace, passedCluster, passedGroup, passedKind, passedNamespace string,
-	full bool, table *tablewriter.Table, logger logr.Logger) error {
+	full bool, table *tablewriter.Table, logger logr.Logger,
+) error {
 
 	instance := utils.GetAccessInstance()
 
@@ -109,7 +125,8 @@ func displayResourcesInNamespaces(ctx context.Context,
 
 func displayResourcesInReport(healthCheckReport *libsveltosv1beta1.HealthCheckReport,
 	passedGroup, passedKind, passedNamespace string, full bool,
-	table *tablewriter.Table, logger logr.Logger) error {
+	table *tablewriter.Table, logger logr.Logger,
+) error {
 
 	logger = logger.WithValues("healtcheckreport", fmt.Sprintf("%s/%s",
 		healthCheckReport.Namespace, healthCheckReport.Name))
@@ -125,8 +142,11 @@ func displayResourcesInReport(healthCheckReport *libsveltosv1beta1.HealthCheckRe
 					return err
 				}
 			} else {
-				displayResource(resourceStatus, healthCheckReport.Spec.ClusterNamespace,
+				err := displayResource(resourceStatus, healthCheckReport.Spec.ClusterNamespace,
 					healthCheckReport.Spec.ClusterName, table)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -135,7 +155,8 @@ func displayResourcesInReport(healthCheckReport *libsveltosv1beta1.HealthCheckRe
 }
 
 func displayResource(resourceStatus *libsveltosv1beta1.ResourceStatus,
-	clusterNamespace, clusterName string, table *tablewriter.Table) {
+	clusterNamespace, clusterName string, table *tablewriter.Table,
+) error {
 
 	clusterInfo := fmt.Sprintf("%s/%s", clusterNamespace, clusterName)
 	gvk := resourceStatus.ObjectRef.GroupVersionKind().String()
@@ -144,18 +165,23 @@ func displayResource(resourceStatus *libsveltosv1beta1.ResourceStatus,
 	message := resourceStatus.Message
 
 	if resourceStatus.HealthStatus != libsveltosv1beta1.HealthStatusHealthy {
-		data := []string{clusterInfo, gvk, resourceNamespace, resourceName, message}
-		table.Rich(data, []tablewriter.Colors{{tablewriter.Bold, tablewriter.FgBlackColor},
-			{tablewriter.Bold, tablewriter.FgBlackColor}, {tablewriter.Bold, tablewriter.BgRedColor},
-			{tablewriter.Bold, tablewriter.BgRedColor}, {tablewriter.Bold, tablewriter.FgBlackColor}})
-		return
+		redColor := color.New(color.FgRed, color.Bold)
+		coloredData := []string{
+			clusterInfo,
+			gvk,
+			redColor.Sprint(resourceNamespace),
+			redColor.Sprint(resourceName),
+			redColor.Sprint(message),
+		}
+		return table.Append(coloredData)
 	}
 
-	table.Append(genResourceRow(clusterInfo, gvk, resourceNamespace, resourceName, message))
+	return table.Append(genResourceRow(clusterInfo, gvk, resourceNamespace, resourceName, message))
 }
 
 func printResource(resourceStatus *libsveltosv1beta1.ResourceStatus,
-	clusterNamespace, clusterName string, logger logr.Logger) error {
+	clusterNamespace, clusterName string, logger logr.Logger,
+) error {
 
 	clusterInfo := fmt.Sprintf("%s/%s", clusterNamespace, clusterName)
 	gvk := resourceStatus.ObjectRef.GroupVersionKind().String()
@@ -196,7 +222,8 @@ func printResource(resourceStatus *libsveltosv1beta1.ResourceStatus,
 }
 
 func doConsiderResourceStatus(resourceStatus *libsveltosv1beta1.ResourceStatus,
-	passedGroup, passedKind, passedNamespace string) bool {
+	passedGroup, passedKind, passedNamespace string,
+) bool {
 
 	if passedGroup != "" {
 		if !strings.EqualFold(resourceStatus.ObjectRef.GroupVersionKind().Group, passedGroup) {

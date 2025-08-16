@@ -73,7 +73,7 @@ func displayAdminRbacs(ctx context.Context,
 	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d roleRequests", len(roleRequests.Items)))
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"CLUSTER", "ADMIN", "NAMESPACE", "API GROUPS", "RESOURCES", "RESOURCE NAMES", "VERBS"})
+	table.Header("CLUSTER", "ADMIN", "NAMESPACE", "API GROUPS", "RESOURCES", "RESOURCE NAMES", "VERBS")
 
 	// Build a map: key is the cluster, value is the slices of rolerequests matching that cluster
 	clusterMap := createRoleRequestsPerClusterMap(roleRequests, logger)
@@ -88,9 +88,7 @@ func displayAdminRbacs(ctx context.Context,
 		}
 	}
 
-	table.Render()
-
-	return nil
+	return table.Render()
 }
 
 func createRoleRequestsPerClusterMap(roleRequests *libsveltosv1beta1.RoleRequestList,
@@ -230,9 +228,11 @@ func processRole(u *unstructured.Unstructured,
 			resourceNames = strings.Join(rule.ResourceNames, ",")
 		}
 
-		table.Append(genAdminRbac(clusterKind, clusterNamespace, clusterName, serviceAccountNamespace,
+		if err := table.Append(genAdminRbac(clusterKind, clusterNamespace, clusterName, serviceAccountNamespace,
 			serviceAccountName, role.Namespace, strings.Join(rule.APIGroups, ","), strings.Join(rule.Resources, ","),
-			resourceNames, strings.Join(rule.Verbs, ",")))
+			resourceNames, strings.Join(rule.Verbs, ","))); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -256,9 +256,11 @@ func processClusterRole(u *unstructured.Unstructured,
 			resourceNames = strings.Join(rule.ResourceNames, ",")
 		}
 
-		table.Append(genAdminRbac(clusterKind, clusterNamespace, clusterName, serviceAccountNamespace, serviceAccountName,
+		if err := table.Append(genAdminRbac(clusterKind, clusterNamespace, clusterName, serviceAccountNamespace, serviceAccountName,
 			"*", strings.Join(rule.APIGroups, ","), strings.Join(rule.Resources, ","),
-			resourceNames, strings.Join(rule.Verbs, ",")))
+			resourceNames, strings.Join(rule.Verbs, ","))); err != nil {
+			return err
+		}
 	}
 
 	return nil

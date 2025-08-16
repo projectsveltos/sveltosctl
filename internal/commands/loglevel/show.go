@@ -33,7 +33,7 @@ func showLogSettings(ctx context.Context) error {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"COMPONENT", "VERBOSITY"})
+	table.Header([]string{"COMPONENT", "VERBOSITY"})
 	genRow := func(component, verbosity string) []string {
 		return []string{
 			component,
@@ -42,11 +42,12 @@ func showLogSettings(ctx context.Context) error {
 	}
 
 	for _, c := range componentConfiguration {
-		table.Append(genRow(string(c.component), string(c.logSeverity)))
+		if err := table.Append(genRow(string(c.component), string(c.logSeverity))); err != nil {
+			return err
+		}
 	}
 
-	table.Render()
-	return nil
+	return table.Render()
 }
 
 // Show displays information about log verbosity (if set)
