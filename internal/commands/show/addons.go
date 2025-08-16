@@ -65,9 +65,7 @@ func displayAddOns(ctx context.Context, passedNamespace, passedCluster, passedPr
 		return err
 	}
 
-	_ = table.Render() // TODO: propagate error
-
-	return nil
+	return table.Render()
 }
 
 func displayAddOnsInNamespaces(ctx context.Context, passedNamespace, passedCluster, passedProfile string,
@@ -111,7 +109,9 @@ func displayAddOnsInNamespace(ctx context.Context, namespace, passedCluster, pas
 		cc := &clusterConfigurations.Items[i]
 		if doConsiderClusterConfiguration(cc, passedCluster) {
 			logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering ClusterConfiguration: %s", cc.Name))
-			displayAddOnsForCluster(cc, passedProfile, table, logger)
+			if err := displayAddOnsForCluster(cc, passedProfile, table, logger); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -119,7 +119,7 @@ func displayAddOnsInNamespace(ctx context.Context, namespace, passedCluster, pas
 }
 
 func displayAddOnsForCluster(clusterConfiguration *configv1beta1.ClusterConfiguration, passedProfile string,
-	table *tablewriter.Table, logger logr.Logger) {
+	table *tablewriter.Table, logger logr.Logger) error {
 
 	instance := utils.GetAccessInstance()
 	helmCharts := instance.GetHelmReleases(clusterConfiguration, logger)
@@ -132,19 +132,24 @@ func displayAddOnsForCluster(clusterConfiguration *configv1beta1.ClusterConfigur
 	clusterInfo := fmt.Sprintf("%s/%s", clusterConfiguration.Namespace, clusterName)
 	for chart := range helmCharts {
 		if doConsiderProfile(helmCharts[chart], passedProfile) {
-			_ = table.Append(genAddOnsRow(clusterInfo, "helm chart", chart.Namespace, chart.ReleaseName, chart.ChartVersion,
-				chart.LastAppliedTime.String(), helmCharts[chart])) // TODO: propagate error
+			if err := table.Append(genAddOnsRow(clusterInfo, "helm chart", chart.Namespace, chart.ReleaseName, chart.ChartVersion,
+				chart.LastAppliedTime.String(), helmCharts[chart])); err != nil {
+				return err
+			}
 		}
 	}
 
 	resources := instance.GetResources(clusterConfiguration, logger)
 	for resource := range resources {
 		if doConsiderProfile(resources[resource], passedProfile) {
-			_ = table.Append(genAddOnsRow(clusterInfo, fmt.Sprintf("%s:%s", resource.Group, resource.Kind),
+			if err := table.Append(genAddOnsRow(clusterInfo, fmt.Sprintf("%s:%s", resource.Group, resource.Kind),
 				resource.Namespace, resource.Name, "N/A",
-				resource.LastAppliedTime.String(), resources[resource])) // TODO: propagate error
+				resource.LastAppliedTime.String(), resources[resource])); err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }
 
 // AddOns displays information about Kubernetes AddOns deployed in clusters

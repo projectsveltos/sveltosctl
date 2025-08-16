@@ -70,7 +70,7 @@ func displayResources(ctx context.Context,
 	}
 
 	if !full {
-		_ = table.Render() // TODO: propagate error
+		return table.Render()
 	}
 
 	return nil
@@ -122,8 +122,11 @@ func displayResourcesInReport(healthCheckReport *libsveltosv1beta1.HealthCheckRe
 					return err
 				}
 			} else {
-				displayResource(resourceStatus, healthCheckReport.Spec.ClusterNamespace,
+				err := displayResource(resourceStatus, healthCheckReport.Spec.ClusterNamespace,
 					healthCheckReport.Spec.ClusterName, table)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -132,7 +135,8 @@ func displayResourcesInReport(healthCheckReport *libsveltosv1beta1.HealthCheckRe
 }
 
 func displayResource(resourceStatus *libsveltosv1beta1.ResourceStatus,
-	clusterNamespace, clusterName string, table *tablewriter.Table) {
+	clusterNamespace, clusterName string, table *tablewriter.Table,
+) error {
 
 	clusterInfo := fmt.Sprintf("%s/%s", clusterNamespace, clusterName)
 	gvk := resourceStatus.ObjectRef.GroupVersionKind().String()
@@ -150,11 +154,10 @@ func displayResource(resourceStatus *libsveltosv1beta1.ResourceStatus,
 			redColor.Sprint(resourceName),
 			blackColor.Sprint(message),
 		}
-		_ = table.Append(coloredData) // TODO: propagate error
-		return
+		return table.Append(coloredData)
 	}
 
-	_ = table.Append(genResourceRow(clusterInfo, gvk, resourceNamespace, resourceName, message)) // TODO: propagate error
+	return table.Append(genResourceRow(clusterInfo, gvk, resourceNamespace, resourceName, message))
 }
 
 func printResource(resourceStatus *libsveltosv1beta1.ResourceStatus,

@@ -74,9 +74,7 @@ func showUsage(ctx context.Context, kind, passedNamespace, passedName string, lo
 		}
 	}
 
-	_ = table.Render() // TODO: propagate error
-
-	return nil
+	return table.Render()
 }
 
 func getMatchingClusters(matchingClusterRefs []corev1.ObjectReference) []string {
@@ -99,7 +97,9 @@ func showUsageForClusterProfiles(ctx context.Context, passedName string, table *
 	for i := range cps.Items {
 		cp := &cps.Items[i]
 		if passedName == "" || cp.Name == passedName {
-			showUsageForClusterProfile(cp, table, logger)
+			if err := showUsageForClusterProfile(cp, table, logger); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -107,13 +107,13 @@ func showUsageForClusterProfiles(ctx context.Context, passedName string, table *
 }
 
 func showUsageForClusterProfile(clusterProfile *configv1beta1.ClusterProfile, table *tablewriter.Table,
-	logger logr.Logger) {
+	logger logr.Logger) error {
 
 	logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering ClusterProfile %s", clusterProfile.Name))
 
 	clusters := getMatchingClusters(clusterProfile.Status.MatchingClusterRefs)
 
-	_ = table.Append(genUsageRow(configv1beta1.ClusterProfileKind, "", clusterProfile.Name, clusters)) // TODO: propagate error
+	return table.Append(genUsageRow(configv1beta1.ClusterProfileKind, "", clusterProfile.Name, clusters))
 }
 
 func showUsageForProfiles(ctx context.Context, passedName string, table *tablewriter.Table, logger logr.Logger) error {
@@ -127,7 +127,9 @@ func showUsageForProfiles(ctx context.Context, passedName string, table *tablewr
 	for i := range ps.Items {
 		p := &ps.Items[i]
 		if passedName == "" || p.Name == passedName {
-			showUsageForProfile(p, table, logger)
+			if err := showUsageForProfile(p, table, logger); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -135,13 +137,13 @@ func showUsageForProfiles(ctx context.Context, passedName string, table *tablewr
 }
 
 func showUsageForProfile(profile *configv1beta1.Profile, table *tablewriter.Table,
-	logger logr.Logger) {
+	logger logr.Logger) error {
 
 	logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering Profile %s", profile.Name))
 
 	clusters := getMatchingClusters(profile.Status.MatchingClusterRefs)
 
-	_ = table.Append(genUsageRow(configv1beta1.ProfileKind, "", profile.Name, clusters)) // TODO: propagate error
+	return table.Append(genUsageRow(configv1beta1.ProfileKind, "", profile.Name, clusters))
 }
 
 func showUsageForConfigMaps(ctx context.Context, passedNamespace, passedName string,
@@ -175,8 +177,10 @@ func showUsageForConfigMaps(ctx context.Context, passedNamespace, passedName str
 	}
 
 	for pr := range result {
-		_ = table.Append(genUsageRow(string(libsveltosv1beta1.ConfigMapReferencedResourceKind),
-			pr.Namespace, pr.Name, result[pr])) // TODO: propagate error
+		if err := table.Append(genUsageRow(string(libsveltosv1beta1.ConfigMapReferencedResourceKind),
+			pr.Namespace, pr.Name, result[pr])); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -213,8 +217,10 @@ func showUsageForSecrets(ctx context.Context, passedNamespace, passedName string
 	}
 
 	for pr := range result {
-		_ = table.Append(genUsageRow(string(libsveltosv1beta1.SecretReferencedResourceKind),
-			pr.Namespace, pr.Name, result[pr])) // TODO: propagate error
+		if err := table.Append(genUsageRow(string(libsveltosv1beta1.SecretReferencedResourceKind),
+			pr.Namespace, pr.Name, result[pr])); err != nil {
+			return err
+		}
 	}
 
 	return nil
