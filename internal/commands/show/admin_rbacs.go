@@ -73,7 +73,7 @@ func displayAdminRbacs(ctx context.Context,
 	logger.V(logs.LogDebug).Info(fmt.Sprintf("found %d roleRequests", len(roleRequests.Items)))
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"CLUSTER", "ADMIN", "NAMESPACE", "API GROUPS", "RESOURCES", "RESOURCE NAMES", "VERBS"})
+	table.Header("CLUSTER", "ADMIN", "NAMESPACE", "API GROUPS", "RESOURCES", "RESOURCE NAMES", "VERBS")
 
 	// Build a map: key is the cluster, value is the slices of rolerequests matching that cluster
 	clusterMap := createRoleRequestsPerClusterMap(roleRequests, logger)

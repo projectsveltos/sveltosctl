@@ -58,7 +58,7 @@ func displayAddOns(ctx context.Context, passedNamespace, passedCluster, passedPr
 	logger logr.Logger) error {
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"CLUSTER", "RESOURCE TYPE", "NAMESPACE", "NAME", "VERSION", "TIME", "PROFILES"})
+	table.Header("CLUSTER", "RESOURCE TYPE", "NAMESPACE", "NAME", "VERSION", "TIME", "PROFILES")
 
 	if err := displayAddOnsInNamespaces(ctx, passedNamespace, passedCluster,
 		passedProfile, table, logger); err != nil {
