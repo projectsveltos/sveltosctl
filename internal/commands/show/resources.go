@@ -55,6 +55,7 @@ var (
 func displayResources(ctx context.Context,
 	passedClusterNamespace, passedCluster, passedGroup, passedKind, passedNamespace string,
 	full bool, logger logr.Logger) error {
+
 	colorCfg := renderer.ColorizedConfig{
 		Header: renderer.Tint{
 			FG: renderer.Colors{color.Bold, color.FgBlack},
@@ -87,7 +88,7 @@ func displayResources(ctx context.Context,
 	}
 
 	if !full {
-		table.Render()
+		return table.Render()
 	}
 
 	return nil
@@ -95,7 +96,8 @@ func displayResources(ctx context.Context,
 
 func displayResourcesInNamespaces(ctx context.Context,
 	passedClusterNamespace, passedCluster, passedGroup, passedKind, passedNamespace string,
-	full bool, table *tablewriter.Table, logger logr.Logger) error {
+	full bool, table *tablewriter.Table, logger logr.Logger,
+) error {
 
 	instance := utils.GetAccessInstance()
 
@@ -123,7 +125,8 @@ func displayResourcesInNamespaces(ctx context.Context,
 
 func displayResourcesInReport(healthCheckReport *libsveltosv1beta1.HealthCheckReport,
 	passedGroup, passedKind, passedNamespace string, full bool,
-	table *tablewriter.Table, logger logr.Logger) error {
+	table *tablewriter.Table, logger logr.Logger,
+) error {
 
 	logger = logger.WithValues("healtcheckreport", fmt.Sprintf("%s/%s",
 		healthCheckReport.Namespace, healthCheckReport.Name))
@@ -139,8 +142,11 @@ func displayResourcesInReport(healthCheckReport *libsveltosv1beta1.HealthCheckRe
 					return err
 				}
 			} else {
-				displayResource(resourceStatus, healthCheckReport.Spec.ClusterNamespace,
+				err := displayResource(resourceStatus, healthCheckReport.Spec.ClusterNamespace,
 					healthCheckReport.Spec.ClusterName, table)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -149,7 +155,8 @@ func displayResourcesInReport(healthCheckReport *libsveltosv1beta1.HealthCheckRe
 }
 
 func displayResource(resourceStatus *libsveltosv1beta1.ResourceStatus,
-	clusterNamespace, clusterName string, table *tablewriter.Table) {
+	clusterNamespace, clusterName string, table *tablewriter.Table,
+) error {
 
 	clusterInfo := fmt.Sprintf("%s/%s", clusterNamespace, clusterName)
 	gvk := resourceStatus.ObjectRef.GroupVersionKind().String()
@@ -166,15 +173,15 @@ func displayResource(resourceStatus *libsveltosv1beta1.ResourceStatus,
 			redColor.Sprint(resourceName),
 			redColor.Sprint(message),
 		}
-		table.Append(coloredData)
-		return
+		return table.Append(coloredData)
 	}
 
-	table.Append(genResourceRow(clusterInfo, gvk, resourceNamespace, resourceName, message))
+	return table.Append(genResourceRow(clusterInfo, gvk, resourceNamespace, resourceName, message))
 }
 
 func printResource(resourceStatus *libsveltosv1beta1.ResourceStatus,
-	clusterNamespace, clusterName string, logger logr.Logger) error {
+	clusterNamespace, clusterName string, logger logr.Logger,
+) error {
 
 	clusterInfo := fmt.Sprintf("%s/%s", clusterNamespace, clusterName)
 	gvk := resourceStatus.ObjectRef.GroupVersionKind().String()
@@ -215,7 +222,8 @@ func printResource(resourceStatus *libsveltosv1beta1.ResourceStatus,
 }
 
 func doConsiderResourceStatus(resourceStatus *libsveltosv1beta1.ResourceStatus,
-	passedGroup, passedKind, passedNamespace string) bool {
+	passedGroup, passedKind, passedNamespace string,
+) bool {
 
 	if passedGroup != "" {
 		if !strings.EqualFold(resourceStatus.ObjectRef.GroupVersionKind().Group, passedGroup) {

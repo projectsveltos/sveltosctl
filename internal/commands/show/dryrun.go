@@ -69,7 +69,7 @@ func displayDryRun(ctx context.Context, passedNamespace, passedCluster, passedPr
 	}
 
 	if !rawDiff {
-		table.Render()
+		return table.Render()
 	}
 
 	return nil
@@ -145,6 +145,7 @@ func displayDryRunInNamespace(ctx context.Context, namespace, passedCluster, pas
 	return nil
 }
 
+//nolint:gocyclo // complex logic for handling multiple report types
 func displayDryRunForCluster(clusterReport *configv1beta1.ClusterReport, profileName string,
 	table *tablewriter.Table, rawDiff bool) error {
 
@@ -161,8 +162,10 @@ func displayDryRunForCluster(clusterReport *configv1beta1.ClusterReport, profile
 		if report.Action == string(configv1beta1.UpdateHelmValuesAction) {
 			message = updateMessage
 		}
-		table.Append(genDryRunRow(clusterInfo, "helm release", report.ReleaseNamespace, report.ReleaseName,
-			report.Action, message, profileName))
+		if err := table.Append(genDryRunRow(clusterInfo, "helm release", report.ReleaseNamespace, report.ReleaseName,
+			report.Action, message, profileName)); err != nil {
+			return err
+		}
 		if rawDiff {
 			if rawDiff && report.Message != "" && report.Action == string(configv1beta1.UpdateHelmValuesAction) {
 				//nolint: forbidigo // print diff
@@ -180,8 +183,10 @@ func displayDryRunForCluster(clusterReport *configv1beta1.ClusterReport, profile
 		if report.Action == string(libsveltosv1beta1.UpdateResourceAction) {
 			message = updateMessage
 		}
-		table.Append(genDryRunRow(clusterInfo, groupKind, report.Resource.Namespace, report.Resource.Name,
-			report.Action, message, profileName))
+		if err := table.Append(genDryRunRow(clusterInfo, groupKind, report.Resource.Namespace, report.Resource.Name,
+			report.Action, message, profileName)); err != nil {
+			return err
+		}
 		if rawDiff {
 			if rawDiff && report.Message != "" && report.Action == string(libsveltosv1beta1.UpdateResourceAction) {
 				//nolint: forbidigo // print diff
@@ -198,8 +203,10 @@ func displayDryRunForCluster(clusterReport *configv1beta1.ClusterReport, profile
 		if report.Action == string(libsveltosv1beta1.UpdateResourceAction) {
 			message = updateMessage
 		}
-		table.Append(genDryRunRow(clusterInfo, groupKind, report.Resource.Namespace, report.Resource.Name,
-			report.Action, message, profileName))
+		if err := table.Append(genDryRunRow(clusterInfo, groupKind, report.Resource.Namespace, report.Resource.Name,
+			report.Action, message, profileName)); err != nil {
+			return err
+		}
 		if rawDiff {
 			if rawDiff && report.Message != "" && report.Action == string(libsveltosv1beta1.UpdateResourceAction) {
 				//nolint: forbidigo // print diff
