@@ -33,7 +33,7 @@ func showLogSettings(ctx context.Context) error {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"COMPONENT", "VERBOSITY"})
+	table.Header([]string{"COMPONENT", "VERBOSITY"})
 	genRow := func(component, verbosity string) []string {
 		return []string{
 			component,

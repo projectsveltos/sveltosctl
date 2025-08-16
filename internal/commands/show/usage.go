@@ -51,7 +51,7 @@ var (
 
 func showUsage(ctx context.Context, kind, passedNamespace, passedName string, logger logr.Logger) error {
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"RESOURCE KIND", "RESOURCE NAMESPACE", "RESOURCE NAME", "CLUSTERS"})
+	table.Header("RESOURCE KIND", "RESOURCE NAMESPACE", "RESOURCE NAME", "CLUSTERS")
 
 	if kind == "" || kind == configv1beta1.ClusterProfileKind {
 		if err := showUsageForClusterProfiles(ctx, passedName, table, logger); err != nil {
