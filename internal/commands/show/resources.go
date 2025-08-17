@@ -70,7 +70,7 @@ func displayResources(ctx context.Context,
 	}
 
 	if !full {
-		table.Render()
+		_ = table.Render() // TODO: propagate error
 	}
 
 	return nil
@@ -150,11 +150,11 @@ func displayResource(resourceStatus *libsveltosv1beta1.ResourceStatus,
 			redColor.Sprint(resourceName),
 			blackColor.Sprint(message),
 		}
-		table.Append(coloredData)
+		_ = table.Append(coloredData) // TODO: propagate error
 		return
 	}
 
-	table.Append(genResourceRow(clusterInfo, gvk, resourceNamespace, resourceName, message))
+	_ = table.Append(genResourceRow(clusterInfo, gvk, resourceNamespace, resourceName, message)) // TODO: propagate error
 }
 
 func printResource(resourceStatus *libsveltosv1beta1.ResourceStatus,

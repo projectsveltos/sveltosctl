@@ -88,7 +88,7 @@ func displayAdminRbacs(ctx context.Context,
 		}
 	}
 
-	table.Render()
+	_ = table.Render() // TODO: propagate error
 
 	return nil
 }
@@ -230,9 +230,9 @@ func processRole(u *unstructured.Unstructured,
 			resourceNames = strings.Join(rule.ResourceNames, ",")
 		}
 
-		table.Append(genAdminRbac(clusterKind, clusterNamespace, clusterName, serviceAccountNamespace,
+		_ = table.Append(genAdminRbac(clusterKind, clusterNamespace, clusterName, serviceAccountNamespace,
 			serviceAccountName, role.Namespace, strings.Join(rule.APIGroups, ","), strings.Join(rule.Resources, ","),
-			resourceNames, strings.Join(rule.Verbs, ",")))
+			resourceNames, strings.Join(rule.Verbs, ","))) // TODO: propagate error
 	}
 
 	return nil
@@ -256,9 +256,9 @@ func processClusterRole(u *unstructured.Unstructured,
 			resourceNames = strings.Join(rule.ResourceNames, ",")
 		}
 
-		table.Append(genAdminRbac(clusterKind, clusterNamespace, clusterName, serviceAccountNamespace, serviceAccountName,
+		_ = table.Append(genAdminRbac(clusterKind, clusterNamespace, clusterName, serviceAccountNamespace, serviceAccountName,
 			"*", strings.Join(rule.APIGroups, ","), strings.Join(rule.Resources, ","),
-			resourceNames, strings.Join(rule.Verbs, ",")))
+			resourceNames, strings.Join(rule.Verbs, ","))) // TODO: propagate error
 	}
 
 	return nil

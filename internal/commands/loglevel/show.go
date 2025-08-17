@@ -42,10 +42,10 @@ func showLogSettings(ctx context.Context) error {
 	}
 
 	for _, c := range componentConfiguration {
-		table.Append(genRow(string(c.component), string(c.logSeverity)))
+		_ = table.Append(genRow(string(c.component), string(c.logSeverity))) // TODO: propagate error
 	}
 
-	table.Render()
+	_ = table.Render() // TODO: propagate error
 	return nil
 }
 

@@ -74,7 +74,7 @@ func showUsage(ctx context.Context, kind, passedNamespace, passedName string, lo
 		}
 	}
 
-	table.Render()
+	_ = table.Render() // TODO: propagate error
 
 	return nil
 }
@@ -113,7 +113,7 @@ func showUsageForClusterProfile(clusterProfile *configv1beta1.ClusterProfile, ta
 
 	clusters := getMatchingClusters(clusterProfile.Status.MatchingClusterRefs)
 
-	table.Append(genUsageRow(configv1beta1.ClusterProfileKind, "", clusterProfile.Name, clusters))
+	_ = table.Append(genUsageRow(configv1beta1.ClusterProfileKind, "", clusterProfile.Name, clusters)) // TODO: propagate error
 }
 
 func showUsageForProfiles(ctx context.Context, passedName string, table *tablewriter.Table, logger logr.Logger) error {
@@ -141,7 +141,7 @@ func showUsageForProfile(profile *configv1beta1.Profile, table *tablewriter.Tabl
 
 	clusters := getMatchingClusters(profile.Status.MatchingClusterRefs)
 
-	table.Append(genUsageRow(configv1beta1.ProfileKind, "", profile.Name, clusters))
+	_ = table.Append(genUsageRow(configv1beta1.ProfileKind, "", profile.Name, clusters)) // TODO: propagate error
 }
 
 func showUsageForConfigMaps(ctx context.Context, passedNamespace, passedName string,
@@ -175,8 +175,8 @@ func showUsageForConfigMaps(ctx context.Context, passedNamespace, passedName str
 	}
 
 	for pr := range result {
-		table.Append(genUsageRow(string(libsveltosv1beta1.ConfigMapReferencedResourceKind),
-			pr.Namespace, pr.Name, result[pr]))
+		_ = table.Append(genUsageRow(string(libsveltosv1beta1.ConfigMapReferencedResourceKind),
+			pr.Namespace, pr.Name, result[pr])) // TODO: propagate error
 	}
 
 	return nil
@@ -213,8 +213,8 @@ func showUsageForSecrets(ctx context.Context, passedNamespace, passedName string
 	}
 
 	for pr := range result {
-		table.Append(genUsageRow(string(libsveltosv1beta1.SecretReferencedResourceKind),
-			pr.Namespace, pr.Name, result[pr]))
+		_ = table.Append(genUsageRow(string(libsveltosv1beta1.SecretReferencedResourceKind),
+			pr.Namespace, pr.Name, result[pr])) // TODO: propagate error
 	}
 
 	return nil
