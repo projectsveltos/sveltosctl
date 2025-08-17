@@ -58,14 +58,14 @@ func displayAddOns(ctx context.Context, passedNamespace, passedCluster, passedPr
 	logger logr.Logger) error {
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"CLUSTER", "RESOURCE TYPE", "NAMESPACE", "NAME", "VERSION", "TIME", "PROFILES"})
+	table.Header("CLUSTER", "RESOURCE TYPE", "NAMESPACE", "NAME", "VERSION", "TIME", "PROFILES")
 
 	if err := displayAddOnsInNamespaces(ctx, passedNamespace, passedCluster,
 		passedProfile, table, logger); err != nil {
 		return err
 	}
 
-	table.Render()
+	_ = table.Render() // TODO: propagate error
 
 	return nil
 }
@@ -132,17 +132,17 @@ func displayAddOnsForCluster(clusterConfiguration *configv1beta1.ClusterConfigur
 	clusterInfo := fmt.Sprintf("%s/%s", clusterConfiguration.Namespace, clusterName)
 	for chart := range helmCharts {
 		if doConsiderProfile(helmCharts[chart], passedProfile) {
-			table.Append(genAddOnsRow(clusterInfo, "helm chart", chart.Namespace, chart.ReleaseName, chart.ChartVersion,
-				chart.LastAppliedTime.String(), helmCharts[chart]))
+			_ = table.Append(genAddOnsRow(clusterInfo, "helm chart", chart.Namespace, chart.ReleaseName, chart.ChartVersion,
+				chart.LastAppliedTime.String(), helmCharts[chart])) // TODO: propagate error
 		}
 	}
 
 	resources := instance.GetResources(clusterConfiguration, logger)
 	for resource := range resources {
 		if doConsiderProfile(resources[resource], passedProfile) {
-			table.Append(genAddOnsRow(clusterInfo, fmt.Sprintf("%s:%s", resource.Group, resource.Kind),
+			_ = table.Append(genAddOnsRow(clusterInfo, fmt.Sprintf("%s:%s", resource.Group, resource.Kind),
 				resource.Namespace, resource.Name, "N/A",
-				resource.LastAppliedTime.String(), resources[resource]))
+				resource.LastAppliedTime.String(), resources[resource])) // TODO: propagate error
 		}
 	}
 }

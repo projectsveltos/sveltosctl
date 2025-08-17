@@ -27,6 +27,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/go-logr/logr"
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/tw"
 	"gopkg.in/yaml.v3"
 
 	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
@@ -55,16 +56,12 @@ func displayResources(ctx context.Context,
 	full bool, logger logr.Logger) error {
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetBorder(true)
 
 	if !full {
-		table.SetHeader([]string{"CLUSTER", "GVK", "NAMESPACE", "NAME", "MESSAGE"})
-		table.SetAutoMergeCellsByColumnIndex([]int{0, 1})
-		table.SetColumnColor(tablewriter.Colors{tablewriter.Bold, tablewriter.FgBlackColor},
-			tablewriter.Colors{tablewriter.Bold, tablewriter.FgBlackColor},
-			tablewriter.Colors{tablewriter.Bold, tablewriter.FgBlackColor},
-			tablewriter.Colors{tablewriter.Bold, tablewriter.FgBlackColor},
-			tablewriter.Colors{tablewriter.Bold, tablewriter.FgBlackColor})
+		table.Header("CLUSTER", "GVK", "NAMESPACE", "NAME", "MESSAGE")
+		table.Configure(func(config *tablewriter.Config) {
+			config.Row.Formatting.MergeMode = tw.MergeHorizontal
+		})
 	}
 
 	if err := displayResourcesInNamespaces(ctx, passedClusterNamespace, passedCluster,
@@ -73,7 +70,7 @@ func displayResources(ctx context.Context,
 	}
 
 	if !full {
-		table.Render()
+		_ = table.Render() // TODO: propagate error
 	}
 
 	return nil
@@ -144,14 +141,20 @@ func displayResource(resourceStatus *libsveltosv1beta1.ResourceStatus,
 	message := resourceStatus.Message
 
 	if resourceStatus.HealthStatus != libsveltosv1beta1.HealthStatusHealthy {
-		data := []string{clusterInfo, gvk, resourceNamespace, resourceName, message}
-		table.Rich(data, []tablewriter.Colors{{tablewriter.Bold, tablewriter.FgBlackColor},
-			{tablewriter.Bold, tablewriter.FgBlackColor}, {tablewriter.Bold, tablewriter.BgRedColor},
-			{tablewriter.Bold, tablewriter.BgRedColor}, {tablewriter.Bold, tablewriter.FgBlackColor}})
+		blackColor := color.New(color.FgBlack, color.Bold)
+		redColor := color.New(color.FgRed, color.Bold)
+		coloredData := []string{
+			blackColor.Sprint(clusterInfo),
+			blackColor.Sprint(gvk),
+			redColor.Sprint(resourceNamespace),
+			redColor.Sprint(resourceName),
+			blackColor.Sprint(message),
+		}
+		_ = table.Append(coloredData) // TODO: propagate error
 		return
 	}
 
-	table.Append(genResourceRow(clusterInfo, gvk, resourceNamespace, resourceName, message))
+	_ = table.Append(genResourceRow(clusterInfo, gvk, resourceNamespace, resourceName, message)) // TODO: propagate error
 }
 
 func printResource(resourceStatus *libsveltosv1beta1.ResourceStatus,
