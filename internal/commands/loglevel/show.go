@@ -42,11 +42,12 @@ func showLogSettings(ctx context.Context) error {
 	}
 
 	for _, c := range componentConfiguration {
-		_ = table.Append(genRow(string(c.component), string(c.logSeverity))) // TODO: propagate error
+		if err := table.Append(genRow(string(c.component), string(c.logSeverity))); err != nil {
+			return err
+		}
 	}
 
-	_ = table.Render() // TODO: propagate error
-	return nil
+	return table.Render()
 }
 
 // Show displays information about log verbosity (if set)

@@ -88,9 +88,7 @@ func displayAdminRbacs(ctx context.Context,
 		}
 	}
 
-	_ = table.Render() // TODO: propagate error
-
-	return nil
+	return table.Render()
 }
 
 func createRoleRequestsPerClusterMap(roleRequests *libsveltosv1beta1.RoleRequestList,
@@ -230,9 +228,11 @@ func processRole(u *unstructured.Unstructured,
 			resourceNames = strings.Join(rule.ResourceNames, ",")
 		}
 
-		_ = table.Append(genAdminRbac(clusterKind, clusterNamespace, clusterName, serviceAccountNamespace,
+		if err := table.Append(genAdminRbac(clusterKind, clusterNamespace, clusterName, serviceAccountNamespace,
 			serviceAccountName, role.Namespace, strings.Join(rule.APIGroups, ","), strings.Join(rule.Resources, ","),
-			resourceNames, strings.Join(rule.Verbs, ","))) // TODO: propagate error
+			resourceNames, strings.Join(rule.Verbs, ","))); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -256,9 +256,11 @@ func processClusterRole(u *unstructured.Unstructured,
 			resourceNames = strings.Join(rule.ResourceNames, ",")
 		}
 
-		_ = table.Append(genAdminRbac(clusterKind, clusterNamespace, clusterName, serviceAccountNamespace, serviceAccountName,
+		if err := table.Append(genAdminRbac(clusterKind, clusterNamespace, clusterName, serviceAccountNamespace, serviceAccountName,
 			"*", strings.Join(rule.APIGroups, ","), strings.Join(rule.Resources, ","),
-			resourceNames, strings.Join(rule.Verbs, ","))) // TODO: propagate error
+			resourceNames, strings.Join(rule.Verbs, ","))); err != nil {
+			return err
+		}
 	}
 
 	return nil
