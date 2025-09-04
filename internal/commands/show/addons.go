@@ -40,8 +40,12 @@ var (
 	// clusterProfileNames is the list of all ClusterProfiles causing the resource to be deployed
 	// in the cluster
 	genAddOnsRow = func(cluster, resourceType, resourceNamespace, resourceName, resourceVersion,
-		lastApplied string, clusterProfileNames []string) []string {
+		lastApplied string, clusterProfileNames []string, deploymentType configv1beta1.DeploymentType) []string {
 		clusterProfiles := strings.Join(clusterProfileNames, ";")
+		location := "Managed cluster"
+		if deploymentType == configv1beta1.DeploymentTypeLocal {
+			location = "Management cluster"
+		}
 		return []string{
 			cluster,
 			resourceType,
@@ -49,6 +53,7 @@ var (
 			resourceName,
 			resourceVersion,
 			lastApplied,
+			location,
 			clusterProfiles,
 		}
 	}
@@ -58,7 +63,7 @@ func displayAddOns(ctx context.Context, passedNamespace, passedCluster, passedPr
 	logger logr.Logger) error {
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.Header("CLUSTER", "RESOURCE TYPE", "NAMESPACE", "NAME", "VERSION", "TIME", "PROFILES")
+	table.Header("CLUSTER", "RESOURCE TYPE", "NAMESPACE", "NAME", "VERSION", "TIME", "DEPLOYMENT TYPE", "PROFILES")
 
 	if err := displayAddOnsInNamespaces(ctx, passedNamespace, passedCluster,
 		passedProfile, table, logger); err != nil {
@@ -133,7 +138,7 @@ func displayAddOnsForCluster(clusterConfiguration *configv1beta1.ClusterConfigur
 	for chart := range helmCharts {
 		if doConsiderProfile(helmCharts[chart], passedProfile) {
 			if err := table.Append(genAddOnsRow(clusterInfo, "helm chart", chart.Namespace, chart.ReleaseName, chart.ChartVersion,
-				chart.LastAppliedTime.String(), helmCharts[chart])); err != nil {
+				chart.LastAppliedTime.String(), helmCharts[chart], configv1beta1.DeploymentTypeRemote)); err != nil {
 				return err
 			}
 		}
@@ -144,7 +149,7 @@ func displayAddOnsForCluster(clusterConfiguration *configv1beta1.ClusterConfigur
 		if doConsiderProfile(resources[resource], passedProfile) {
 			if err := table.Append(genAddOnsRow(clusterInfo, fmt.Sprintf("%s:%s", resource.Group, resource.Kind),
 				resource.Namespace, resource.Name, "N/A",
-				resource.LastAppliedTime.String(), resources[resource])); err != nil {
+				resource.LastAppliedTime.String(), resources[resource], resource.DeploymentType)); err != nil {
 				return err
 			}
 		}
@@ -166,7 +171,7 @@ func AddOns(ctx context.Context, args []string, logger logr.Logger) error {
 
 Options:
   -h --help                  Show this screen.
-     --verbose               Verbose mode. Print each step.  
+     --verbose               Verbose mode. Print each step.
 
 Description:
   The show addons command shows information about Kubernetes addons deployed in clusters.

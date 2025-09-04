@@ -146,8 +146,8 @@ func showUsageForProfile(profile *configv1beta1.Profile, table *tablewriter.Tabl
 	return table.Append(genUsageRow(configv1beta1.ProfileKind, "", profile.Name, clusters))
 }
 
-func showUsageForConfigMaps(ctx context.Context, passedNamespace, passedName string,
-	table *tablewriter.Table, logger logr.Logger) error {
+func showUsageForReferencedResources(ctx context.Context, passedNamespace, passedName string,
+	kind libsveltosv1beta1.ReferencedResourceKind, table *tablewriter.Table, logger logr.Logger) error {
 
 	instance := utils.GetAccessInstance()
 	result := make(map[configv1beta1.PolicyRef][]string)
@@ -160,8 +160,9 @@ func showUsageForConfigMaps(ctx context.Context, passedNamespace, passedName str
 	for i := range cps.Items {
 		cp := &cps.Items[i]
 		logger.V(logs.LogDebug).Info(
-			fmt.Sprintf("Collect referenced ConfigMaps from ClusterProfile %s", cp.Name))
-		getConfigMaps(passedNamespace, passedName, cp.Spec.PolicyRefs, cp.Status.MatchingClusterRefs, result, logger)
+			fmt.Sprintf("Collect referenced resources %s from ClusterProfile %s", kind, cp.Name))
+		getReferencedResources(passedNamespace, passedName, kind, cp.Spec.PolicyRefs, cp.Status.MatchingClusterRefs,
+			result, logger)
 	}
 
 	ps, err := instance.ListProfiles(ctx, logger)
@@ -172,12 +173,13 @@ func showUsageForConfigMaps(ctx context.Context, passedNamespace, passedName str
 	for i := range ps.Items {
 		p := &ps.Items[i]
 		logger.V(logs.LogDebug).Info(
-			fmt.Sprintf("Collect referenced ConfigMaps from Profile %s", p.Name))
-		getConfigMaps(passedNamespace, passedName, p.Spec.PolicyRefs, p.Status.MatchingClusterRefs, result, logger)
+			fmt.Sprintf("Collect referenced resources %s from Profile %s", kind, p.Name))
+		getReferencedResources(passedNamespace, passedName, kind, p.Spec.PolicyRefs, p.Status.MatchingClusterRefs,
+			result, logger)
 	}
 
 	for pr := range result {
-		if err := table.Append(genUsageRow(string(libsveltosv1beta1.ConfigMapReferencedResourceKind),
+		if err := table.Append(genUsageRow(string(kind),
 			pr.Namespace, pr.Name, result[pr])); err != nil {
 			return err
 		}
@@ -186,44 +188,30 @@ func showUsageForConfigMaps(ctx context.Context, passedNamespace, passedName str
 	return nil
 }
 
+func showUsageForConfigMaps(ctx context.Context, passedNamespace, passedName string,
+	table *tablewriter.Table, logger logr.Logger) error {
+
+	return showUsageForReferencedResources(ctx, passedNamespace, passedName, libsveltosv1beta1.ConfigMapReferencedResourceKind,
+		table, logger)
+}
+
 func showUsageForSecrets(ctx context.Context, passedNamespace, passedName string,
 	table *tablewriter.Table, logger logr.Logger) error {
 
-	instance := utils.GetAccessInstance()
-	result := make(map[configv1beta1.PolicyRef][]string)
+	return showUsageForReferencedResources(ctx, passedNamespace, passedName, libsveltosv1beta1.SecretReferencedResourceKind,
+		table, logger)
+}
 
-	cps, err := instance.ListClusterProfiles(ctx, logger)
-	if err != nil {
-		return err
+func getReferencedResources(passedNamespace, passedName string, kind libsveltosv1beta1.ReferencedResourceKind,
+	policyRefs []configv1beta1.PolicyRef, matchingClusterRefs []corev1.ObjectReference,
+	result map[configv1beta1.PolicyRef][]string, logger logr.Logger) {
+
+	switch kind {
+	case libsveltosv1beta1.ConfigMapReferencedResourceKind:
+		getConfigMaps(passedNamespace, passedName, policyRefs, matchingClusterRefs, result, logger)
+	case libsveltosv1beta1.SecretReferencedResourceKind:
+		getSecrets(passedNamespace, passedName, policyRefs, matchingClusterRefs, result, logger)
 	}
-
-	for i := range cps.Items {
-		cp := &cps.Items[i]
-		logger.V(logs.LogDebug).Info(
-			fmt.Sprintf("Collect referenced Secret from ClusterProfile %s", cp.Name))
-		getSecrets(passedNamespace, passedName, cp.Spec.PolicyRefs, cp.Status.MatchingClusterRefs, result, logger)
-	}
-
-	ps, err := instance.ListProfiles(ctx, logger)
-	if err != nil {
-		return err
-	}
-
-	for i := range ps.Items {
-		p := &ps.Items[i]
-		logger.V(logs.LogDebug).Info(
-			fmt.Sprintf("Collect referenced Secret from Profile %s", p.Name))
-		getSecrets(passedNamespace, passedName, p.Spec.PolicyRefs, p.Status.MatchingClusterRefs, result, logger)
-	}
-
-	for pr := range result {
-		if err := table.Append(genUsageRow(string(libsveltosv1beta1.SecretReferencedResourceKind),
-			pr.Namespace, pr.Name, result[pr])); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func getConfigMaps(passedNamespace, passedName string, policyRefs []configv1beta1.PolicyRef,
@@ -308,7 +296,7 @@ func Usage(ctx context.Context, args []string, logger logr.Logger) error {
 
 Options:
   -h --help                  Show this screen.
-     --verbose               Verbose mode. Print each step.  
+     --verbose               Verbose mode. Print each step.
 
 Description:
   The show usage command display usage information:

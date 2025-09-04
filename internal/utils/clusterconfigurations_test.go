@@ -137,7 +137,7 @@ var _ = Describe("ClusterConfiguration", func() {
 	})
 
 	It("GetResources returns deployed resources", func() {
-		resource1 := &libsveltosv1beta1.Resource{
+		resource1 := &configv1beta1.DeployedResource{
 			Name:            randomString(),
 			Namespace:       randomString(),
 			Group:           randomString(),
@@ -145,7 +145,7 @@ var _ = Describe("ClusterConfiguration", func() {
 			LastAppliedTime: &metav1.Time{Time: time.Now()},
 		}
 
-		resource2 := &libsveltosv1beta1.Resource{
+		resource2 := &configv1beta1.DeployedResource{
 			Name:            randomString(),
 			Namespace:       randomString(),
 			Group:           randomString(),
@@ -154,8 +154,8 @@ var _ = Describe("ClusterConfiguration", func() {
 		}
 
 		clusterConfiguration := createClusterConfiguration(
-			[]libsveltosv1beta1.Resource{*resource1},
-			[]libsveltosv1beta1.Resource{*resource1, *resource2},
+			[]configv1beta1.DeployedResource{*resource1},
+			[]configv1beta1.DeployedResource{*resource1, *resource2},
 			nil, nil)
 		initObjects := []client.Object{clusterConfiguration}
 
@@ -173,7 +173,7 @@ var _ = Describe("ClusterConfiguration", func() {
 	})
 })
 
-func createClusterConfiguration(clusterProfile1Resources, clusterProfile2Resources []libsveltosv1beta1.Resource,
+func createClusterConfiguration(clusterProfile1Resources, clusterProfile2Resources []configv1beta1.DeployedResource,
 	clusterProfile1Charts, clusterProfile2Charts []configv1beta1.Chart) *configv1beta1.ClusterConfiguration {
 
 	cfr1 := &configv1beta1.ClusterProfileResource{
