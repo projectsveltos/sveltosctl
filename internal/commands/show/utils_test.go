@@ -71,7 +71,7 @@ func addDeployedHelmCharts(clusterConfiguration *configv1beta1.ClusterConfigurat
 
 // addDeployedResources adds provided resources as deployed in clusterConfiguration status
 func addDeployedResources(clusterConfiguration *configv1beta1.ClusterConfiguration,
-	clusterProfileName string, resources []libsveltosv1beta1.Resource) *configv1beta1.ClusterConfiguration {
+	clusterProfileName string, resources []configv1beta1.DeployedResource) *configv1beta1.ClusterConfiguration {
 
 	if clusterConfiguration.Status.ClusterProfileResources == nil {
 		clusterConfiguration.Status.ClusterProfileResources = make([]configv1beta1.ClusterProfileResource, 0)
@@ -115,9 +115,9 @@ func generateChart() *configv1beta1.Chart {
 	}
 }
 
-func generateResource() *libsveltosv1beta1.Resource {
+func generateResource() *configv1beta1.DeployedResource {
 	t := metav1.Time{Time: time.Now()}
-	return &libsveltosv1beta1.Resource{
+	return &configv1beta1.DeployedResource{
 		Name:            randomString(),
 		Namespace:       randomString(),
 		Group:           randomString(),

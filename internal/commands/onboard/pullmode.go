@@ -40,7 +40,6 @@ import (
 	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	"github.com/projectsveltos/libsveltos/lib/deployer"
 	"github.com/projectsveltos/libsveltos/lib/k8s_utils"
-	"github.com/projectsveltos/libsveltos/lib/logsettings"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	"github.com/projectsveltos/sveltosctl/internal/agent"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
@@ -455,7 +454,7 @@ func getCaCrt(secret *corev1.Secret) ([]byte, error) {
 }
 
 func getKubeconfigFromToken(server string, token, caData []byte) string {
-	template := `apiVersion: v1
+	configTemplate := `apiVersion: v1
 kind: Config
 clusters:
 - name: local
@@ -476,7 +475,7 @@ current-context: sveltos-context`
 	caDataBase64 := base64.StdEncoding.EncodeToString(caData)
 	tokenString := string(token) // Token is already in the correct format
 
-	data := fmt.Sprintf(template, server, caDataBase64, tokenString)
+	data := fmt.Sprintf(configTemplate, server, caDataBase64, tokenString)
 
 	return data
 }
@@ -642,7 +641,7 @@ func prepareApplierYAML(kubeconfig, clusterNamespace, clusterName string,
 
 			unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&depl)
 			if err != nil {
-				logger.V(logsettings.LogDebug).Info(fmt.Sprintf("failed to convert deployment instance to unstructured: %v", err))
+				logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to convert deployment instance to unstructured: %v", err))
 				return "", err
 			}
 
@@ -674,7 +673,7 @@ func prepareApplierYAML(kubeconfig, clusterNamespace, clusterName string,
 
 	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&secret)
 	if err != nil {
-		logger.V(logsettings.LogDebug).Info(fmt.Sprintf("failed to convert secret instance to unstructured: %v", err))
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to convert secret instance to unstructured: %v", err))
 		return "", err
 	}
 	policy := &unstructured.Unstructured{}
