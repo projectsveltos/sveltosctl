@@ -17,8 +17,15 @@ limitations under the License.
 package onboard
 
 var (
-	OnboardSveltosCluster = onboardSveltosCluster
-	PrepareApplierYAML    = prepareApplierYAML
+	OnboardSveltosCluster    = onboardSveltosCluster
+	PrepareApplierYAML       = prepareApplierYAML
+	DeregisterSveltosCluster = deregisterSveltosCluster
+	DeleteServiceAccount     = deleteServiceAccount
+	DeleteSecret             = deleteSecret
+	DeleteRole               = deleteRole
+	DeleteRoleBinding        = deleteRoleBinding
+	DeleteClusterRole        = deleteClusterRole
+	DeleteClusterRoleBinding = deleteClusterRoleBinding
 )
 
 const (
