@@ -106,11 +106,34 @@ func deregisterSveltosCluster(ctx context.Context, clusterNamespace, clusterName
 	if err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.V(logs.LogInfo).Info(fmt.Sprintf(
-				"SveltosCluster %s/%s not found. It may have already been deleted.",
+				"SveltosCluster %s/%s not found. Attempting to clean up any orphaned resources.",
 				clusterNamespace, clusterName))
 			//nolint: forbidigo // print info message
-			fmt.Printf("SveltosCluster %s/%s not found. It may have already been deleted.\n",
+			fmt.Printf("SveltosCluster %s/%s not found. Attempting to clean up any orphaned resources.\n",
 				clusterNamespace, clusterName)
+
+			// Even if the SveltosCluster is gone, try to clean up the kubeconfig secret
+			deletedResources := []string{}
+			secretName := clusterName + sveltosKubeconfigSecretNamePostfix
+			if err := deleteSecret(ctx, c, clusterNamespace, secretName, logger); err != nil {
+				logger.V(logs.LogInfo).Info(fmt.Sprintf("Warning: failed to delete kubeconfig Secret: %v", err))
+			} else {
+				deletedResources = append(deletedResources,
+					fmt.Sprintf("Secret/%s/%s", clusterNamespace, secretName))
+			}
+
+			if len(deletedResources) > 0 {
+				//nolint: forbidigo // print deleted resources
+				fmt.Printf("\nCleaned up orphaned resources:\n")
+				for _, resource := range deletedResources {
+					//nolint: forbidigo // print each resource
+					fmt.Printf("  - %s\n", resource)
+				}
+			} else {
+				//nolint: forbidigo // print info message
+				fmt.Printf("No orphaned resources found.\n")
+			}
+
 			return nil
 		}
 		return fmt.Errorf("failed to get SveltosCluster: %w", err)
