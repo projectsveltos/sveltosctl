@@ -257,6 +257,43 @@ var _ = Describe("DeregisterCluster", func() {
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 	})
 
+	It("deregisterSveltosCluster cleans up orphaned kubeconfig secret when cluster is not found", func() {
+		clusterNamespace := randomString()
+		clusterName := randomString()
+
+		// Create only the kubeconfig Secret (no SveltosCluster)
+		secretName := clusterName + onboard.SveltosKubeconfigSecretNamePostfix
+		kubeconfigSecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: clusterNamespace,
+				Name:      secretName,
+			},
+			Data: map[string][]byte{
+				onboard.Kubeconfig: []byte("test-kubeconfig"),
+			},
+		}
+
+		initObjects := []client.Object{kubeconfigSecret}
+
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
+		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
+
+		// Should not error and should clean up the orphaned secret
+		Expect(onboard.DeregisterSveltosCluster(context.TODO(), clusterNamespace, clusterName,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
+
+		instance := utils.GetAccessInstance()
+
+		// Verify kubeconfig Secret is deleted
+		tmpSecret := &corev1.Secret{}
+		err = instance.GetResource(context.TODO(),
+			types.NamespacedName{Namespace: clusterNamespace, Name: secretName}, tmpSecret)
+		Expect(err).ToNot(BeNil())
+		Expect(apierrors.IsNotFound(err)).To(BeTrue())
+	})
+
 	It("deleteServiceAccount handles missing resource gracefully", func() {
 		clusterNamespace := randomString()
 		clusterName := randomString()
