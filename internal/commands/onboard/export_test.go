@@ -20,6 +20,8 @@ var (
 	OnboardSveltosCluster    = onboardSveltosCluster
 	PrepareApplierYAML       = prepareApplierYAML
 	DeregisterSveltosCluster = deregisterSveltosCluster
+	DeletePullModeResources  = deletePullModeResources
+	DeletePushModeResources  = deletePushModeResources
 	DeleteServiceAccount     = deleteServiceAccount
 	DeleteSecret             = deleteSecret
 	DeleteRole               = deleteRole

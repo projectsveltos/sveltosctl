@@ -147,57 +147,15 @@ func deregisterSveltosCluster(ctx context.Context, clusterNamespace, clusterName
 
 	// Delete pull-mode specific resources
 	if isPullMode {
-		if err := deleteClusterRoleBinding(ctx, c, clusterNamespace, clusterName, logger); err != nil {
-			logger.V(logs.LogInfo).Info(fmt.Sprintf("Warning: failed to delete ClusterRoleBinding: %v", err))
-		} else {
-			deletedResources = append(deletedResources,
-				fmt.Sprintf("ClusterRoleBinding/%s-%s", clusterNamespace, clusterName))
-		}
-
-		if err := deleteClusterRole(ctx, c, clusterNamespace, clusterName, logger); err != nil {
-			logger.V(logs.LogInfo).Info(fmt.Sprintf("Warning: failed to delete ClusterRole: %v", err))
-		} else {
-			deletedResources = append(deletedResources,
-				fmt.Sprintf("ClusterRole/%s-%s", clusterNamespace, clusterName))
-		}
-
-		if err := deleteRoleBinding(ctx, c, clusterNamespace, clusterName, logger); err != nil {
-			logger.V(logs.LogInfo).Info(fmt.Sprintf("Warning: failed to delete RoleBinding: %v", err))
-		} else {
-			deletedResources = append(deletedResources,
-				fmt.Sprintf("RoleBinding/%s/%s", clusterNamespace, clusterName))
-		}
-
-		if err := deleteRole(ctx, c, clusterNamespace, clusterName, logger); err != nil {
-			logger.V(logs.LogInfo).Info(fmt.Sprintf("Warning: failed to delete Role: %v", err))
-		} else {
-			deletedResources = append(deletedResources,
-				fmt.Sprintf("Role/%s/%s", clusterNamespace, clusterName))
-		}
-
-		if err := deleteSecret(ctx, c, clusterNamespace, clusterName, logger); err != nil {
-			logger.V(logs.LogInfo).Info(fmt.Sprintf("Warning: failed to delete ServiceAccount Secret: %v", err))
-		} else {
-			deletedResources = append(deletedResources,
-				fmt.Sprintf("Secret/%s/%s", clusterNamespace, clusterName))
-		}
-
-		if err := deleteServiceAccount(ctx, c, clusterNamespace, clusterName, logger); err != nil {
-			logger.V(logs.LogInfo).Info(fmt.Sprintf("Warning: failed to delete ServiceAccount: %v", err))
-		} else {
-			deletedResources = append(deletedResources,
-				fmt.Sprintf("ServiceAccount/%s/%s", clusterNamespace, clusterName))
-		}
+		pullModeResources := deletePullModeResources(ctx, c, clusterNamespace, clusterName, logger)
+		deletedResources = append(deletedResources, pullModeResources...)
 	}
 
-	secretName := clusterName + sveltosKubeconfigSecretNamePostfix
-	if err := deleteSecret(ctx, c, clusterNamespace, secretName, logger); err != nil {
-		logger.V(logs.LogInfo).Info(fmt.Sprintf("Warning: failed to delete kubeconfig Secret: %v", err))
-	} else {
-		deletedResources = append(deletedResources,
-			fmt.Sprintf("Secret/%s/%s", clusterNamespace, secretName))
-	}
+	// Delete common resources (kubeconfig secret)
+	secretResources := deletePushModeResources(ctx, c, clusterNamespace, clusterName, logger)
+	deletedResources = append(deletedResources, secretResources...)
 
+	// Delete SveltosCluster
 	logger.V(logs.LogDebug).Info(fmt.Sprintf("Deleting SveltosCluster %s/%s", clusterNamespace, clusterName))
 	if err := instance.DeleteResource(ctx, sveltosCluster); err != nil {
 		return fmt.Errorf("failed to delete SveltosCluster: %w", err)
@@ -215,6 +173,86 @@ func deregisterSveltosCluster(ctx context.Context, clusterNamespace, clusterName
 	}
 
 	return nil
+}
+
+// deletePullModeResources removes all pull-mode specific resources
+// Returns a list of successfully deleted resources
+func deletePullModeResources(ctx context.Context, c client.Client, clusterNamespace, clusterName string,
+	logger logr.Logger,
+) []string {
+
+	deletedResources := []string{}
+
+	// Delete ClusterRoleBinding
+	if err := deleteClusterRoleBinding(ctx, c, clusterNamespace, clusterName, logger); err != nil {
+		logger.V(logs.LogInfo).Info(fmt.Sprintf("Warning: failed to delete ClusterRoleBinding: %v", err))
+	} else {
+		deletedResources = append(deletedResources,
+			fmt.Sprintf("ClusterRoleBinding/%s-%s", clusterNamespace, clusterName))
+	}
+
+	// Delete ClusterRole
+	if err := deleteClusterRole(ctx, c, clusterNamespace, clusterName, logger); err != nil {
+		logger.V(logs.LogInfo).Info(fmt.Sprintf("Warning: failed to delete ClusterRole: %v", err))
+	} else {
+		deletedResources = append(deletedResources,
+			fmt.Sprintf("ClusterRole/%s-%s", clusterNamespace, clusterName))
+	}
+
+	// Delete RoleBinding
+	if err := deleteRoleBinding(ctx, c, clusterNamespace, clusterName, logger); err != nil {
+		logger.V(logs.LogInfo).Info(fmt.Sprintf("Warning: failed to delete RoleBinding: %v", err))
+	} else {
+		deletedResources = append(deletedResources,
+			fmt.Sprintf("RoleBinding/%s/%s", clusterNamespace, clusterName))
+	}
+
+	// Delete Role
+	if err := deleteRole(ctx, c, clusterNamespace, clusterName, logger); err != nil {
+		logger.V(logs.LogInfo).Info(fmt.Sprintf("Warning: failed to delete Role: %v", err))
+	} else {
+		deletedResources = append(deletedResources,
+			fmt.Sprintf("Role/%s/%s", clusterNamespace, clusterName))
+	}
+
+	// Delete ServiceAccount Secret
+	if err := deleteSecret(ctx, c, clusterNamespace, clusterName, logger); err != nil {
+		logger.V(logs.LogInfo).Info(fmt.Sprintf("Warning: failed to delete ServiceAccount Secret: %v", err))
+	} else {
+		deletedResources = append(deletedResources,
+			fmt.Sprintf("Secret/%s/%s", clusterNamespace, clusterName))
+	}
+
+	// Delete ServiceAccount
+	if err := deleteServiceAccount(ctx, c, clusterNamespace, clusterName, logger); err != nil {
+		logger.V(logs.LogInfo).Info(fmt.Sprintf("Warning: failed to delete ServiceAccount: %v", err))
+	} else {
+		deletedResources = append(deletedResources,
+			fmt.Sprintf("ServiceAccount/%s/%s", clusterNamespace, clusterName))
+	}
+
+	return deletedResources
+}
+
+// deletePushModeResources removes resources that exist in push mode (just kubeconfig secret)
+// This is common to both push and pull mode clusters
+// Returns a list of successfully deleted resources
+func deletePushModeResources(ctx context.Context, c client.Client, clusterNamespace, clusterName string,
+	logger logr.Logger,
+) []string {
+
+	deletedResources := []string{}
+
+	// Delete kubeconfig Secret
+	secretName := clusterName + sveltosKubeconfigSecretNamePostfix
+	if err := deleteSecret(ctx, c, clusterNamespace, secretName, logger); err != nil {
+		logger.V(logs.LogInfo).Info(fmt.Sprintf("Warning: failed to delete kubeconfig Secret: %v", err))
+	} else {
+		deletedResources = append(deletedResources,
+			fmt.Sprintf("Secret/%s/%s", clusterNamespace, secretName))
+	}
+
+	return deletedResources
 }
 
 func deleteServiceAccount(ctx context.Context, c client.Client, namespace, name string,
