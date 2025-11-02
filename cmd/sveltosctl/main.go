@@ -52,6 +52,7 @@ func main() {
                    mode was to be moved out of DryRun mode. Displays also information on which permissions each
                    tenant admin has in each managed cluster.
     register       Onboard an existing non CAPI cluster by creating all necessary internal resources.
+    deregister     Remove a non CAPI cluster that was previously registered with Sveltos.
     generate       Generates a Kubeconfig that can later be used to register a cluster.
                    Run this command with sveltosctl pointing to the cluster you want Sveltos to manage.
     log-level      Allows changing the log verbosity.
@@ -114,6 +115,8 @@ Description:
 			err = commands.Show(ctx, args, logger)
 		case "register":
 			err = commands.RegisterCluster(ctx, args, logger)
+		case "deregister":
+			err = commands.DeregisterCluster(ctx, args, logger)
 		case "generate":
 			err = commands.Generate(ctx, args, logger)
 		case "log-level":
