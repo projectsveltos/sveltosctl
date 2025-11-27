@@ -91,7 +91,8 @@ func patchSveltosCluster(ctx context.Context, clusterNamespace, clusterName stri
 			currentSveltosCluster.Spec.KubeconfigKeyName = kubeconfig
 			if renew {
 				currentSveltosCluster.Spec.TokenRequestRenewalOption = &libsveltosv1beta1.TokenRequestRenewalOption{
-					RenewTokenRequestInterval: metav1.Duration{Duration: 24 * time.Hour},
+					RenewTokenRequestInterval: metav1.Duration{Duration: 1 * time.Hour},
+					TokenDuration:             metav1.Duration{Duration: 5 * time.Hour},
 				}
 			}
 
