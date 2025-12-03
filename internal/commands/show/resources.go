@@ -60,7 +60,7 @@ func displayResources(ctx context.Context,
 	if !full {
 		table.Header("CLUSTER", "GVK", "NAMESPACE", "NAME", "MESSAGE")
 		table.Configure(func(config *tablewriter.Config) {
-			config.Row.Formatting.MergeMode = tw.MergeHorizontal
+			config.Row.Merging.Mode = tw.MergeHorizontal
 		})
 	}
 
@@ -228,14 +228,14 @@ func doConsiderResourceStatus(resourceStatus *libsveltosv1beta1.ResourceStatus,
 // Resources displays information about Kubernetes resources collected from managed clusters
 func Resources(ctx context.Context, args []string, logger logr.Logger) error {
 	doc := `Usage:
-  sveltosctl show resources [options] [--group=<group>] [--kind=<kind>] [--namespace=<namespace>] 
+  sveltosctl show resources [options] [--group=<group>] [--kind=<kind>] [--namespace=<namespace>]
   [--cluster-namespace=<name>] [--cluster=<name>] [--full] [--verbose]
 
      --group=<group>              Show Kubernetes resources deployed in clusters matching this group.
                                   If not specified all groups are considered.
      --kind=<kind>                Show Kubernetes resources deployed in clusters matching this Kind.
                                   If not specified all kinds are considered.
-     --namespace=<namespace>      Show Kubernetes resources in this namespace. 
+     --namespace=<namespace>      Show Kubernetes resources in this namespace.
                                   If not specified all namespaces are considered.
      --cluster-namespace=<name>   Show Kubernetes resources in clusters in this namespace.
                                   If not specified all namespaces are considered.
@@ -245,7 +245,7 @@ func Resources(ctx context.Context, args []string, logger logr.Logger) error {
 
 Options:
   -h --help                  Show this screen.
-     --verbose               Verbose mode. Print each step.  
+     --verbose               Verbose mode. Print each step.
 
 Description:
   The show addons command shows information about Kubernetes addons deployed in clusters.
