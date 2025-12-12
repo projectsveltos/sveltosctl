@@ -121,8 +121,10 @@ Description:
 			err = commands.Generate(ctx, args, logger)
 		case "log-level":
 			err = commands.LogLevel(ctx, args, logger)
-		case "version":
+		case "":
 			err = commands.Version(args, logger)
+		case "redeploy":
+			err = commands.RedeployCluster(ctx, args, logger)
 		default:
 			err = fmt.Errorf("unknown command: %q\n%s", command, doc)
 		}
