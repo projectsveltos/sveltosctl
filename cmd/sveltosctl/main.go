@@ -53,6 +53,8 @@ func main() {
                    tenant admin has in each managed cluster.
     register       Onboard an existing non CAPI cluster by creating all necessary internal resources.
     deregister     Remove a non CAPI cluster that was previously registered with Sveltos.
+    redeploy.      Forces Sveltos to re-apply all configured add-ons and resources for a specified cluster,
+                   bypassing the internal reconciliation status check.
     generate       Generates a Kubeconfig that can later be used to register a cluster.
                    Run this command with sveltosctl pointing to the cluster you want Sveltos to manage.
     log-level      Allows changing the log verbosity.
