@@ -123,7 +123,7 @@ Description:
 			err = commands.Generate(ctx, args, logger)
 		case "log-level":
 			err = commands.LogLevel(ctx, args, logger)
-		case "":
+		case "version":
 			err = commands.Version(args, logger)
 		case "redeploy":
 			err = commands.RedeployCluster(ctx, args, logger)
