@@ -35,9 +35,9 @@ KUBECTL := $(TOOLS_BIN_DIR)/kubectl
 SETUP_ENVTEST := $(TOOLS_BIN_DIR)/setup_envs
 CONTROLLER_GEN := $(TOOLS_BIN_DIR)/controller-gen
 
-GOLANGCI_LINT_VERSION := "v2.5.0"
+GOLANGCI_LINT_VERSION := "v2.7.2"
 
-KUSTOMIZE_VER := v5.7.0
+KUSTOMIZE_VER := v5.8.0
 KUSTOMIZE_BIN := kustomize
 KUSTOMIZE := $(abspath $(TOOLS_BIN_DIR)/$(KUSTOMIZE_BIN)-$(KUSTOMIZE_VER))
 KUSTOMIZE_PKG := sigs.k8s.io/kustomize/kustomize/v5
@@ -182,7 +182,7 @@ build-all:
 ##@ Testing
 
 # KUBEBUILDER_ENVTEST_KUBERNETES_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-KUBEBUILDER_ENVTEST_KUBERNETES_VERSION = 1.33.0
+KUBEBUILDER_ENVTEST_KUBERNETES_VERSION = 1.35.0
 
 ifeq ($(shell go env GOOS),darwin) # Use the darwin/amd64 binary until an arm64 version is available
 KUBEBUILDER_ASSETS ?= $(shell $(SETUP_ENVTEST) use --use-env -p path --arch amd64 $(KUBEBUILDER_ENVTEST_KUBERNETES_VERSION))
