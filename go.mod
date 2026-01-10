@@ -7,12 +7,12 @@ require (
 	github.com/fatih/color v1.18.0
 	github.com/go-logr/logr v1.4.3
 	github.com/olekukonko/tablewriter v1.1.2
-	github.com/onsi/ginkgo/v2 v2.27.3
-	github.com/onsi/gomega v1.38.3
+	github.com/onsi/ginkgo/v2 v2.27.4
+	github.com/onsi/gomega v1.39.0
 	github.com/pkg/errors v0.9.1
-	github.com/projectsveltos/addon-controller v1.3.1-0.20260103154745-aaa98e292937
-	github.com/projectsveltos/event-manager v1.3.1-0.20260103162850-6b18e6119fbe
-	github.com/projectsveltos/libsveltos v1.3.2-0.20260103131048-3e231674542f
+	github.com/projectsveltos/addon-controller v1.4.0
+	github.com/projectsveltos/event-manager v1.4.0
+	github.com/projectsveltos/libsveltos v1.4.0
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.35.0
 	k8s.io/apiextensions-apiserver v0.35.0
@@ -91,7 +91,7 @@ require (
 	k8s.io/cluster-bootstrap v0.34.2 // indirect
 	k8s.io/component-base v0.35.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
-	k8s.io/utils v0.0.0-20251222233032-718f0e51e6d2 // indirect
+	k8s.io/utils v0.0.0-20260108192941-914a6e750570 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
 	sigs.k8s.io/kustomize/api v0.21.0 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.21.0 // indirect
