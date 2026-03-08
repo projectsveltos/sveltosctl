@@ -23,16 +23,17 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog/v2/textlogger"
-	kubectlscheme "k8s.io/kubectl/pkg/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -197,7 +198,9 @@ var _ = Describe("CRUD", func() {
 	})
 
 	It("updateResourceWithDynamicResourceInterface creates and updates an object", func() {
-		universalDeserializer := kubectlscheme.Codecs.UniversalDeserializer()
+		codecs := serializer.NewCodecFactory(scheme)
+		universalDeserializer := codecs.UniversalDeserializer()
+
 		request := &unstructured.Unstructured{}
 		nsName := randomString()
 		_, _, err := universalDeserializer.Decode([]byte(fmt.Sprintf(nsInstanceTemplate, nsName)), nil, request)
