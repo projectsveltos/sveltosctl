@@ -60,13 +60,13 @@ var (
 )
 
 func displayAddOns(ctx context.Context, passedNamespace, passedCluster, passedProfile string,
-	logger logr.Logger) error {
+	helmOnly, resourcesOnly bool, logger logr.Logger) error {
 
 	table := tablewriter.NewWriter(os.Stdout)
 	table.Header("CLUSTER", "RESOURCE TYPE", "NAMESPACE", "NAME", "VERSION", "TIME", "DEPLOYMENT TYPE", "PROFILES")
 
 	if err := displayAddOnsInNamespaces(ctx, passedNamespace, passedCluster,
-		passedProfile, table, logger); err != nil {
+		passedProfile, helmOnly, resourcesOnly, table, logger); err != nil {
 		return err
 	}
 
@@ -74,7 +74,7 @@ func displayAddOns(ctx context.Context, passedNamespace, passedCluster, passedPr
 }
 
 func displayAddOnsInNamespaces(ctx context.Context, passedNamespace, passedCluster, passedProfile string,
-	table *tablewriter.Table, logger logr.Logger) error {
+	helmOnly, resourcesOnly bool, table *tablewriter.Table, logger logr.Logger) error {
 
 	instance := utils.GetAccessInstance()
 
@@ -88,7 +88,7 @@ func displayAddOnsInNamespaces(ctx context.Context, passedNamespace, passedClust
 		if doConsiderNamespace(ns, passedNamespace) {
 			logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering namespace: %s", ns.Name))
 			err = displayAddOnsInNamespace(ctx, ns.Name, passedCluster, passedProfile,
-				table, logger)
+				helmOnly, resourcesOnly, table, logger)
 			if err != nil {
 				return err
 			}
@@ -99,7 +99,7 @@ func displayAddOnsInNamespaces(ctx context.Context, passedNamespace, passedClust
 }
 
 func displayAddOnsInNamespace(ctx context.Context, namespace, passedCluster, passedProfile string,
-	table *tablewriter.Table, logger logr.Logger) error {
+	helmOnly, resourcesOnly bool, table *tablewriter.Table, logger logr.Logger) error {
 
 	instance := utils.GetAccessInstance()
 
@@ -114,7 +114,7 @@ func displayAddOnsInNamespace(ctx context.Context, namespace, passedCluster, pas
 		cc := &clusterConfigurations.Items[i]
 		if doConsiderClusterConfiguration(cc, passedCluster) {
 			logger.V(logs.LogDebug).Info(fmt.Sprintf("Considering ClusterConfiguration: %s", cc.Name))
-			if err := displayAddOnsForCluster(cc, passedProfile, table, logger); err != nil {
+			if err := displayAddOnsForCluster(cc, passedProfile, helmOnly, resourcesOnly, table, logger); err != nil {
 				return err
 			}
 		}
@@ -124,43 +124,48 @@ func displayAddOnsInNamespace(ctx context.Context, namespace, passedCluster, pas
 }
 
 func displayAddOnsForCluster(clusterConfiguration *configv1beta1.ClusterConfiguration, passedProfile string,
-	table *tablewriter.Table, logger logr.Logger) error {
+	helmOnly, resourcesOnly bool, table *tablewriter.Table, logger logr.Logger) error {
 
 	instance := utils.GetAccessInstance()
-	helmCharts := instance.GetHelmReleases(clusterConfiguration, logger)
 
 	logger = logger.WithValues("clusterConfiguration", clusterConfiguration.Name)
 	logger.V(logs.LogDebug).Info("Get ClusterConfiguration")
 
 	clusterName := instance.GetClusterNameFromClusterConfiguration(clusterConfiguration)
-
 	clusterInfo := fmt.Sprintf("%s/%s", clusterConfiguration.Namespace, clusterName)
-	for chart := range helmCharts {
-		if doConsiderProfile(helmCharts[chart], passedProfile) {
-			if err := table.Append(genAddOnsRow(clusterInfo, "helm chart", chart.Namespace, chart.ReleaseName, chart.ChartVersion,
-				chart.LastAppliedTime.String(), helmCharts[chart], configv1beta1.DeploymentTypeRemote)); err != nil {
-				return err
+
+	if !resourcesOnly {
+		helmCharts := instance.GetHelmReleases(clusterConfiguration, logger)
+		for chart := range helmCharts {
+			if doConsiderProfile(helmCharts[chart], passedProfile) {
+				if err := table.Append(genAddOnsRow(clusterInfo, "helm chart", chart.Namespace, chart.ReleaseName, chart.ChartVersion,
+					chart.LastAppliedTime.String(), helmCharts[chart], configv1beta1.DeploymentTypeRemote)); err != nil {
+					return err
+				}
 			}
 		}
 	}
 
-	resources := instance.GetResources(clusterConfiguration, logger)
-	for resource := range resources {
-		if doConsiderProfile(resources[resource], passedProfile) {
-			if err := table.Append(genAddOnsRow(clusterInfo, fmt.Sprintf("%s:%s", resource.Group, resource.Kind),
-				resource.Namespace, resource.Name, "N/A",
-				resource.LastAppliedTime.String(), resources[resource], resource.DeploymentType)); err != nil {
-				return err
+	if !helmOnly {
+		resources := instance.GetResources(clusterConfiguration, logger)
+		for resource := range resources {
+			if doConsiderProfile(resources[resource], passedProfile) {
+				if err := table.Append(genAddOnsRow(clusterInfo, fmt.Sprintf("%s:%s", resource.Group, resource.Kind),
+					resource.Namespace, resource.Name, "N/A",
+					resource.LastAppliedTime.String(), resources[resource], resource.DeploymentType)); err != nil {
+					return err
+				}
 			}
 		}
 	}
+
 	return nil
 }
 
 // AddOns displays information about Kubernetes AddOns deployed in clusters
 func AddOns(ctx context.Context, args []string, logger logr.Logger) error {
 	doc := `Usage:
-  sveltosctl show addons [options] [--namespace=<name>] [--cluster=<name>] [--profile=<name>] [--verbose]
+  sveltosctl show addons [options] [--namespace=<name>] [--cluster=<name>] [--profile=<name>] [--helm-charts] [--resources] [--verbose]
 
      --namespace=<name>      Show Kubernetes addons deployed in clusters in this namespace.
                              If not specified all namespaces are considered.
@@ -168,6 +173,8 @@ func AddOns(ctx context.Context, args []string, logger logr.Logger) error {
                              If not specified all cluster names are considered.
      --profile=<kind/name>   Show Kubernetes addons deployed because of this clusterprofile/profile.
                              If not specified all clusterprofiles/profiles are considered.
+     --helm-charts           Show helm charts only.
+     --resources             Show resources only.
 
 Options:
   -h --help                  Show this screen.
@@ -213,5 +220,8 @@ Description:
 		profile = passedProfile.(string)
 	}
 
-	return displayAddOns(ctx, namespace, cluster, profile, logger)
+	helmOnly := parsedArgs["--helm-charts"].(bool)
+	resourcesOnly := parsedArgs["--resources"].(bool)
+
+	return displayAddOns(ctx, namespace, cluster, profile, helmOnly, resourcesOnly, logger)
 }

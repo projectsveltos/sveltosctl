@@ -83,7 +83,7 @@ var _ = Describe("AddOnss", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
-		err = show.DisplayAddOns(context.TODO(), "", "", "",
+		err = show.DisplayAddOns(context.TODO(), "", "", "", false, false,
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 
@@ -106,6 +106,57 @@ var _ = Describe("AddOnss", func() {
 		lines := strings.Split(buf.String(), "\n")
 		verifyCharts(lines, clusterInfo, clusterProfileName1, charts1)
 		verifyCharts(lines, clusterInfo, clusterProfileName2, charts2)
+
+		os.Stdout = old
+	})
+
+	It("show addons with --helm-charts displays only helm charts and not resources", func() {
+		clusterProfileName := randomString()
+		charts := []configv1beta1.Chart{
+			*generateChart(), *generateChart(),
+		}
+		resources := []configv1beta1.DeployedResource{
+			*generateResource(), *generateResource(),
+		}
+		clusterConfiguration = addDeployedHelmCharts(clusterConfiguration, clusterProfileName, charts)
+		clusterConfiguration = addDeployedResources(clusterConfiguration, clusterProfileName, resources)
+
+		old := os.Stdout
+		r, w, _ := os.Pipe()
+		os.Stdout = w
+
+		initObjects := []client.Object{ns, clusterConfiguration}
+
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
+
+		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
+		err = show.DisplayAddOns(context.TODO(), "", "", "", true, false,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
+		Expect(err).To(BeNil())
+
+		clusterInfo := fmt.Sprintf("%s/%s", clusterConfiguration.Namespace, clusterConfiguration.Name)
+
+		w.Close()
+		var buf bytes.Buffer
+		_, err = io.Copy(&buf, r)
+		Expect(err).To(BeNil())
+
+		lines := strings.Split(buf.String(), "\n")
+		verifyCharts(lines, clusterInfo, clusterProfileName, charts)
+
+		// resources must not appear in the output
+		for i := range resources {
+			for _, line := range lines {
+				if strings.Contains(line, clusterInfo) &&
+					strings.Contains(line, resources[i].Namespace) &&
+					strings.Contains(line, resources[i].Name) {
+					Fail(fmt.Sprintf("resource %s/%s should not appear when --helm-charts is set",
+						resources[i].Namespace, resources[i].Name))
+				}
+			}
+		}
 
 		os.Stdout = old
 	})
@@ -134,7 +185,7 @@ var _ = Describe("AddOnss", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 
 		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
-		err = show.DisplayAddOns(context.TODO(), "", "", "",
+		err = show.DisplayAddOns(context.TODO(), "", "", "", false, false,
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 
