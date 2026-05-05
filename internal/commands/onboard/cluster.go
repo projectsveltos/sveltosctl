@@ -46,7 +46,7 @@ const (
 	kubeconfig                         = "kubeconfig"
 )
 
-func onboardSveltosCluster(ctx context.Context, clusterNamespace, clusterName string, kubeconfigData []byte,
+func onboardSveltosCluster(ctx context.Context, clusterNamespace, clusterName, shard string, kubeconfigData []byte,
 	labels map[string]string, renew bool, logger logr.Logger) error {
 
 	instance := utils.GetAccessInstance()
@@ -64,7 +64,7 @@ func onboardSveltosCluster(ctx context.Context, clusterNamespace, clusterName st
 		return err
 	}
 
-	err = patchSveltosCluster(ctx, clusterNamespace, clusterName, labels, renew, logger)
+	err = patchSveltosCluster(ctx, clusterNamespace, clusterName, shard, labels, renew, logger)
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func onboardSveltosCluster(ctx context.Context, clusterNamespace, clusterName st
 	return nil
 }
 
-func patchSveltosCluster(ctx context.Context, clusterNamespace, clusterName string,
+func patchSveltosCluster(ctx context.Context, clusterNamespace, clusterName, shard string,
 	labels map[string]string, renew bool, logger logr.Logger) error {
 
 	instance := utils.GetAccessInstance()
@@ -95,6 +95,11 @@ func patchSveltosCluster(ctx context.Context, clusterNamespace, clusterName stri
 					TokenDuration:             metav1.Duration{Duration: 5 * time.Hour},
 				}
 			}
+			if shard != "" {
+				currentSveltosCluster.Annotations = map[string]string{
+					"sharding.projectsveltos.io/key": shard,
+				}
+			}
 
 			return instance.CreateResource(ctx, currentSveltosCluster)
 		}
@@ -104,6 +109,13 @@ func patchSveltosCluster(ctx context.Context, clusterNamespace, clusterName stri
 	logger.V(logs.LogDebug).Info("Updating SveltosCluster")
 	currentSveltosCluster.Labels = labels
 	currentSveltosCluster.Spec.KubeconfigKeyName = kubeconfig
+	if shard != "" {
+		currentSveltosCluster.Annotations = map[string]string{
+			"sharding.projectsveltos.io/key": shard,
+		}
+	} else if currentSveltosCluster.Annotations != nil {
+		delete(currentSveltosCluster.Annotations, "sharding.projectsveltos.io/key")
+	}
 	return instance.UpdateResource(ctx, currentSveltosCluster)
 }
 
@@ -135,7 +147,7 @@ func patchSecret(ctx context.Context, clusterNamespace, secretName string, kubec
 func RegisterCluster(ctx context.Context, args []string, logger logr.Logger) error { //nolint: funlen // command description
 	doc := `Usage:
   sveltosctl register cluster [options] --namespace=<name> --cluster=<name> [--kubeconfig=<file>] [--fleet-cluster-context=<value>] [--pullmode]
-                                [--labels=<value>] [--service-account-token] [--verbose]
+                                [--labels=<value>] [--shard=<key>] [--service-account-token] [--verbose]
 
      --namespace=<name>                  Specifies the namespace where Sveltos will create a resource (SveltosCluster) to represent
                                          the registered cluster.
@@ -164,7 +176,10 @@ func RegisterCluster(ctx context.Context, args []string, logger logr.Logger) err
                                          being created. The format for labels is <key1=value1,key2=value2>, where each key-value
                                          pair is separated by a comma (,) and the key and value are separated by an equal sign (=).
                                          You can define multiple labels by adding more key-value pairs separated by commas.
-    --service-account-token              (Optional) Use a non-expiring ServiceAccount token for management cluster registration.
+     --shard=<shard key>                 Optional. Assigns the cluster to a specific controller shard. This automatically adds the annotation
+                                         sharding.projectsveltos.io/key: <value> to the SveltosCluster resource, ensuring the correct shard
+                                         processes it.
+     --service-account-token             (Optional) Use a non-expiring ServiceAccount token for management cluster registration.
                                          When enabled, Sveltos will automatically create the necessary ServiceAccount infrastructure
                                          (ServiceAccount, ClusterRole, and ClusterRoleBinding) in the managed cluster and
                                          generate a long-lived token by also creating a Secret of type kubernetes.io/service-account-token.
@@ -216,6 +231,11 @@ Description:
 		}
 	}
 
+	shard := ""
+	if passedShard := parsedArgs["--shard"]; passedShard != nil {
+		shard = passedShard.(string)
+	}
+
 	_ = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogInfo))
 	pullMode := parsedArgs["--pullmode"].(bool)
 
@@ -240,7 +260,7 @@ Description:
 	}
 
 	if pullMode {
-		return onboardSveltosClusterInPullMode(ctx, namespace, cluster, labels, logger)
+		return onboardSveltosClusterInPullMode(ctx, namespace, cluster, shard, labels, logger)
 	}
 
 	if kubeconfig == "" && fleetClusterContext == "" {
@@ -252,7 +272,7 @@ Description:
 		return err
 	}
 
-	return onboardSveltosCluster(ctx, namespace, cluster, data, labels, renew, logger)
+	return onboardSveltosCluster(ctx, namespace, cluster, shard, data, labels, renew, logger)
 }
 
 func getKubeconfigData(ctx context.Context, kubeconfigFile, fleetClusterContext string,
