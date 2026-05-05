@@ -55,7 +55,8 @@ var _ = Describe("OnboardCluster", func() {
 			randomString(): randomString(),
 		}
 
-		Expect(onboard.OnboardSveltosCluster(context.TODO(), clusterNamespace, clusterName, kubeconfigData,
+		shardKey := randomString()
+		Expect(onboard.OnboardSveltosCluster(context.TODO(), clusterNamespace, clusterName, shardKey, kubeconfigData,
 			labels, false, textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		instance := utils.GetAccessInstance()
@@ -65,6 +66,8 @@ var _ = Describe("OnboardCluster", func() {
 			types.NamespacedName{Namespace: clusterNamespace, Name: clusterName}, sveltosCluster)
 		Expect(err).To(BeNil())
 		Expect(reflect.DeepEqual(sveltosCluster.Labels, labels)).To(BeTrue())
+		Expect(sveltosCluster.Annotations).ToNot(BeNil())
+		Expect(sveltosCluster.Annotations["sharding.projectsveltos.io/key"]).To(Equal(shardKey))
 
 		secret := &corev1.Secret{}
 		secretName := clusterName + onboard.SveltosKubeconfigSecretNamePostfix
@@ -80,7 +83,12 @@ var _ = Describe("OnboardCluster", func() {
 			randomString(): randomString(),
 		}
 
-		Expect(onboard.OnboardSveltosCluster(context.TODO(), clusterNamespace, clusterName, kubeconfigData,
+		Expect(onboard.OnboardSveltosCluster(context.TODO(), clusterNamespace, clusterName, "", kubeconfigData,
 			labels, false, textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
+		err = instance.GetResource(context.TODO(),
+			types.NamespacedName{Namespace: clusterNamespace, Name: clusterName}, sveltosCluster)
+		Expect(err).To(BeNil())
+		Expect(reflect.DeepEqual(sveltosCluster.Labels, labels)).To(BeTrue())
+		Expect(sveltosCluster.Annotations).To(BeNil())
 	})
 })

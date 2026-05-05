@@ -45,7 +45,7 @@ import (
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
-func onboardSveltosClusterInPullMode(ctx context.Context, clusterNamespace, clusterName string,
+func onboardSveltosClusterInPullMode(ctx context.Context, clusterNamespace, clusterName, shard string,
 	labels map[string]string, logger logr.Logger) error {
 
 	instance := utils.GetAccessInstance()
@@ -93,7 +93,7 @@ func onboardSveltosClusterInPullMode(ctx context.Context, clusterNamespace, clus
 		return err
 	}
 
-	err = createSveltosCluster(ctx, c, clusterNamespace, clusterName, labels)
+	err = createSveltosCluster(ctx, c, clusterNamespace, clusterName, shard, labels)
 	if err != nil {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("createSveltosCluster failed: %s", err))
 		return err
@@ -358,8 +358,9 @@ func createClusterRoleBinding(ctx context.Context, c client.Client, namespace, n
 	return err
 }
 
-func updateSveltosClusterLabels(ctx context.Context, c client.Client, sveltosCluster *libsveltosv1beta1.SveltosCluster,
-	labels map[string]string) error {
+func updateSveltosClusterLabelsAndAnnotations(ctx context.Context, c client.Client,
+	sveltosCluster *libsveltosv1beta1.SveltosCluster, labels map[string]string,
+	shard string) error {
 
 	lbls := sveltosCluster.Labels
 	if lbls == nil {
@@ -371,17 +372,26 @@ func updateSveltosClusterLabels(ctx context.Context, c client.Client, sveltosClu
 	}
 
 	sveltosCluster.Labels = lbls
+
+	if shard != "" {
+		sveltosCluster.Annotations = map[string]string{
+			"sharding.projectsveltos.io/key": shard,
+		}
+	} else if sveltosCluster.Annotations != nil {
+		delete(sveltosCluster.Annotations, "sharding.projectsveltos.io/key")
+	}
+
 	return c.Update(ctx, sveltosCluster)
 }
 
-func createSveltosCluster(ctx context.Context, c client.Client, namespace, name string,
+func createSveltosCluster(ctx context.Context, c client.Client, namespace, name, shard string,
 	labels map[string]string) error {
 
 	currentSveltosCluster := &libsveltosv1beta1.SveltosCluster{}
 	err := c.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, currentSveltosCluster)
 	if err == nil {
 		// Update labels
-		return updateSveltosClusterLabels(ctx, c, currentSveltosCluster, labels)
+		return updateSveltosClusterLabelsAndAnnotations(ctx, c, currentSveltosCluster, labels, shard)
 	}
 
 	sveltosCluster := &libsveltosv1beta1.SveltosCluster{
@@ -393,6 +403,12 @@ func createSveltosCluster(ctx context.Context, c client.Client, namespace, name 
 		Spec: libsveltosv1beta1.SveltosClusterSpec{
 			PullMode: true,
 		},
+	}
+
+	if shard != "" {
+		sveltosCluster.Annotations = map[string]string{
+			"sharding.projectsveltos.io/key": shard,
+		}
 	}
 
 	err = c.Create(ctx, sveltosCluster)
