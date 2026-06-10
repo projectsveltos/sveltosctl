@@ -46,7 +46,7 @@ var _ = Describe("RoleRequest", func() {
 					ServiceAccountName:      randomString(),
 					ClusterSelector: libsveltosv1beta1.Selector{
 						LabelSelector: metav1.LabelSelector{
-							MatchLabels: map[string]string{"zone": "east"},
+							MatchLabels: map[string]string{zoneLabel: "east"},
 						},
 					},
 				},

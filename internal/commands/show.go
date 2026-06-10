@@ -68,7 +68,7 @@ See 'sveltosctl show <subcommand> --help' to read about a specific subcommand.
 	}
 
 	command := opts["<subcommand>"].(string)
-	arguments := append([]string{"show", command}, opts["<args>"].([]string)...)
+	arguments := append([]string{showSubcommand, command}, opts["<args>"].([]string)...)
 
 	if opts["<subcommand>"] != nil {
 		switch command {

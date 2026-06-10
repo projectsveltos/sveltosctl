@@ -70,7 +70,7 @@ Description:
 	}
 
 	command := opts["<command>"].(string)
-	arguments := append([]string{"logLevel", command}, opts["<args>"].([]string)...)
+	arguments := append([]string{logLevelArg, command}, opts["<args>"].([]string)...)
 
 	switch command {
 	case clusterCommand:

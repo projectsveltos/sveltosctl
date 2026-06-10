@@ -304,13 +304,13 @@ func createRoleBinding(ctx context.Context, c client.Client, namespace, name str
 			Name:      name,
 		},
 		RoleRef: rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
+			APIGroup: rbacAPIGroup,
 			Kind:     "Role",
 			Name:     name,
 		},
 		Subjects: []rbacv1.Subject{
 			{
-				Kind:      "ServiceAccount",
+				Kind:      serviceAccountKind,
 				Namespace: namespace,
 				Name:      name,
 			},
@@ -335,13 +335,13 @@ func createClusterRoleBinding(ctx context.Context, c client.Client, namespace, n
 			Name: namespace + "-" + name,
 		},
 		RoleRef: rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
+			APIGroup: rbacAPIGroup,
 			Kind:     "ClusterRole",
 			Name:     namespace + "-" + name,
 		},
 		Subjects: []rbacv1.Subject{
 			{
-				Kind:      "ServiceAccount",
+				Kind:      serviceAccountKind,
 				Namespace: namespace,
 				Name:      name,
 			},
@@ -375,10 +375,10 @@ func updateSveltosClusterLabelsAndAnnotations(ctx context.Context, c client.Clie
 
 	if shard != "" {
 		sveltosCluster.Annotations = map[string]string{
-			"sharding.projectsveltos.io/key": shard,
+			shardingAnnotationKey: shard,
 		}
 	} else if sveltosCluster.Annotations != nil {
-		delete(sveltosCluster.Annotations, "sharding.projectsveltos.io/key")
+		delete(sveltosCluster.Annotations, shardingAnnotationKey)
 	}
 
 	return c.Update(ctx, sveltosCluster)
@@ -407,7 +407,7 @@ func createSveltosCluster(ctx context.Context, c client.Client, namespace, name,
 
 	if shard != "" {
 		sveltosCluster.Annotations = map[string]string{
-			"sharding.projectsveltos.io/key": shard,
+			shardingAnnotationKey: shard,
 		}
 	}
 

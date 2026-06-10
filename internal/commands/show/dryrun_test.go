@@ -67,7 +67,7 @@ var _ = Describe("DryRun", func() {
 				Namespace: ns.Name,
 				Name:      randomString(),
 				Labels: map[string]string{
-					"projectsveltos.io/cluster-profile-name": clusterProfileName1,
+					clusterProfileNameLabel: clusterProfileName1,
 				},
 				OwnerReferences: []metav1.OwnerReference{
 					{
@@ -98,7 +98,7 @@ var _ = Describe("DryRun", func() {
 				Namespace: ns.Name,
 				Name:      randomString(),
 				Labels: map[string]string{
-					"projectsveltos.io/cluster-profile-name": clusterProfileName2,
+					clusterProfileNameLabel: clusterProfileName2,
 				},
 				OwnerReferences: []metav1.OwnerReference{
 					{
@@ -176,7 +176,7 @@ var _ = Describe("DryRun", func() {
 				Namespace: ns.Name,
 				Name:      randomString(),
 				Labels: map[string]string{
-					"projectsveltos.io/cluster-profile-name": clusterProfileName1,
+					clusterProfileNameLabel: clusterProfileName1,
 				},
 				OwnerReferences: []metav1.OwnerReference{
 					{
@@ -208,7 +208,7 @@ var _ = Describe("DryRun", func() {
 				Namespace: ns.Name,
 				Name:      randomString(),
 				Labels: map[string]string{
-					"projectsveltos.io/cluster-profile-name": clusterProfileName2,
+					clusterProfileNameLabel: clusterProfileName2,
 				},
 				OwnerReferences: []metav1.OwnerReference{
 					{

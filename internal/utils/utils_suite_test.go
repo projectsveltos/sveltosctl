@@ -25,6 +25,11 @@ import (
 	"sigs.k8s.io/cluster-api/util"
 )
 
+const (
+	zoneLabel = "zone"
+	westValue = "west"
+)
+
 func TestUtils(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Utils Suite")

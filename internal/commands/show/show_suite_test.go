@@ -24,7 +24,8 @@ import (
 )
 
 const (
-	namePrefix = "show-feature"
+	namePrefix              = "show-feature"
+	clusterProfileNameLabel = "projectsveltos.io/cluster-profile-name"
 )
 
 func TestShow(t *testing.T) {
