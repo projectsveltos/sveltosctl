@@ -44,6 +44,9 @@ const (
 	//nolint: gosec // Sveltos secret postfix
 	sveltosKubeconfigSecretNamePostfix = "-sveltos-kubeconfig"
 	kubeconfig                         = "kubeconfig"
+	shardingAnnotationKey              = "sharding.projectsveltos.io/key"
+	rbacAPIGroup                       = "rbac.authorization.k8s.io"
+	serviceAccountKind                 = "ServiceAccount"
 )
 
 func onboardSveltosCluster(ctx context.Context, clusterNamespace, clusterName, shard string, kubeconfigData []byte,
@@ -97,7 +100,7 @@ func patchSveltosCluster(ctx context.Context, clusterNamespace, clusterName, sha
 			}
 			if shard != "" {
 				currentSveltosCluster.Annotations = map[string]string{
-					"sharding.projectsveltos.io/key": shard,
+					shardingAnnotationKey: shard,
 				}
 			}
 
@@ -111,10 +114,10 @@ func patchSveltosCluster(ctx context.Context, clusterNamespace, clusterName, sha
 	currentSveltosCluster.Spec.KubeconfigKeyName = kubeconfig
 	if shard != "" {
 		currentSveltosCluster.Annotations = map[string]string{
-			"sharding.projectsveltos.io/key": shard,
+			shardingAnnotationKey: shard,
 		}
 	} else if currentSveltosCluster.Annotations != nil {
-		delete(currentSveltosCluster.Annotations, "sharding.projectsveltos.io/key")
+		delete(currentSveltosCluster.Annotations, shardingAnnotationKey)
 	}
 	return instance.UpdateResource(ctx, currentSveltosCluster)
 }

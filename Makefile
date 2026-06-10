@@ -11,8 +11,9 @@ GO_INSTALL := ./scripts/go_install.sh
 
 REGISTRY ?= projectsveltos
 IMAGE_NAME ?= sveltosctl
+K8S_LATEST_VER ?= $(shell curl -s https://dl.k8s.io/release/stable.txt)
 export SVELTOSCTL_IMG ?= $(REGISTRY)/$(IMAGE_NAME)
-TAG ?= v1.10.0
+TAG ?= v1.11.0
 ARCH ?= $(shell go env GOARCH)
 
 # Directories.
@@ -35,7 +36,7 @@ KUBECTL := $(TOOLS_BIN_DIR)/kubectl
 SETUP_ENVTEST := $(TOOLS_BIN_DIR)/setup_envs
 CONTROLLER_GEN := $(TOOLS_BIN_DIR)/controller-gen
 
-GOLANGCI_LINT_VERSION := "v2.11.4"
+GOLANGCI_LINT_VERSION := "v2.12.1"
 
 KUSTOMIZE_VER := v5.8.0
 KUSTOMIZE_BIN := kustomize

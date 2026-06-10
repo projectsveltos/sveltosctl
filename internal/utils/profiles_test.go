@@ -45,7 +45,7 @@ var _ = Describe("Profile", func() {
 				Spec: configv1beta1.Spec{
 					ClusterSelector: libsveltosv1beta1.Selector{
 						LabelSelector: metav1.LabelSelector{
-							MatchLabels: map[string]string{"zone": "west"},
+							MatchLabels: map[string]string{zoneLabel: westValue},
 						},
 					},
 					SyncMode: configv1beta1.SyncModeContinuous,
