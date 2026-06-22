@@ -112,7 +112,7 @@ func deregisterSveltosCluster(ctx context.Context, clusterNamespace, clusterName
 			fmt.Printf("SveltosCluster %s/%s not found. Attempting to clean up any orphaned resources.\n",
 				clusterNamespace, clusterName)
 
-			// Even if the SveltosCluster is gone, try to clean up the kubeconfig secret
+			// Even if the SveltosCluster is gone, try to clean up known secrets.
 			deletedResources := []string{}
 			secretName := clusterName + sveltosKubeconfigSecretNamePostfix
 			if err := deleteSecret(ctx, c, clusterNamespace, secretName, logger); err != nil {
@@ -120,6 +120,13 @@ func deregisterSveltosCluster(ctx context.Context, clusterNamespace, clusterName
 			} else {
 				deletedResources = append(deletedResources,
 					fmt.Sprintf("Secret/%s/%s", clusterNamespace, secretName))
+			}
+			caSecretName := clusterName + sveltosCASecretNamePostfix
+			if err := deleteSecret(ctx, c, clusterNamespace, caSecretName, logger); err != nil {
+				logger.V(logs.LogInfo).Info(fmt.Sprintf("Warning: failed to delete CA Secret: %v", err))
+			} else {
+				deletedResources = append(deletedResources,
+					fmt.Sprintf("Secret/%s/%s", clusterNamespace, caSecretName))
 			}
 
 			if len(deletedResources) > 0 {
@@ -140,20 +147,24 @@ func deregisterSveltosCluster(ctx context.Context, clusterNamespace, clusterName
 	}
 
 	isPullMode := sveltosCluster.Spec.PullMode
-	logger.V(logs.LogDebug).Info(fmt.Sprintf("Cluster %s/%s is in pull-mode: %t",
-		clusterNamespace, clusterName, isPullMode))
+	isWorkloadIdentity := sveltosCluster.Spec.WorkloadIdentity != nil
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("Cluster %s/%s pull-mode=%t workload-identity=%t",
+		clusterNamespace, clusterName, isPullMode, isWorkloadIdentity))
 
 	deletedResources := []string{}
 
-	// Delete pull-mode specific resources
 	if isPullMode {
 		pullModeResources := deletePullModeResources(ctx, c, clusterNamespace, clusterName, logger)
 		deletedResources = append(deletedResources, pullModeResources...)
+		secretResources := deletePushModeResources(ctx, c, clusterNamespace, clusterName, logger)
+		deletedResources = append(deletedResources, secretResources...)
+	} else if isWorkloadIdentity {
+		wiResources := deleteWorkloadIdentityResources(ctx, c, clusterNamespace, clusterName, logger)
+		deletedResources = append(deletedResources, wiResources...)
+	} else {
+		secretResources := deletePushModeResources(ctx, c, clusterNamespace, clusterName, logger)
+		deletedResources = append(deletedResources, secretResources...)
 	}
-
-	// Delete common resources (kubeconfig secret)
-	secretResources := deletePushModeResources(ctx, c, clusterNamespace, clusterName, logger)
-	deletedResources = append(deletedResources, secretResources...)
 
 	// Delete SveltosCluster
 	logger.V(logs.LogDebug).Info(fmt.Sprintf("Deleting SveltosCluster %s/%s", clusterNamespace, clusterName))
@@ -229,6 +240,25 @@ func deletePullModeResources(ctx context.Context, c client.Client, clusterNamesp
 	} else {
 		deletedResources = append(deletedResources,
 			fmt.Sprintf("ServiceAccount/%s/%s", clusterNamespace, clusterName))
+	}
+
+	return deletedResources
+}
+
+// deleteWorkloadIdentityResources removes the CA secret created by sveltosctl for a
+// workload identity cluster. Returns a list of successfully deleted resources.
+func deleteWorkloadIdentityResources(ctx context.Context, c client.Client, clusterNamespace, clusterName string,
+	logger logr.Logger,
+) []string {
+
+	deletedResources := []string{}
+
+	caSecretName := clusterName + sveltosCASecretNamePostfix
+	if err := deleteSecret(ctx, c, clusterNamespace, caSecretName, logger); err != nil {
+		logger.V(logs.LogInfo).Info(fmt.Sprintf("Warning: failed to delete CA Secret: %v", err))
+	} else {
+		deletedResources = append(deletedResources,
+			fmt.Sprintf("Secret/%s/%s", clusterNamespace, caSecretName))
 	}
 
 	return deletedResources

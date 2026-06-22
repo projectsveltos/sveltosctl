@@ -17,20 +17,25 @@ limitations under the License.
 package onboard
 
 var (
-	OnboardSveltosCluster    = onboardSveltosCluster
-	PrepareApplierYAML       = prepareApplierYAML
-	DeregisterSveltosCluster = deregisterSveltosCluster
-	DeletePullModeResources  = deletePullModeResources
-	DeletePushModeResources  = deletePushModeResources
-	DeleteServiceAccount     = deleteServiceAccount
-	DeleteSecret             = deleteSecret
-	DeleteRole               = deleteRole
-	DeleteRoleBinding        = deleteRoleBinding
-	DeleteClusterRole        = deleteClusterRole
-	DeleteClusterRoleBinding = deleteClusterRoleBinding
+	OnboardSveltosCluster                     = onboardSveltosCluster
+	OnboardSveltosClusterWithWorkloadIdentity = onboardSveltosClusterWithWorkloadIdentity
+	BuildWorkloadIdentityConfig               = buildWorkloadIdentityConfig
+	PrepareApplierYAML                        = prepareApplierYAML
+	DeregisterSveltosCluster                  = deregisterSveltosCluster
+	DeletePullModeResources                   = deletePullModeResources
+	DeletePushModeResources                   = deletePushModeResources
+	DeleteWorkloadIdentityResources           = deleteWorkloadIdentityResources
+	DeleteServiceAccount                      = deleteServiceAccount
+	DeleteSecret                              = deleteSecret
+	DeleteRole                                = deleteRole
+	DeleteRoleBinding                         = deleteRoleBinding
+	DeleteClusterRole                         = deleteClusterRole
+	DeleteClusterRoleBinding                  = deleteClusterRoleBinding
 )
 
 const (
 	SveltosKubeconfigSecretNamePostfix = sveltosKubeconfigSecretNamePostfix
+	SveltosCASecretNamePostfix         = sveltosCASecretNamePostfix
 	Kubeconfig                         = kubeconfig
+	CAKey                              = caKey
 )
