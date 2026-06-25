@@ -13,7 +13,7 @@ REGISTRY ?= projectsveltos
 IMAGE_NAME ?= sveltosctl
 K8S_LATEST_VER ?= $(shell curl -s https://dl.k8s.io/release/stable.txt)
 export SVELTOSCTL_IMG ?= $(REGISTRY)/$(IMAGE_NAME)
-TAG ?= v1.11.0
+TAG ?= v1.11.1
 ARCH ?= $(shell go env GOARCH)
 
 # Directories.

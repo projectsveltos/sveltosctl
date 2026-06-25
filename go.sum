@@ -166,10 +166,10 @@ github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINE
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRIccs7FGNTlIRMkT8wgtp5eCXdBlqhYGL6U=
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/projectsveltos/addon-controller v1.11.0 h1:HWVFg9aOWJekdRqDrh+egqfUvCI4XYZ8IHhoqY/69YY=
-github.com/projectsveltos/addon-controller v1.11.0/go.mod h1:76fj03lq6RLXN81rXttnuo+CzbNME0Q4xil+NYXRQDU=
-github.com/projectsveltos/event-manager v1.11.0 h1:aExj+rc5LFhSSlC+ZnJhLbwNBVUCs25SYlxg37Y3hKM=
-github.com/projectsveltos/event-manager v1.11.0/go.mod h1:2ToaOv0883QeoLfWBvvtuVWqjooVp6xP3x7eAo0pfT0=
+github.com/projectsveltos/addon-controller v1.11.1 h1:vPlAouBelxNrNOSbchbsWuTlt3uzI5vY5+bsPMvBCq4=
+github.com/projectsveltos/addon-controller v1.11.1/go.mod h1:wO0TCEgqF5J+XVjbfm1oxyGohbek5sVGjTUTS/Hdd/Y=
+github.com/projectsveltos/event-manager v1.11.1 h1:5OLlqwynFv/nQ5Vri7uNb9Ew66LqHqTAMMqv4cd4JOo=
+github.com/projectsveltos/event-manager v1.11.1/go.mod h1:shIsIY8PxBCnVPBmhw1DLH/0KF1LuzX8/cDoumyBya4=
 github.com/projectsveltos/libsveltos v1.11.2-0.20260622062629-79f5f1f526c0 h1:VxpBJhQsUYjSVWwMlcV1Tm6lskYlFLVu/WmQMyGNFd0=
 github.com/projectsveltos/libsveltos v1.11.2-0.20260622062629-79f5f1f526c0/go.mod h1:0BqS35yVUCvk5qXOirNgvIkNqMSQEgh4hnHud822sUs=
 github.com/prometheus/client_golang v1.23.2 h1:Je96obch5RDVy3FDMndoUsjAhG5Edi49h0RJWRi/o0o=
