@@ -21,6 +21,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
@@ -57,5 +58,48 @@ var _ = Describe("Unset", func() {
 		Expect(currentDC.Spec.Configuration[0].Component).To(Equal(libsveltosv1beta1.ComponentAddonManager))
 		Expect(currentDC.Spec.Configuration[0].LogLevel).To(Equal(libsveltosv1beta1.LogLevelInfo))
 
+	})
+
+	It("unsetDebuggingConfigurationInManaged removes log level settings from managed cluster", func() {
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+
+		// Create a DebuggingConfiguration with multiple components for the managed cluster
+		dc := &libsveltosv1beta1.DebuggingConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "default",
+			},
+			Spec: libsveltosv1beta1.DebuggingConfigurationSpec{
+				Configuration: []libsveltosv1beta1.ComponentConfiguration{
+					{
+						Component: libsveltosv1beta1.ComponentClassifier,
+						LogLevel:  libsveltosv1beta1.LogLevelDebug,
+					},
+					{
+						Component: libsveltosv1beta1.ComponentAddonManager,
+						LogLevel:  libsveltosv1beta1.LogLevelInfo,
+					},
+				},
+			},
+		}
+
+		managedClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(dc).Build()
+
+		// Test removing one component using the helper function
+		spec := []libsveltosv1beta1.ComponentConfiguration{
+			{
+				Component: libsveltosv1beta1.ComponentAddonManager,
+				LogLevel:  libsveltosv1beta1.LogLevelInfo,
+			},
+		}
+
+		err = loglevel.UpdateLogLevelConfigurationWithClient(context.TODO(), managedClient, spec)
+		Expect(err).To(BeNil())
+
+		// Verify the configuration was updated (one component removed)
+		configs, err := loglevel.CollectLogLevelConfigurationFromClient(context.TODO(), managedClient)
+		Expect(err).To(BeNil())
+		Expect(configs).ToNot(BeNil())
+		Expect(len(configs)).To(Equal(1))
 	})
 })

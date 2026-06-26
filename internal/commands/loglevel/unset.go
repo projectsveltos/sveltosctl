@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	docopt "github.com/docopt/docopt-go"
+	"github.com/docopt/docopt-go"
 
 	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 )
@@ -32,39 +32,72 @@ func unsetDebuggingConfiguration(ctx context.Context, component string) error {
 		return nil
 	}
 
-	found := false
-	spec := make([]libsveltosv1beta1.ComponentConfiguration, 0)
+	spec, found := removeComponent(cc, component)
+	if !found {
+		return nil
+	}
+	return updateLogLevelConfiguration(ctx, spec)
+}
 
+func unsetDebuggingConfigurationInManaged(ctx context.Context, component, namespace,
+	clusterName string, clusterType libsveltosv1beta1.ClusterType) error {
+
+	managedClient, err := getManagedClusterClient(ctx, namespace, clusterName, clusterType)
+	if err != nil {
+		return err
+	}
+
+	cc, err := collectLogLevelConfigurationFromClient(ctx, managedClient)
+	if err != nil {
+		return err
+	}
+
+	spec, found := removeComponent(cc, component)
+	if !found {
+		return nil
+	}
+	return updateLogLevelConfigurationWithClient(ctx, managedClient, spec)
+}
+
+// removeComponent returns the ComponentConfiguration slice with component
+// removed, along with a flag indicating whether it was present.
+func removeComponent(cc []*componentConfiguration,
+	component string) ([]libsveltosv1beta1.ComponentConfiguration, bool) {
+
+	spec := make([]libsveltosv1beta1.ComponentConfiguration, 0, len(cc))
+	found := false
 	for _, c := range cc {
 		if string(c.component) == component {
 			found = true
 			continue
-		} else {
-			spec = append(spec,
-				libsveltosv1beta1.ComponentConfiguration{
-					Component: c.component,
-					LogLevel:  c.logSeverity,
-				},
-			)
 		}
+		spec = append(spec, libsveltosv1beta1.ComponentConfiguration{
+			Component: c.component,
+			LogLevel:  c.logSeverity,
+		})
 	}
-
-	if found {
-		return updateLogLevelConfiguration(ctx, spec)
-	}
-	return nil
+	return spec, found
 }
 
-// Unset resets log verbosity for a given component
+// Unset resets log verbosity for a given component.
+//
+// When --namespace and --clusterName are provided, the DebuggingConfiguration
+// is updated in the specified managed cluster. Otherwise, it is updated in the
+// management cluster.
 func Unset(ctx context.Context, args []string) error {
 	doc := `Usage:
-  sveltosctl log-level unset --component=<name>
+  sveltosctl log-level unset --component=<name> [--namespace=<namespace>] [--clusterName=<cluster-name>] [--clusterType=<cluster-type>]
 Options:
-  -h --help             Show this screen.
-     --component=<name> Name of the component for which log severity is being set.
-	 
+  -h --help                        Show this screen.
+     --component=<name>            Name of the component for which log severity is being unset.
+     --namespace=<namespace>       (Optional) Namespace of the managed cluster.
+     --clusterName=<cluster-name>  (Optional) Name of the managed cluster.
+     --clusterType=<cluster-type>  (Optional) Type of managed cluster: Capi or Sveltos. Defaults to Capi.
+
 Description:
-  The log-level set command set log severity for the specified component.
+  The log-level unset command unsets log severity for the specified component.
+  If --namespace and --clusterName are provided, log severity is unset in the
+  specified managed cluster. Otherwise it is unset in the management cluster.
 `
 	parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
 	if err != nil {
@@ -82,5 +115,13 @@ Description:
 		component = passedComponent.(string)
 	}
 
+	namespace, clusterName, clusterType, err := parseManagedClusterArgs(parsedArgs)
+	if err != nil {
+		return err
+	}
+
+	if namespace != "" && clusterName != "" {
+		return unsetDebuggingConfigurationInManaged(ctx, component, namespace, clusterName, clusterType)
+	}
 	return unsetDebuggingConfiguration(ctx, component)
 }
