@@ -19,7 +19,9 @@ package onboard
 var (
 	OnboardSveltosCluster                     = onboardSveltosCluster
 	OnboardSveltosClusterWithWorkloadIdentity = onboardSveltosClusterWithWorkloadIdentity
-	BuildWorkloadIdentityConfig               = buildWorkloadIdentityConfig
+	BuildEKSWorkloadIdentityConfig            = buildEKSWorkloadIdentityConfig
+	BuildGKEWorkloadIdentityConfig            = buildGKEWorkloadIdentityConfig
+	BuildAKSWorkloadIdentityConfig            = buildAKSWorkloadIdentityConfig
 	PrepareApplierYAML                        = prepareApplierYAML
 	DeregisterSveltosCluster                  = deregisterSveltosCluster
 	DeletePullModeResources                   = deletePullModeResources

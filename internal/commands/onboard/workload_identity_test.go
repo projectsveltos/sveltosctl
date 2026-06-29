@@ -35,258 +35,124 @@ import (
 )
 
 const (
-	argWorkloadIdentityProvider = "--workload-identity-provider"
-	argWorkloadIdentityEndpoint = "--workload-identity-endpoint"
-	argWorkloadIdentityCAFile   = "--workload-identity-ca-file"
-	argAWSClusterName           = "--aws-cluster-name"
-	argAWSRoleARN               = "--aws-role-arn"
-	argAWSRegion                = "--aws-region"
-	argGCPProjectID             = "--gcp-project-id"
-	argGCPClusterName           = "--gcp-cluster-name"
-	argGCPLocation              = "--gcp-location"
-	argAzureTenantID            = "--azure-tenant-id"
-	argAzureClientID            = "--azure-client-id"
-	argAzureSubscriptionID      = "--azure-subscription-id"
-	argAzureResourceGroup       = "--azure-resource-group"
-	argAzureClusterName         = "--azure-cluster-name"
-	providerAWS                 = "aws"
-	clusterNameAWS              = "my-cluster"
-	endpointAWSEKS              = "https://example.eks.amazonaws.com"
-	clusterNameEKS              = "my-eks-cluster"
-	providerGCP                 = "gcp"
-	endpointGCP                 = "https://34.1.2.3"
-	projectIDGCP                = "my-project"
-	providerAzure               = "azure"
-	endpointAzure               = "https://my-aks.hcp.eastus.azmk8s.io"
-	tenantIDAzure               = "my-tenant"
+	endpointEKS    = "https://example.eks.amazonaws.com"
+	clusterNameEKS = "my-eks-cluster"
+	endpointGKE    = "https://34.1.2.3"
+	projectIDGKE   = "my-project"
+	endpointAKS    = "https://my-aks.hcp.eastus.azmk8s.io"
+	tenantIDAKS    = "my-tenant"
+	clientIDAKS    = "my-client"
 )
 
-var _ = Describe("BuildWorkloadIdentityConfig", func() {
-	logger := textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1)))
-	_ = logger
-
+var _ = Describe("BuildEKSWorkloadIdentityConfig", func() {
 	It("returns error when endpoint is missing", func() {
-		args := map[string]interface{}{
-			argWorkloadIdentityProvider: providerAWS,
-			argWorkloadIdentityEndpoint: nil,
-			argWorkloadIdentityCAFile:   nil,
-			argAWSClusterName:           clusterNameAWS,
-			argAWSRoleARN:               nil,
-			argAWSRegion:                nil,
-			argGCPProjectID:             nil,
-			argGCPClusterName:           nil,
-			argGCPLocation:              nil,
-			argAzureTenantID:            nil,
-			argAzureClientID:            nil,
-			argAzureSubscriptionID:      nil,
-			argAzureResourceGroup:       nil,
-			argAzureClusterName:         nil,
-		}
-		_, _, err := onboard.BuildWorkloadIdentityConfig(args)
+		_, err := onboard.BuildEKSWorkloadIdentityConfig("", clusterNameEKS, "", "")
 		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring(argWorkloadIdentityEndpoint))
+		Expect(err.Error()).To(ContainSubstring("--endpoint"))
 	})
 
-	It("returns error for unknown provider", func() {
-		args := map[string]interface{}{
-			argWorkloadIdentityProvider: "unknown",
-			argWorkloadIdentityEndpoint: "https://example.com",
-			argWorkloadIdentityCAFile:   nil,
-			argAWSClusterName:           nil,
-			argAWSRoleARN:               nil,
-			argAWSRegion:                nil,
-			argGCPProjectID:             nil,
-			argGCPClusterName:           nil,
-			argGCPLocation:              nil,
-			argAzureTenantID:            nil,
-			argAzureClientID:            nil,
-			argAzureSubscriptionID:      nil,
-			argAzureResourceGroup:       nil,
-			argAzureClusterName:         nil,
-		}
-		_, _, err := onboard.BuildWorkloadIdentityConfig(args)
+	It("returns error when eks-cluster-name is missing", func() {
+		_, err := onboard.BuildEKSWorkloadIdentityConfig(endpointEKS, "", "", "")
 		Expect(err).To(HaveOccurred())
-		Expect(err.Error()).To(ContainSubstring("unknown"))
+		Expect(err.Error()).To(ContainSubstring("--eks-cluster-name"))
 	})
 
-	Context("AWS", func() {
-		It("returns error when --aws-cluster-name is missing", func() {
-			args := map[string]interface{}{
-				argWorkloadIdentityProvider: providerAWS,
-				argWorkloadIdentityEndpoint: endpointAWSEKS,
-				argWorkloadIdentityCAFile:   nil,
-				argAWSClusterName:           nil,
-				argAWSRoleARN:               nil,
-				argAWSRegion:                nil,
-				argGCPProjectID:             nil,
-				argGCPClusterName:           nil,
-				argGCPLocation:              nil,
-				argAzureTenantID:            nil,
-				argAzureClientID:            nil,
-				argAzureSubscriptionID:      nil,
-				argAzureResourceGroup:       nil,
-				argAzureClusterName:         nil,
-			}
-			_, _, err := onboard.BuildWorkloadIdentityConfig(args)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring(argAWSClusterName))
-		})
-
-		It("builds AWS config with required fields only", func() {
-			args := map[string]interface{}{
-				argWorkloadIdentityProvider: providerAWS,
-				argWorkloadIdentityEndpoint: endpointAWSEKS,
-				argWorkloadIdentityCAFile:   nil,
-				argAWSClusterName:           clusterNameEKS,
-				argAWSRoleARN:               nil,
-				argAWSRegion:                nil,
-				argGCPProjectID:             nil,
-				argGCPClusterName:           nil,
-				argGCPLocation:              nil,
-				argAzureTenantID:            nil,
-				argAzureClientID:            nil,
-				argAzureSubscriptionID:      nil,
-				argAzureResourceGroup:       nil,
-				argAzureClusterName:         nil,
-			}
-			wi, caFile, err := onboard.BuildWorkloadIdentityConfig(args)
-			Expect(err).To(BeNil())
-			Expect(caFile).To(BeEmpty())
-			Expect(wi.Provider).To(Equal(libsveltosv1beta1.WorkloadIdentityProviderAWS))
-			Expect(wi.Endpoint).To(Equal(endpointAWSEKS))
-			Expect(wi.AWS).ToNot(BeNil())
-			Expect(wi.AWS.ClusterName).To(Equal(clusterNameEKS))
-			Expect(wi.AWS.RoleARN).To(BeEmpty())
-			Expect(wi.AWS.Region).To(BeEmpty())
-		})
-
-		It("builds AWS config with all optional fields", func() {
-			args := map[string]interface{}{
-				argWorkloadIdentityProvider: providerAWS,
-				argWorkloadIdentityEndpoint: endpointAWSEKS,
-				argWorkloadIdentityCAFile:   "/tmp/ca.crt",
-				argAWSClusterName:           clusterNameEKS,
-				argAWSRoleARN:               "arn:aws:iam::123456789012:role/my-role",
-				argAWSRegion:                "us-east-1",
-				argGCPProjectID:             nil,
-				argGCPClusterName:           nil,
-				argGCPLocation:              nil,
-				argAzureTenantID:            nil,
-				argAzureClientID:            nil,
-				argAzureSubscriptionID:      nil,
-				argAzureResourceGroup:       nil,
-				argAzureClusterName:         nil,
-			}
-			wi, caFile, err := onboard.BuildWorkloadIdentityConfig(args)
-			Expect(err).To(BeNil())
-			Expect(caFile).To(Equal("/tmp/ca.crt"))
-			Expect(wi.AWS.RoleARN).To(Equal("arn:aws:iam::123456789012:role/my-role"))
-			Expect(wi.AWS.Region).To(Equal("us-east-1"))
-		})
+	It("builds config with required fields only", func() {
+		wi, err := onboard.BuildEKSWorkloadIdentityConfig(endpointEKS, clusterNameEKS, "", "")
+		Expect(err).To(BeNil())
+		Expect(wi.Provider).To(Equal(libsveltosv1beta1.WorkloadIdentityProviderAWS))
+		Expect(wi.Endpoint).To(Equal(endpointEKS))
+		Expect(wi.AWS).ToNot(BeNil())
+		Expect(wi.AWS.ClusterName).To(Equal(clusterNameEKS))
+		Expect(wi.AWS.RoleARN).To(BeEmpty())
+		Expect(wi.AWS.Region).To(BeEmpty())
 	})
 
-	Context("GCP", func() {
-		It("returns error when required GCP fields are missing", func() {
-			args := map[string]interface{}{
-				argWorkloadIdentityProvider: providerGCP,
-				argWorkloadIdentityEndpoint: endpointGCP,
-				argWorkloadIdentityCAFile:   nil,
-				argAWSClusterName:           nil,
-				argAWSRoleARN:               nil,
-				argAWSRegion:                nil,
-				argGCPProjectID:             projectIDGCP,
-				argGCPClusterName:           nil,
-				argGCPLocation:              nil,
-				argAzureTenantID:            nil,
-				argAzureClientID:            nil,
-				argAzureSubscriptionID:      nil,
-				argAzureResourceGroup:       nil,
-				argAzureClusterName:         nil,
-			}
-			_, _, err := onboard.BuildWorkloadIdentityConfig(args)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring(argGCPClusterName))
-		})
+	It("builds config with all optional fields", func() {
+		wi, err := onboard.BuildEKSWorkloadIdentityConfig(endpointEKS, clusterNameEKS,
+			"arn:aws:iam::123456789012:role/my-role", "us-east-1")
+		Expect(err).To(BeNil())
+		Expect(wi.AWS.RoleARN).To(Equal("arn:aws:iam::123456789012:role/my-role"))
+		Expect(wi.AWS.Region).To(Equal("us-east-1"))
+	})
+})
 
-		It("builds GCP config with all required fields", func() {
-			args := map[string]interface{}{
-				argWorkloadIdentityProvider: providerGCP,
-				argWorkloadIdentityEndpoint: endpointGCP,
-				argWorkloadIdentityCAFile:   nil,
-				argAWSClusterName:           nil,
-				argAWSRoleARN:               nil,
-				argAWSRegion:                nil,
-				argGCPProjectID:             projectIDGCP,
-				argGCPClusterName:           "cluster-managed",
-				argGCPLocation:              "us-central1-a",
-				argAzureTenantID:            nil,
-				argAzureClientID:            nil,
-				argAzureSubscriptionID:      nil,
-				argAzureResourceGroup:       nil,
-				argAzureClusterName:         nil,
-			}
-			wi, caFile, err := onboard.BuildWorkloadIdentityConfig(args)
-			Expect(err).To(BeNil())
-			Expect(caFile).To(BeEmpty())
-			Expect(wi.Provider).To(Equal(libsveltosv1beta1.WorkloadIdentityProviderGCP))
-			Expect(wi.GCP).ToNot(BeNil())
-			Expect(wi.GCP.ProjectID).To(Equal(projectIDGCP))
-			Expect(wi.GCP.ClusterName).To(Equal("cluster-managed"))
-			Expect(wi.GCP.Location).To(Equal("us-central1-a"))
-		})
+var _ = Describe("BuildGKEWorkloadIdentityConfig", func() {
+	It("returns error when endpoint is missing", func() {
+		_, err := onboard.BuildGKEWorkloadIdentityConfig("", projectIDGKE, "my-cluster", "us-central1-a")
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("--endpoint"))
 	})
 
-	Context("Azure", func() {
-		It("returns error when required Azure fields are missing", func() {
-			args := map[string]interface{}{
-				argWorkloadIdentityProvider: providerAzure,
-				argWorkloadIdentityEndpoint: endpointAzure,
-				argWorkloadIdentityCAFile:   nil,
-				argAWSClusterName:           nil,
-				argAWSRoleARN:               nil,
-				argAWSRegion:                nil,
-				argGCPProjectID:             nil,
-				argGCPClusterName:           nil,
-				argGCPLocation:              nil,
-				argAzureTenantID:            tenantIDAzure,
-				argAzureClientID:            nil,
-				argAzureSubscriptionID:      nil,
-				argAzureResourceGroup:       nil,
-				argAzureClusterName:         nil,
-			}
-			_, _, err := onboard.BuildWorkloadIdentityConfig(args)
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring(argAzureClientID))
-		})
+	It("returns error when project-id is missing", func() {
+		_, err := onboard.BuildGKEWorkloadIdentityConfig(endpointGKE, "", "my-cluster", "us-central1-a")
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("--project-id"))
+	})
 
-		It("builds Azure config with required fields and optional fields", func() {
-			args := map[string]interface{}{
-				argWorkloadIdentityProvider: providerAzure,
-				argWorkloadIdentityEndpoint: endpointAzure,
-				argWorkloadIdentityCAFile:   nil,
-				argAWSClusterName:           nil,
-				argAWSRoleARN:               nil,
-				argAWSRegion:                nil,
-				argGCPProjectID:             nil,
-				argGCPClusterName:           nil,
-				argGCPLocation:              nil,
-				argAzureTenantID:            tenantIDAzure,
-				argAzureClientID:            "my-client",
-				argAzureSubscriptionID:      "my-sub",
-				argAzureResourceGroup:       "my-rg",
-				argAzureClusterName:         "my-aks",
-			}
-			wi, caFile, err := onboard.BuildWorkloadIdentityConfig(args)
-			Expect(err).To(BeNil())
-			Expect(caFile).To(BeEmpty())
-			Expect(wi.Provider).To(Equal(libsveltosv1beta1.WorkloadIdentityProviderAzure))
-			Expect(wi.Azure).ToNot(BeNil())
-			Expect(wi.Azure.TenantID).To(Equal(tenantIDAzure))
-			Expect(wi.Azure.ClientID).To(Equal("my-client"))
-			Expect(wi.Azure.SubscriptionID).To(Equal("my-sub"))
-			Expect(wi.Azure.ResourceGroup).To(Equal("my-rg"))
-			Expect(wi.Azure.ClusterName).To(Equal("my-aks"))
-		})
+	It("returns error when gke-cluster-name is missing", func() {
+		_, err := onboard.BuildGKEWorkloadIdentityConfig(endpointGKE, projectIDGKE, "", "us-central1-a")
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("--gke-cluster-name"))
+	})
+
+	It("returns error when location is missing", func() {
+		_, err := onboard.BuildGKEWorkloadIdentityConfig(endpointGKE, projectIDGKE, "my-cluster", "")
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("--location"))
+	})
+
+	It("builds config with all required fields", func() {
+		wi, err := onboard.BuildGKEWorkloadIdentityConfig(endpointGKE, projectIDGKE, "cluster-managed", "us-central1-a")
+		Expect(err).To(BeNil())
+		Expect(wi.Provider).To(Equal(libsveltosv1beta1.WorkloadIdentityProviderGCP))
+		Expect(wi.Endpoint).To(Equal(endpointGKE))
+		Expect(wi.GCP).ToNot(BeNil())
+		Expect(wi.GCP.ProjectID).To(Equal(projectIDGKE))
+		Expect(wi.GCP.ClusterName).To(Equal("cluster-managed"))
+		Expect(wi.GCP.Location).To(Equal("us-central1-a"))
+	})
+})
+
+var _ = Describe("BuildAKSWorkloadIdentityConfig", func() {
+	It("returns error when endpoint is missing", func() {
+		_, err := onboard.BuildAKSWorkloadIdentityConfig("", tenantIDAKS, clientIDAKS, "", "", "")
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("--endpoint"))
+	})
+
+	It("returns error when tenant-id is missing", func() {
+		_, err := onboard.BuildAKSWorkloadIdentityConfig(endpointAKS, "", clientIDAKS, "", "", "")
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("--tenant-id"))
+	})
+
+	It("returns error when client-id is missing", func() {
+		_, err := onboard.BuildAKSWorkloadIdentityConfig(endpointAKS, tenantIDAKS, "", "", "", "")
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("--client-id"))
+	})
+
+	It("builds config with required fields only", func() {
+		wi, err := onboard.BuildAKSWorkloadIdentityConfig(endpointAKS, tenantIDAKS, clientIDAKS, "", "", "")
+		Expect(err).To(BeNil())
+		Expect(wi.Provider).To(Equal(libsveltosv1beta1.WorkloadIdentityProviderAzure))
+		Expect(wi.Endpoint).To(Equal(endpointAKS))
+		Expect(wi.Azure).ToNot(BeNil())
+		Expect(wi.Azure.TenantID).To(Equal(tenantIDAKS))
+		Expect(wi.Azure.ClientID).To(Equal(clientIDAKS))
+		Expect(wi.Azure.SubscriptionID).To(BeEmpty())
+		Expect(wi.Azure.ResourceGroup).To(BeEmpty())
+		Expect(wi.Azure.ClusterName).To(BeEmpty())
+	})
+
+	It("builds config with all optional fields", func() {
+		wi, err := onboard.BuildAKSWorkloadIdentityConfig(endpointAKS, tenantIDAKS, clientIDAKS,
+			"my-sub", "my-rg", "my-aks")
+		Expect(err).To(BeNil())
+		Expect(wi.Azure.SubscriptionID).To(Equal("my-sub"))
+		Expect(wi.Azure.ResourceGroup).To(Equal("my-rg"))
+		Expect(wi.Azure.ClusterName).To(Equal("my-aks"))
 	})
 })
 
@@ -310,7 +176,7 @@ var _ = Describe("OnboardSveltosClusterWithWorkloadIdentity", func() {
 	awsWI := func() *libsveltosv1beta1.WorkloadIdentityConfig {
 		return &libsveltosv1beta1.WorkloadIdentityConfig{
 			Provider: libsveltosv1beta1.WorkloadIdentityProviderAWS,
-			Endpoint: endpointAWSEKS,
+			Endpoint: endpointEKS,
 			AWS: &libsveltosv1beta1.AWSWorkloadIdentityConfig{
 				ClusterName: clusterNameEKS,
 			},
@@ -331,7 +197,6 @@ var _ = Describe("OnboardSveltosClusterWithWorkloadIdentity", func() {
 		Expect(sc.Spec.WorkloadIdentity.Provider).To(Equal(libsveltosv1beta1.WorkloadIdentityProviderAWS))
 		Expect(sc.Spec.KubeconfigKeyName).To(BeEmpty())
 
-		// no kubeconfig secret created
 		secret := &corev1.Secret{}
 		secretName := clusterName + onboard.SveltosKubeconfigSecretNamePostfix
 		err := instance.GetResource(context.TODO(),
@@ -369,12 +234,10 @@ var _ = Describe("OnboardSveltosClusterWithWorkloadIdentity", func() {
 	})
 
 	It("updates existing SveltosCluster and clears KubeconfigKeyName", func() {
-		// first register with kubeconfig
 		Expect(onboard.OnboardSveltosCluster(
 			context.TODO(), clusterNamespace, clusterName, "", []byte("kubeconfig-data"), nil, false, logger,
 		)).To(Succeed())
 
-		// then re-register with workload identity
 		Expect(onboard.OnboardSveltosClusterWithWorkloadIdentity(
 			context.TODO(), clusterNamespace, clusterName, "", awsWI(), "", nil, logger,
 		)).To(Succeed())
@@ -408,9 +271,9 @@ var _ = Describe("DeregisterSveltosCluster workload identity", func() {
 		sc.Name = clusterName
 		sc.Spec.WorkloadIdentity = &libsveltosv1beta1.WorkloadIdentityConfig{
 			Provider:    libsveltosv1beta1.WorkloadIdentityProviderAWS,
-			Endpoint:    endpointAWSEKS,
+			Endpoint:    endpointEKS,
 			CASecretRef: &corev1.LocalObjectReference{Name: caSecretName},
-			AWS:         &libsveltosv1beta1.AWSWorkloadIdentityConfig{ClusterName: clusterNameAWS},
+			AWS:         &libsveltosv1beta1.AWSWorkloadIdentityConfig{ClusterName: clusterNameEKS},
 		}
 
 		scheme, err := utils.GetScheme()
@@ -422,17 +285,14 @@ var _ = Describe("DeregisterSveltosCluster workload identity", func() {
 
 		instance := utils.GetAccessInstance()
 
-		// SveltosCluster deleted
 		err = instance.GetResource(context.TODO(),
 			types.NamespacedName{Namespace: clusterNamespace, Name: clusterName}, &libsveltosv1beta1.SveltosCluster{})
 		Expect(apierrors.IsNotFound(err)).To(BeTrue())
 
-		// CA secret deleted
 		err = instance.GetResource(context.TODO(),
 			types.NamespacedName{Namespace: clusterNamespace, Name: caSecretName}, &corev1.Secret{})
 		Expect(apierrors.IsNotFound(err)).To(BeTrue())
 
-		// kubeconfig secret was never created — still not found (not an error condition)
 		kubeconfigSecretName := clusterName + onboard.SveltosKubeconfigSecretNamePostfix
 		err = instance.GetResource(context.TODO(),
 			types.NamespacedName{Namespace: clusterNamespace, Name: kubeconfigSecretName}, &corev1.Secret{})

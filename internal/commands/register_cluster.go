@@ -35,7 +35,10 @@ func RegisterCluster(ctx context.Context, args []string, logger logr.Logger) err
 	doc := `Usage:
 	sveltosctl register <command> [<args>...]
 
-	cluster       Imports a non CAPI cluster to be managed by Sveltos.
+	cluster       Registers a cluster using a kubeconfig or context.
+	cluster-eks   Registers an Amazon EKS cluster using workload identity (IRSA).
+	cluster-gke   Registers a Google GKE cluster using workload identity federation.
+	cluster-aks   Registers an Azure AKS cluster using workload identity federation.
 
 Options:
 	-h --help      Show this screen.
@@ -68,6 +71,12 @@ Description:
 	switch command {
 	case "cluster":
 		return onboard.RegisterCluster(ctx, arguments, logger)
+	case "cluster-eks":
+		return onboard.RegisterClusterEKS(ctx, arguments, logger)
+	case "cluster-gke":
+		return onboard.RegisterClusterGKE(ctx, arguments, logger)
+	case "cluster-aks":
+		return onboard.RegisterClusterAKS(ctx, arguments, logger)
 	default:
 		//nolint: forbidigo // print doc
 		fmt.Println(doc)
