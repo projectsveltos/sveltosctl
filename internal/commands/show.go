@@ -35,12 +35,13 @@ func Show(ctx context.Context, args []string, logger logr.Logger) error {
 	doc := `Usage:
   sveltosctl show [options] <subcommand> [<args>...]
 
-    addons        Displays information on Kubernetes addons (resources and helm releases) deployed in clusters.
-    resources     Displays information from resources collected from managed clusters.
-    usage         Displays information on which CAPI clusters will be affected by a policy (ClusterProfile or referenced ConfigMaps/Secrets) change.
-    dryrun        Displays information on ClusterProfiles in DryRun mode. It displays what changes would
-                  take effect if a ClusterProfile were to be moved out of DryRun mode.
-    admin-rbac    Displays information about RBACs assigned to admins in each managed cluster.
+    addons               Displays information on Kubernetes addons (resources and helm releases) deployed in clusters.
+    resources            Displays information from resources collected from managed clusters.
+    usage                Displays information on which CAPI clusters will be affected by a policy (ClusterProfile or referenced ConfigMaps/Secrets) change.
+    dryrun               Displays information on ClusterProfiles in DryRun mode. It displays what changes would
+                         take effect if a ClusterProfile were to be moved out of DryRun mode.
+    admin-rbac           Displays information about RBACs assigned to admins in each managed cluster.
+    classifier-labels    Displays labels managed by Classifier and ManagementClusterClassifier instances on each cluster.
 
 Options:
   -h --help       Show this screen.
@@ -82,6 +83,8 @@ See 'sveltosctl show <subcommand> --help' to read about a specific subcommand.
 			err = show.Usage(ctx, arguments, logger)
 		case "admin-rbac":
 			err = show.AdminPermissions(ctx, arguments, logger)
+		case "classifier-labels":
+			err = show.ClassifierLabels(ctx, arguments, logger)
 		default:
 			//nolint: forbidigo // print doc
 			fmt.Println(doc)
