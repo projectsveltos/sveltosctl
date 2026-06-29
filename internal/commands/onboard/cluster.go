@@ -150,14 +150,9 @@ func patchSecret(ctx context.Context, clusterNamespace, secretName string, kubec
 }
 
 // RegisterCluster takes care of creating all necessary internal resources to import a cluster
-func RegisterCluster(ctx context.Context, args []string, logger logr.Logger) error { //nolint: funlen,gocyclo,maintidx // command description
+func RegisterCluster(ctx context.Context, args []string, logger logr.Logger) error { //nolint: funlen // command description
 	doc := `Usage:
   sveltosctl register cluster [options] --namespace=<name> --cluster=<name> [--kubeconfig=<file>] [--fleet-cluster-context=<value>] [--pullmode]
-                                [--workload-identity-provider=<name>] [--workload-identity-endpoint=<url>] [--workload-identity-ca-file=<file>]
-                                [--aws-cluster-name=<name>] [--aws-role-arn=<arn>] [--aws-region=<region>]
-                                [--gcp-project-id=<id>] [--gcp-cluster-name=<name>] [--gcp-location=<location>]
-                                [--azure-tenant-id=<id>] [--azure-client-id=<id>] [--azure-subscription-id=<id>]
-                                [--azure-resource-group=<group>] [--azure-cluster-name=<name>]
                                 [--labels=<value>] [--shard=<key>] [--service-account-token] [--verbose]
 
      --namespace=<name>                  Specifies the namespace where Sveltos will create a resource (SveltosCluster) to represent
@@ -183,31 +178,6 @@ func RegisterCluster(ctx context.Context, args []string, logger logr.Logger) err
                                          firewall restrictions or when direct inbound access to the managed cluster is undesirable.
                                          This flag outputs the specialized YAML configuration that needs to be applied to the managed
                                          cluster to complete its setup.
-     --workload-identity-provider=<name> (Optional) Cloud provider for workload identity authentication. One of: aws, gcp, azure.
-                                         When set, --kubeconfig and --fleet-cluster-context are not used; Sveltos obtains
-                                         short-lived credentials from the cloud provider at runtime.
-                                         Mutually exclusive with --kubeconfig and --fleet-cluster-context.
-     --workload-identity-endpoint=<url>  Required when --workload-identity-provider is set. The API server endpoint of the
-                                         managed cluster (e.g. https://...).
-     --workload-identity-ca-file=<file>  (Optional) Path to the CA certificate file for the managed cluster API server.
-                                         When provided, sveltosctl creates a Secret named <cluster>-sveltos-ca in the
-                                         cluster namespace and references it in the SveltosCluster.
-     --aws-cluster-name=<name>           Required when --workload-identity-provider=aws. The EKS cluster name, embedded
-                                         in the bearer token header sent to the EKS API server.
-     --aws-role-arn=<arn>                (Optional) IAM role ARN to assume before generating the EKS bearer token.
-                                         If omitted, the pod's own IRSA credentials are used directly.
-     --aws-region=<region>               (Optional) AWS region of the EKS cluster. Defaults to the AWS_REGION environment
-                                         variable injected by IRSA.
-     --gcp-project-id=<id>               Required when --workload-identity-provider=gcp. The GCP project ID.
-     --gcp-cluster-name=<name>           Required when --workload-identity-provider=gcp. The GKE cluster name.
-     --gcp-location=<location>           Required when --workload-identity-provider=gcp. The GCP region or zone
-                                         (e.g. us-central1-a).
-     --azure-tenant-id=<id>              Required when --workload-identity-provider=azure. Azure AD tenant ID.
-     --azure-client-id=<id>              Required when --workload-identity-provider=azure. Client ID of the managed
-                                         identity or app registration federated with the management cluster service account.
-     --azure-subscription-id=<id>        (Optional) Azure subscription containing the AKS cluster.
-     --azure-resource-group=<group>      (Optional) Azure resource group containing the AKS cluster.
-     --azure-cluster-name=<name>         (Optional) AKS cluster name.
      --labels=<key1=value1,key2=value2>  (Optional) This option allows you to specify labels for the SveltosCluster resource
                                          being created. The format for labels is <key1=value1,key2=value2>, where each key-value
                                          pair is separated by a comma (,) and the key and value are separated by an equal sign (=).
@@ -225,7 +195,9 @@ Options:
      --verbose               Verbose mode. Print each step.
 
 Description:
-  The register cluster command registers a cluster to be managed by Sveltos.
+  The register cluster command registers a cluster to be managed by Sveltos using a kubeconfig.
+  To register an EKS, GKE, or AKS cluster using workload identity, use the register cluster-eks,
+  register cluster-gke, or register cluster-aks commands instead.
 `
 	parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
 	if err != nil {
@@ -241,10 +213,8 @@ Description:
 	}
 
 	_ = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogInfo))
-	verbose := parsedArgs["--verbose"].(bool)
-	if verbose {
-		err = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogDebug))
-		if err != nil {
+	if parsedArgs["--verbose"].(bool) {
+		if err := flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogDebug)); err != nil {
 			return err
 		}
 	}
@@ -272,20 +242,20 @@ Description:
 		shard = passedShard.(string)
 	}
 
-	_ = flag.Lookup("v").Value.Set(fmt.Sprint(logs.LogInfo))
 	pullMode := parsedArgs["--pullmode"].(bool)
+	if pullMode {
+		return onboardSveltosClusterInPullMode(ctx, namespace, cluster, shard, labels, logger)
+	}
 
 	renew := true
-
 	satoken := parsedArgs["--service-account-token"].(bool)
 	if satoken {
 		renew = false
 	}
 
-	kubeconfig := ""
+	kubeconfigFile := ""
 	if passedKubeconfig := parsedArgs["--kubeconfig"]; passedKubeconfig != nil {
-		kubeconfig = passedKubeconfig.(string)
-		// If Kubeconfig is passed, dont try to renew it
+		kubeconfigFile = passedKubeconfig.(string)
 		renew = false
 		satoken = false
 	}
@@ -295,31 +265,11 @@ Description:
 		fleetClusterContext = passedContext.(string)
 	}
 
-	if pullMode {
-		return onboardSveltosClusterInPullMode(ctx, namespace, cluster, shard, labels, logger)
-	}
-
-	wiProvider := ""
-	if v := parsedArgs["--workload-identity-provider"]; v != nil {
-		wiProvider = v.(string)
-	}
-
-	if wiProvider != "" {
-		if kubeconfig != "" || fleetClusterContext != "" {
-			return fmt.Errorf("--workload-identity-provider is mutually exclusive with --kubeconfig and --fleet-cluster-context")
-		}
-		wi, caFile, err := buildWorkloadIdentityConfig(parsedArgs)
-		if err != nil {
-			return err
-		}
-		return onboardSveltosClusterWithWorkloadIdentity(ctx, namespace, cluster, shard, wi, caFile, labels, logger)
-	}
-
-	if kubeconfig == "" && fleetClusterContext == "" {
+	if kubeconfigFile == "" && fleetClusterContext == "" {
 		return fmt.Errorf("either kubeconfig or fleet-cluster-context must be specified")
 	}
 
-	data, err := getKubeconfigData(ctx, kubeconfig, fleetClusterContext, satoken, logger)
+	data, err := getKubeconfigData(ctx, kubeconfigFile, fleetClusterContext, satoken, logger)
 	if err != nil {
 		return err
 	}
@@ -418,113 +368,6 @@ func patchCASecret(ctx context.Context, clusterNamespace, secretName string, caD
 	logger.V(logs.LogDebug).Info(fmt.Sprintf("Updating CA Secret %s/%s", clusterNamespace, secretName))
 	current.Data = map[string][]byte{caKey: caData}
 	return instance.UpdateResource(ctx, current)
-}
-
-func buildWorkloadIdentityConfig(parsedArgs map[string]interface{}) (*libsveltosv1beta1.WorkloadIdentityConfig, string, error) {
-	endpoint := ""
-	if v := parsedArgs["--workload-identity-endpoint"]; v != nil {
-		endpoint = v.(string)
-	}
-	if endpoint == "" {
-		return nil, "", fmt.Errorf("--workload-identity-endpoint is required when --workload-identity-provider is set")
-	}
-
-	caFile := ""
-	if v := parsedArgs["--workload-identity-ca-file"]; v != nil {
-		caFile = v.(string)
-	}
-
-	provider := parsedArgs["--workload-identity-provider"].(string)
-	wi := &libsveltosv1beta1.WorkloadIdentityConfig{Endpoint: endpoint}
-
-	switch provider {
-	case "aws":
-		if err := buildAWSWorkloadIdentity(parsedArgs, wi); err != nil {
-			return nil, "", err
-		}
-	case "gcp":
-		if err := buildGCPWorkloadIdentity(parsedArgs, wi); err != nil {
-			return nil, "", err
-		}
-	case "azure":
-		if err := buildAzureWorkloadIdentity(parsedArgs, wi); err != nil {
-			return nil, "", err
-		}
-	default:
-		return nil, "", fmt.Errorf("unknown workload identity provider %q: must be aws, gcp, or azure", provider)
-	}
-
-	return wi, caFile, nil
-}
-
-func buildAWSWorkloadIdentity(parsedArgs map[string]interface{}, wi *libsveltosv1beta1.WorkloadIdentityConfig) error {
-	clusterName := ""
-	if v := parsedArgs["--aws-cluster-name"]; v != nil {
-		clusterName = v.(string)
-	}
-	if clusterName == "" {
-		return fmt.Errorf("--aws-cluster-name is required when --workload-identity-provider=aws")
-	}
-	wi.Provider = libsveltosv1beta1.WorkloadIdentityProviderAWS
-	wi.AWS = &libsveltosv1beta1.AWSWorkloadIdentityConfig{ClusterName: clusterName}
-	if v := parsedArgs["--aws-role-arn"]; v != nil {
-		wi.AWS.RoleARN = v.(string)
-	}
-	if v := parsedArgs["--aws-region"]; v != nil {
-		wi.AWS.Region = v.(string)
-	}
-	return nil
-}
-
-func buildGCPWorkloadIdentity(parsedArgs map[string]interface{}, wi *libsveltosv1beta1.WorkloadIdentityConfig) error {
-	projectID, clusterName, location := "", "", ""
-	if v := parsedArgs["--gcp-project-id"]; v != nil {
-		projectID = v.(string)
-	}
-	if v := parsedArgs["--gcp-cluster-name"]; v != nil {
-		clusterName = v.(string)
-	}
-	if v := parsedArgs["--gcp-location"]; v != nil {
-		location = v.(string)
-	}
-	if projectID == "" || clusterName == "" || location == "" {
-		return fmt.Errorf("--gcp-project-id, --gcp-cluster-name, and --gcp-location are required when --workload-identity-provider=gcp")
-	}
-	wi.Provider = libsveltosv1beta1.WorkloadIdentityProviderGCP
-	wi.GCP = &libsveltosv1beta1.GCPWorkloadIdentityConfig{
-		ProjectID:   projectID,
-		ClusterName: clusterName,
-		Location:    location,
-	}
-	return nil
-}
-
-func buildAzureWorkloadIdentity(parsedArgs map[string]interface{}, wi *libsveltosv1beta1.WorkloadIdentityConfig) error {
-	tenantID, clientID := "", ""
-	if v := parsedArgs["--azure-tenant-id"]; v != nil {
-		tenantID = v.(string)
-	}
-	if v := parsedArgs["--azure-client-id"]; v != nil {
-		clientID = v.(string)
-	}
-	if tenantID == "" || clientID == "" {
-		return fmt.Errorf("--azure-tenant-id and --azure-client-id are required when --workload-identity-provider=azure")
-	}
-	wi.Provider = libsveltosv1beta1.WorkloadIdentityProviderAzure
-	wi.Azure = &libsveltosv1beta1.AzureWorkloadIdentityConfig{
-		TenantID: tenantID,
-		ClientID: clientID,
-	}
-	if v := parsedArgs["--azure-subscription-id"]; v != nil {
-		wi.Azure.SubscriptionID = v.(string)
-	}
-	if v := parsedArgs["--azure-resource-group"]; v != nil {
-		wi.Azure.ResourceGroup = v.(string)
-	}
-	if v := parsedArgs["--azure-cluster-name"]; v != nil {
-		wi.Azure.ClusterName = v.(string)
-	}
-	return nil
 }
 
 func getKubeconfigData(ctx context.Context, kubeconfigFile, fleetClusterContext string,
