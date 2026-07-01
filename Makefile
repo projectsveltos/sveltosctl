@@ -13,7 +13,7 @@ REGISTRY ?= projectsveltos
 IMAGE_NAME ?= sveltosctl
 K8S_LATEST_VER ?= $(shell curl -s https://dl.k8s.io/release/stable.txt)
 export SVELTOSCTL_IMG ?= $(REGISTRY)/$(IMAGE_NAME)
-TAG ?= v1.11.1
+TAG ?= main
 ARCH ?= $(shell go env GOARCH)
 
 # Directories.
@@ -36,7 +36,7 @@ KUBECTL := $(TOOLS_BIN_DIR)/kubectl
 SETUP_ENVTEST := $(TOOLS_BIN_DIR)/setup_envs
 CONTROLLER_GEN := $(TOOLS_BIN_DIR)/controller-gen
 
-GOLANGCI_LINT_VERSION := "v2.12.1"
+GOLANGCI_LINT_VERSION := "v2.12.2"
 
 KUSTOMIZE_VER := v5.8.0
 KUSTOMIZE_BIN := kustomize
