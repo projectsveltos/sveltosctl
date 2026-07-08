@@ -239,7 +239,7 @@ func createRole(ctx context.Context, c client.Client, namespace, name string) er
 
 	// Permissions might change with new releases
 	currentRole := &rbacv1.Role{}
-	err = c.Get(ctx, types.NamespacedName{Name: uRole.GetName()}, currentRole)
+	err = c.Get(ctx, types.NamespacedName{Namespace: uRole.GetNamespace(), Name: uRole.GetName()}, currentRole)
 	if err == nil {
 		uRole.SetResourceVersion(currentRole.ResourceVersion)
 		return c.Update(ctx, uRole)
@@ -604,6 +604,17 @@ rules:
   - list
   - update
   - watch
+- apiGroups:
+  - lib.projectsveltos.io
+  resources:
+  - classifierreports/status
+  - eventreports/status
+  - healthcheckreports/status
+  - reloaderreports/status
+  verbs:
+  - get
+  - update
+  - patch
 `
 
 	clusterRole = `apiVersion: rbac.authorization.k8s.io/v1
