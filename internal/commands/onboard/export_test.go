@@ -18,6 +18,7 @@ package onboard
 
 var (
 	OnboardSveltosCluster                     = onboardSveltosCluster
+	OnboardSveltosClusterInPullMode           = onboardSveltosClusterInPullMode
 	OnboardSveltosClusterWithWorkloadIdentity = onboardSveltosClusterWithWorkloadIdentity
 	BuildEKSWorkloadIdentityConfig            = buildEKSWorkloadIdentityConfig
 	BuildGKEWorkloadIdentityConfig            = buildGKEWorkloadIdentityConfig
