@@ -42,6 +42,7 @@ func Show(ctx context.Context, args []string, logger logr.Logger) error {
                          take effect if a ClusterProfile were to be moved out of DryRun mode.
     admin-rbac           Displays information about RBACs assigned to admins in each managed cluster.
     classifier-labels    Displays labels managed by Classifier and ManagementClusterClassifier instances on each cluster.
+    helm-updates         Displays information on Helm charts deployed in clusters for which a newer version or patch is available.
 
 Options:
   -h --help       Show this screen.
@@ -85,6 +86,8 @@ See 'sveltosctl show <subcommand> --help' to read about a specific subcommand.
 			err = show.AdminPermissions(ctx, arguments, logger)
 		case "classifier-labels":
 			err = show.ClassifierLabels(ctx, arguments, logger)
+		case "helm-updates":
+			err = show.HelmUpdates(ctx, arguments, logger)
 		default:
 			//nolint: forbidigo // print doc
 			fmt.Println(doc)
