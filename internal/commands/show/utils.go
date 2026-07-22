@@ -55,6 +55,14 @@ func doConsiderClusterReport(clusterReport *configv1beta1.ClusterReport,
 	return clusterReport.Spec.ClusterName == passedCluster
 }
 
+func doConsiderClusterType(clusterType, passedClusterType string) bool {
+	if passedClusterType == "" {
+		return true
+	}
+
+	return clusterType == passedClusterType
+}
+
 func doConsiderProfile(profileNames []string, passedProfile string) bool {
 	if passedProfile == "" {
 		return true

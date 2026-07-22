@@ -17,9 +17,10 @@ limitations under the License.
 package show
 
 var (
-	DisplayAddOns     = displayAddOns
-	DisplayDryRun     = displayDryRun
-	ShowUsage         = showUsage
-	DisplayAdminRbacs = displayAdminRbacs
-	DisplayResources  = displayResources
+	DisplayAddOns      = displayAddOns
+	DisplayDryRun      = displayDryRun
+	ShowUsage          = showUsage
+	DisplayAdminRbacs  = displayAdminRbacs
+	DisplayResources   = displayResources
+	DisplayHelmUpdates = displayHelmUpdates
 )
