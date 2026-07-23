@@ -200,6 +200,7 @@ var _ = Describe("DryRun", func() {
 			*generateResourceReport(string(libsveltosv1beta1.UpdateResourceAction)),
 			*generateResourceReport(string(libsveltosv1beta1.NoResourceAction)),
 			*generateResourceReport(string(libsveltosv1beta1.DeleteResourceAction)),
+			*generateResourceReport(string(libsveltosv1beta1.ErrorResourceAction)),
 		}
 
 		clusterProfileName2 := randomString()

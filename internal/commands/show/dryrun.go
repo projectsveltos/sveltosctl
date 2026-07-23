@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/docopt/docopt-go"
+	"github.com/fatih/color"
 	"github.com/go-logr/logr"
 	"github.com/olekukonko/tablewriter"
 	"github.com/pkg/errors"
@@ -56,6 +57,21 @@ var (
 		}
 	}
 )
+
+// appendDryRunRow appends row to table, highlighting it in red when action is Error so a
+// resource whose dry-run apply failed does not blend in with Create/Update/NoAction/Conflict rows.
+func appendDryRunRow(table *tablewriter.Table, row []string, action string) error {
+	if action != string(libsveltosv1beta1.ErrorResourceAction) {
+		return table.Append(row)
+	}
+
+	red := color.New(color.FgRed, color.Bold)
+	coloredRow := make([]string, len(row))
+	for i := range row {
+		coloredRow[i] = red.Sprint(row[i])
+	}
+	return table.Append(coloredRow)
+}
 
 func displayDryRun(ctx context.Context, passedNamespace, passedCluster, passedProfile string,
 	rawDiff bool, logger logr.Logger) error {
@@ -180,8 +196,9 @@ func displayDryRunForCluster(clusterReport *configv1beta1.ClusterReport, profile
 		if report.Action == string(libsveltosv1beta1.UpdateResourceAction) {
 			message = updateMessage
 		}
-		if err := table.Append(genDryRunRow(clusterInfo, groupKind, report.Resource.Namespace, report.Resource.Name,
-			report.Action, message, profileName)); err != nil {
+		row := genDryRunRow(clusterInfo, groupKind, report.Resource.Namespace, report.Resource.Name,
+			report.Action, message, profileName)
+		if err := appendDryRunRow(table, row, report.Action); err != nil {
 			return err
 		}
 		if rawDiff && report.Message != "" && report.Action == string(libsveltosv1beta1.UpdateResourceAction) {
@@ -198,8 +215,9 @@ func displayDryRunForCluster(clusterReport *configv1beta1.ClusterReport, profile
 		if report.Action == string(libsveltosv1beta1.UpdateResourceAction) {
 			message = updateMessage
 		}
-		if err := table.Append(genDryRunRow(clusterInfo, groupKind, report.Resource.Namespace, report.Resource.Name,
-			report.Action, message, profileName)); err != nil {
+		row := genDryRunRow(clusterInfo, groupKind, report.Resource.Namespace, report.Resource.Name,
+			report.Action, message, profileName)
+		if err := appendDryRunRow(table, row, report.Action); err != nil {
 			return err
 		}
 		if rawDiff && report.Message != "" && report.Action == string(libsveltosv1beta1.UpdateResourceAction) {
