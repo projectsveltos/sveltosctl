@@ -1,16 +1,23 @@
 [![CI](https://github.com/projectsveltos/sveltosctl/actions/workflows/main.yaml/badge.svg)](https://github.com/projectsveltos/sveltosctl/actions)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/projectsveltos/sveltosctl/badge)](https://scorecard.dev/viewer/?uri=github.com/projectsveltos/sveltosctl)
 [![CodeQL](https://github.com/projectsveltos/sveltosctl/actions/workflows/codeql.yaml/badge.svg)](https://github.com/projectsveltos/sveltosctl/actions/workflows/codeql.yaml)
-[![Slack](https://img.shields.io/badge/join%20slack-%23projectsveltos-brighteen)](https://join.slack.com/t/projectsveltos/shared_invite/zt-1hraownbr-W8NTs6LTimxLPB8Erj8Q6Q)
+[![Release](https://img.shields.io/github/v/release/projectsveltos/sveltosctl)](https://github.com/projectsveltos/sveltosctl/releases)
 [![License](https://img.shields.io/badge/license-Apache-blue.svg)](LICENSE)
-[![Twitter Follow](https://img.shields.io/twitter/follow/projectsveltos?style=social)](https://twitter.com/projectsveltos)
+[![Slack](https://img.shields.io/badge/join%20slack-%23projectsveltos-brighteen)](https://join.slack.com/t/projectsveltos/shared_invite/zt-1hraownbr-W8NTs6LTimxLPB8Erj8Q6Q)
+[![LinkedIn](https://custom-icon-badges.demolab.com/badge/LinkedIn-0A66C2?logo=linkedin-white&logoColor=fff)](https://www.linkedin.com/company/projectsveltos/)
+[![X URL](https://img.shields.io/twitter/url/https/twitter.com/projectsveltos.svg?style=social&label=Follow%20%40projectsveltos)](https://x.com/projectsveltos)
 
-# sveltosctl
+👋 Welcome to **Projectsveltos**!
 
-<img src="https://raw.githubusercontent.com/projectsveltos/sveltos/main/docs/assets/logo.png" width="200">
+<div align="center">
 
-Please refere to sveltos [documentation](https://projectsveltos.github.io/sveltos/).
+| 🌐 Website | 📚 Documentation | 📅 Book a Demo | 💼 Enterprise Support | 🏢 Adopters |
+|:---:|:---:|:---:|:---:|:---:|
+| [Visit](https://website.projectsveltos.io) | [Get Started](https://projectsveltos.github.io/sveltos/) | [Schedule 30 min](https://cal.com/gianluca-mardente-nuclsu/30min) | [Contact Us](mailto:gianluca@projectsveltos.io) | [View List](https://website.projectsveltos.io/companies) |
 
+</div>
+
+## What this repository is
 **sveltosctl** is the command line client for Sveltos. **sveltosctl** nicely displays resources and helm charts info in custer deployed using [ClusterProfile/Profile](https://github.com/projectsveltos/addon-controller).
 
 It assumes:
@@ -72,6 +79,38 @@ Usage:
      --namespace=<name>     Show addons deployed in clusters in this namespace. If not specified all namespaces are considered.
      --cluster=<name>       Show addons deployed in cluster with name. If not specified all cluster names are considered.
      --profile=<kind/name>  Show addons deployed because of this clusterprofile/profile. If not specified all clusterprofiles/profiles are considered.
+```
+
+## Display outdated Helm chart versions
+
+**show helm-updates** displays, for each Helm chart currently deployed in a cluster, the newer version
+and/or newer same-minor patch version available upstream. Charts already on the latest version are omitted.
+
+```
+./bin/sveltosctl show helm-updates
++-------------------------------------+-----------+--------------+-----------------+---------------+---------------------+
+|               CLUSTER               | NAMESPACE | RELEASE NAME | CURRENT VERSION | NEWER VERSION | NEWER PATCH VERSION |
++-------------------------------------+-----------+--------------+-----------------+---------------+---------------------+
+| default/sveltos-management-workload | kyverno   | kyverno      | v3.1.0          | v3.3.0        | v3.1.4              |
++-------------------------------------+-----------+--------------+-----------------+---------------+---------------------+
+```
+
+**show helm-updates** command has some arguments which allow filtering by:
+1. clusters' namespace
+2. clusters' name
+3. cluster type
+
+```
+./bin/sveltosctl show helm-updates --help
+Usage:
+  sveltosctl show helm-updates [options] [--namespace=<name>] [--cluster=<name>] [--cluster-type=<type>] [--verbose]
+
+     --namespace=<name>      Show outdated helm charts deployed in clusters in this namespace.
+                             If not specified all namespaces are considered.
+     --cluster=<name>        Show outdated helm charts deployed in cluster with name.
+                             If not specified all cluster names are considered.
+     --cluster-type=<type>   Show outdated helm charts deployed in cluster with this type
+                             (Capi or Sveltos). If not specified all cluster types are considered.
 ```
 
 ## Register a cluster

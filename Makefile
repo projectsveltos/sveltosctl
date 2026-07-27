@@ -13,7 +13,7 @@ REGISTRY ?= projectsveltos
 IMAGE_NAME ?= sveltosctl
 K8S_LATEST_VER ?= $(shell curl -s https://dl.k8s.io/release/stable.txt)
 export SVELTOSCTL_IMG ?= $(REGISTRY)/$(IMAGE_NAME)
-TAG ?= main
+TAG ?= v1.13.0
 ARCH ?= $(shell go env GOARCH)
 
 # Directories.
@@ -146,11 +146,11 @@ PKEY ?= id_rsa
 
 .PHONY: docker-build
 docker-build: ## Build the docker image for sveltosctl
-	docker build --build-arg BUILDOS=linux --build-arg TARGETARCH=amd64 --build-arg LDFLAGS="$(LDFLAGS)" --build-arg ARCH=$(ARCH) -t $(REGISTRY)/$(IMAGE_NAME)-$(ARCH):$(TAG) -f Dockerfile .
+	docker build --build-arg BUILDOS=linux --build-arg TARGETARCH=amd64 --build-arg LDFLAGS="$(LDFLAGS)" --build-arg ARCH=$(ARCH) --build-arg GIT_VERSION=$(TAG) -t $(REGISTRY)/$(IMAGE_NAME)-$(ARCH):$(TAG) -f Dockerfile .
 
 .PHONY: docker-buildx
 docker-buildx: ## docker build for multiple arch and push to docker hub
-	docker buildx build --push --platform linux/amd64,linux/arm64 -t $(SVELTOSCTL_IMG):$(TAG) .
+	docker buildx build --push --platform linux/amd64,linux/arm64 --build-arg GIT_VERSION=$(TAG) -t $(SVELTOSCTL_IMG):$(TAG) .
 
 ##@ Build
 
