@@ -2,7 +2,6 @@
 FROM golang:1.26.5 AS builder
 
 ARG ARCH
-ARG GIT_VERSION=unknown
 ARG LDFLAGS
 ARG BUILDOS
 ARG TARGETARCH
@@ -23,17 +22,21 @@ COPY internal/ internal/
 # Build
 RUN CGO_ENABLED=0 GOOS=$BUILDOS GOARCH=$TARGETARCH GO111MODULE=on go build -ldflags "$LDFLAGS" -a -o sveltosctl cmd/sveltosctl/main.go
 
-LABEL name="Sveltos CLI tool" \
-      vendor="Projectsveltos" \
-      version=$GIT_VERSION \
-      release="1" \
-      summary="Sveltos CLI tool" \
-      description="sveltoctl is a command line tool used to visualize information on deployed features." \
-      maintainer=""
-
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
 FROM gcr.io/distroless/static:nonroot
+
+ARG GIT_VERSION=unknown
+
+LABEL org.opencontainers.image.source="https://github.com/projectsveltos/sveltosctl" \
+      org.opencontainers.image.url="https://projectsveltos.io" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.vendor="projectsveltos" \
+      org.opencontainers.image.title="sveltosctl" \
+      org.opencontainers.image.description="Command line tool to visualize information on deployed Sveltos features." \
+      org.opencontainers.image.version="$GIT_VERSION" \
+      org.opencontainers.image.revision="$GIT_VERSION"
+
 WORKDIR /
 COPY --from=builder /workspace/sveltosctl .
 USER nonroot:nonroot
