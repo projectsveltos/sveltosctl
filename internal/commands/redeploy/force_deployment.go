@@ -27,6 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	configv1beta1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	"github.com/projectsveltos/addon-controller/lib/clusterops"
 	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
@@ -152,11 +153,15 @@ func resetClusterSummaryInstance(ctx context.Context, namespace, cluster string,
 }
 
 // getClusterSummariesInOrder lists all relevant ClusterSummary instances,
-// constructs a dependency graph based on Spec.DependsOn, performs a topological
-// sort, and returns the list of names in the required reset order along with
-// a map of the objects.
+// constructs a dependency graph based on Spec.DependsOn and Spec.TransitionFrom,
+// performs a topological sort, and returns the list of names in the required
+// reset order along with a map of the objects.
 //
 // The order is determined such that if B depends on A, A is reset before B.
+// TransitionFrom is folded into the same graph the same way: a predecessor's
+// resumed teardown depends on its successor being reprovisioned, so the
+// predecessor is treated as "depending on" the successor for ordering purposes,
+// and the successor is reset first.
 func getClusterSummariesInOrder(ctx context.Context, c client.Client, namespace, cluster string,
 	clusterType *libsveltosv1beta1.ClusterType,
 ) (resetOrder []string, csMap map[string]*configv1beta1.ClusterSummary, err error) {
@@ -194,14 +199,44 @@ func getClusterSummariesInOrder(ctx context.Context, c client.Client, namespace,
 		dependencies[cs.Name] = make(map[string]bool)
 	}
 
+	// DependsOn/TransitionFrom both name a (Cluster)Profile, not a ClusterSummary: a
+	// ClusterSummary's own name is derived (clusterops.GetClusterSummaryName), never the
+	// bare profile name, so each reference has to be resolved before it can be looked up
+	// in csMap.
 	for i := range clusterSummaryList.Items {
 		cs := &clusterSummaryList.Items[i]
+
+		profileReference, ownerErr := configv1beta1.GetProfileOwnerReference(cs)
+		if ownerErr != nil {
+			// A real ClusterSummary is always owned by the (Cluster)Profile that created it;
+			// one without a resolvable owner has no DependsOn/TransitionFrom names we could
+			// map to another ClusterSummary anyway. Rather than aborting the whole redeploy
+			// over this one node, reset it with no ordering constraints of its own: it is
+			// already in csMap/dependencies from the loop above, so it still gets reset.
+			continue
+		}
+		isSveltosCluster := cs.Spec.ClusterType == libsveltosv1beta1.ClusterTypeSveltos
+
 		for j := range cs.Spec.ClusterProfileSpec.DependsOn {
-			depName := cs.Spec.ClusterProfileSpec.DependsOn[j]
+			depProfileName := cs.Spec.ClusterProfileSpec.DependsOn[j]
+			depCSName := clusterops.GetClusterSummaryName(profileReference.Kind, depProfileName,
+				cs.Spec.ClusterName, isSveltosCluster)
 
 			// Only consider dependencies that are within the currently listed set (i.e., local to this cluster)
-			if _, exists := csMap[depName]; exists {
-				dependencies[cs.Name][depName] = true
+			if _, exists := csMap[depCSName]; exists {
+				dependencies[cs.Name][depCSName] = true
+			}
+		}
+
+		for j := range cs.Spec.ClusterProfileSpec.TransitionFrom {
+			predecessorProfileName := cs.Spec.ClusterProfileSpec.TransitionFrom[j]
+			predecessorCSName := clusterops.GetClusterSummaryName(profileReference.Kind, predecessorProfileName,
+				cs.Spec.ClusterName, isSveltosCluster)
+
+			// The predecessor is what "depends on" the successor being reset/reprovisioned
+			// first, not the other way around, so the edge is added on the predecessor's row.
+			if _, exists := csMap[predecessorCSName]; exists {
+				dependencies[predecessorCSName][cs.Name] = true
 			}
 		}
 	}
