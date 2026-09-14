@@ -31,10 +31,16 @@ var (
 
 	GetAndRollbackConfigMaps        = getAndRollbackConfigMaps
 	GetAndRollbackProfiles          = getAndRollbackProfiles
+	GetAndRollbackRoleRequests      = getAndRollbackRoleRequests
+	GetAndRollbackEventSources      = getAndRollbackEventSources
+	GetAndRollbackEventTriggers     = getAndRollbackEventTriggers
 	RollbackConfigMaps              = rollbackConfigMaps
 	RollbackSecrets                 = rollbackSecrets
 	RollbackClusters                = rollbackClusters
 	RollbackClusterProfile          = rollbackClusterProfile
+	RollbackRoleRequest             = rollbackRoleRequest
+	RollbackEventSource             = rollbackEventSource
+	RollbackEventTrigger            = rollbackEventTrigger
 	RollbackConfigurationToSnapshot = rollbackConfigurationToSnapshot
 	GetResourceFromResourceOwner    = getResourceFromResourceOwner
 )

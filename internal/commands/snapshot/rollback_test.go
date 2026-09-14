@@ -36,6 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	eventv1beta1 "github.com/projectsveltos/event-manager/api/v1beta1"
 	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/collector"
 	"github.com/projectsveltos/sveltosctl/internal/commands/snapshot"
@@ -99,6 +100,37 @@ metadata:
   labels:
     env: production
     dep: eng`
+
+	roleRequestTemplate = `apiVersion: lib.projectsveltos.io/v1beta1
+kind: RoleRequest
+metadata:
+  name: %s
+spec:
+  serviceAccountName: fv-admin
+  serviceAccountNamespace: fv
+  clusterSelector:
+    matchLabels:
+      env: fv`
+
+	eventSourceTemplate = `apiVersion: lib.projectsveltos.io/v1beta1
+kind: EventSource
+metadata:
+  name: %s
+spec:
+  resourceSelectors:
+  - group: ""
+    version: v1
+    kind: Pod`
+
+	eventTriggerTemplate = `apiVersion: lib.projectsveltos.io/v1beta1
+kind: EventTrigger
+metadata:
+  name: %s
+spec:
+  sourceClusterSelector:
+    matchLabels:
+      env: fv
+  eventSourceName: %s`
 
 	//nolint: gosec // test only
 	configMapWithPolicy = `data:
@@ -249,6 +281,93 @@ var _ = Describe("Snapshot Rollback", func() {
 		Expect(reflect.DeepEqual(currentCP.Spec, originalSpec)).To(BeTrue())
 	})
 
+	It("rollbackRoleRequest rollbacks roleRequest", func() {
+		name := randomString()
+		rr := getRoleRequest(name)
+
+		initObjects := []client.Object{rr}
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
+
+		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
+
+		instance := utils.GetAccessInstance()
+
+		currentRoleRequest := &libsveltosv1beta1.RoleRequest{}
+		Expect(instance.GetResource(context.TODO(),
+			types.NamespacedName{Name: name}, currentRoleRequest)).To(Succeed())
+
+		originalSpec := currentRoleRequest.Spec
+
+		updateRoleRequestSpec(currentRoleRequest)
+
+		Expect(snapshot.RollbackRoleRequest(context.TODO(), rr,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
+
+		Expect(instance.GetResource(context.TODO(),
+			types.NamespacedName{Name: name}, currentRoleRequest)).To(Succeed())
+		Expect(reflect.DeepEqual(currentRoleRequest.Spec, originalSpec)).To(BeTrue())
+	})
+
+	It("rollbackEventSource rollbacks eventSource", func() {
+		name := randomString()
+		es := getEventSource(name)
+
+		initObjects := []client.Object{es}
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
+
+		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
+
+		instance := utils.GetAccessInstance()
+
+		currentEventSource := &libsveltosv1beta1.EventSource{}
+		Expect(instance.GetResource(context.TODO(),
+			types.NamespacedName{Name: name}, currentEventSource)).To(Succeed())
+
+		originalSpec := currentEventSource.Spec
+
+		updateEventSourceSpec(currentEventSource)
+
+		Expect(snapshot.RollbackEventSource(context.TODO(), es,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
+
+		Expect(instance.GetResource(context.TODO(),
+			types.NamespacedName{Name: name}, currentEventSource)).To(Succeed())
+		Expect(reflect.DeepEqual(currentEventSource.Spec, originalSpec)).To(BeTrue())
+	})
+
+	It("rollbackEventTrigger rollbacks eventTrigger", func() {
+		name := randomString()
+		et := getEventTrigger(name, randomString())
+
+		initObjects := []client.Object{et}
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
+
+		utils.InitalizeManagementClusterAcces(scheme, nil, nil, c)
+
+		instance := utils.GetAccessInstance()
+
+		currentEventTrigger := &eventv1beta1.EventTrigger{}
+		Expect(instance.GetResource(context.TODO(),
+			types.NamespacedName{Name: name}, currentEventTrigger)).To(Succeed())
+
+		originalSpec := currentEventTrigger.Spec
+
+		updateEventTriggerSpec(currentEventTrigger)
+
+		Expect(snapshot.RollbackEventTrigger(context.TODO(), et,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
+
+		Expect(instance.GetResource(context.TODO(),
+			types.NamespacedName{Name: name}, currentEventTrigger)).To(Succeed())
+		Expect(reflect.DeepEqual(currentEventTrigger.Spec, originalSpec)).To(BeTrue())
+	})
+
 	It("rollbackClusters rollbacks clusters", func() {
 		name := randomString()
 		namespace := randomString()
@@ -345,7 +464,7 @@ var _ = Describe("Snapshot Rollback", func() {
 		updateClusterLabels(currentCluster)
 		updateClusterProfileSpec(currentClusterProfile)
 
-		Expect(snapshot.RollbackConfigurationToSnapshot(context.TODO(), folder, "", "", "", "", "",
+		Expect(snapshot.RollbackConfigurationToSnapshot(context.TODO(), folder, "", "", "", "", "", "", "",
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		Expect(instance.GetResource(context.TODO(),
@@ -457,6 +576,33 @@ func getClusterProfile(name string) *unstructured.Unstructured {
 	return cp
 }
 
+func getRoleRequest(name string) *unstructured.Unstructured {
+	universalDeserializer := kubectlscheme.Codecs.UniversalDeserializer()
+	rr := &unstructured.Unstructured{}
+	_, _, err := universalDeserializer.Decode([]byte(
+		fmt.Sprintf(roleRequestTemplate, name)), nil, rr)
+	Expect(err).To(BeNil())
+	return rr
+}
+
+func getEventSource(name string) *unstructured.Unstructured {
+	universalDeserializer := kubectlscheme.Codecs.UniversalDeserializer()
+	es := &unstructured.Unstructured{}
+	_, _, err := universalDeserializer.Decode([]byte(
+		fmt.Sprintf(eventSourceTemplate, name)), nil, es)
+	Expect(err).To(BeNil())
+	return es
+}
+
+func getEventTrigger(name, eventSourceName string) *unstructured.Unstructured {
+	universalDeserializer := kubectlscheme.Codecs.UniversalDeserializer()
+	et := &unstructured.Unstructured{}
+	_, _, err := universalDeserializer.Decode([]byte(
+		fmt.Sprintf(eventTriggerTemplate, name, eventSourceName)), nil, et)
+	Expect(err).To(BeNil())
+	return et
+}
+
 func updateConfigMapData(currentConfigMap *corev1.ConfigMap) {
 	instance := utils.GetAccessInstance()
 
@@ -494,6 +640,30 @@ func updateClusterProfileSpec(currentClusterProfile *configv1alpha1.ClusterProfi
 	currentClusterProfile.Spec.SyncMode = configv1alpha1.SyncModeDryRun
 	currentClusterProfile.Spec.HelmCharts = nil
 	Expect(instance.UpdateResource(context.TODO(), currentClusterProfile)).To(Succeed())
+}
+
+func updateRoleRequestSpec(currentRoleRequest *libsveltosv1beta1.RoleRequest) {
+	instance := utils.GetAccessInstance()
+
+	currentRoleRequest.Spec.ServiceAccountName = randomString()
+	currentRoleRequest.Spec.ServiceAccountNamespace = randomString()
+	Expect(instance.UpdateResource(context.TODO(), currentRoleRequest)).To(Succeed())
+}
+
+func updateEventSourceSpec(currentEventSource *libsveltosv1beta1.EventSource) {
+	instance := utils.GetAccessInstance()
+
+	currentEventSource.Spec.ResourceSelectors = nil
+	currentEventSource.Spec.CollectResources = true
+	Expect(instance.UpdateResource(context.TODO(), currentEventSource)).To(Succeed())
+}
+
+func updateEventTriggerSpec(currentEventTrigger *eventv1beta1.EventTrigger) {
+	instance := utils.GetAccessInstance()
+
+	currentEventTrigger.Spec.EventSourceName = randomString()
+	currentEventTrigger.Spec.OneForEvent = true
+	Expect(instance.UpdateResource(context.TODO(), currentEventTrigger)).To(Succeed())
 }
 
 func createDirectoryWithObjects(snapshotName, snapshotStorage string, objects []*unstructured.Unstructured) string {

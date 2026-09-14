@@ -35,6 +35,7 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 
 	configv1alpha1 "github.com/projectsveltos/addon-controller/api/v1beta1"
+	eventv1beta1 "github.com/projectsveltos/event-manager/api/v1beta1"
 	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	logs "github.com/projectsveltos/libsveltos/lib/logsettings"
 	utilsv1beta1 "github.com/projectsveltos/sveltosctl/api/v1beta1"
@@ -44,7 +45,7 @@ import (
 
 func rollbackConfiguration(ctx context.Context,
 	snapshotName, sample, passedNamespace, passedCluster, passedProfile,
-	passedClassifier, passedRoleRequest string,
+	passedClassifier, passedRoleRequest, passedEventSource, passedEventTrigger string,
 	logger logr.Logger) error {
 
 	logger.V(logs.LogDebug).Info(fmt.Sprintf("Getting Snapshot %s", snapshotName))
@@ -75,11 +76,11 @@ func rollbackConfiguration(ctx context.Context,
 	}
 
 	return rollbackConfigurationToSnapshot(ctx, folder, passedNamespace, passedCluster, passedProfile,
-		passedClassifier, passedRoleRequest, logger)
+		passedClassifier, passedRoleRequest, passedEventSource, passedEventTrigger, logger)
 }
 
 func rollbackConfigurationToSnapshot(ctx context.Context, folder, passedNamespace, passedCluster,
-	passedProfile, passedClassifier, passedRoleRequest string,
+	passedProfile, passedClassifier, passedRoleRequest, passedEventSource, passedEventTrigger string,
 	logger logr.Logger) error {
 
 	logger.V(logs.LogDebug).Info("roll back configuration: configmaps")
@@ -114,6 +115,18 @@ func rollbackConfigurationToSnapshot(ctx context.Context, folder, passedNamespac
 
 	logger.V(logs.LogDebug).Info("roll back configuration: rolerequests")
 	err = getAndRollbackRoleRequests(ctx, folder, passedRoleRequest, logger)
+	if err != nil {
+		return err
+	}
+
+	logger.V(logs.LogDebug).Info("roll back configuration: eventsources")
+	err = getAndRollbackEventSources(ctx, folder, passedEventSource, logger)
+	if err != nil {
+		return err
+	}
+
+	logger.V(logs.LogDebug).Info("roll back configuration: eventtriggers")
+	err = getAndRollbackEventTriggers(ctx, folder, passedEventTrigger, logger)
 	if err != nil {
 		return err
 	}
@@ -308,7 +321,51 @@ func getAndRollbackRoleRequests(ctx context.Context, folder, passedRoleRequest s
 		cl := roleRequests[i]
 		if passedRoleRequest == "" || cl.GetName() == passedRoleRequest {
 			logger.V(logs.LogDebug).Info(fmt.Sprintf("rollback RoleRequest %s", cl.GetName()))
-			err = rollbackClassifier(ctx, cl, logger)
+			err = rollbackRoleRequest(ctx, cl, logger)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func getAndRollbackEventSources(ctx context.Context, folder, passedEventSource string, logger logr.Logger) error {
+	snapshotClient := collector.GetClient()
+	eventSources, err := snapshotClient.GetClusterResources(folder, libsveltosv1beta1.EventSourceKind, logger)
+	if err != nil {
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect EventSources from folder %s", folder))
+		return err
+	}
+
+	for i := range eventSources {
+		es := eventSources[i]
+		if passedEventSource == "" || es.GetName() == passedEventSource {
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("rollback EventSource %s", es.GetName()))
+			err = rollbackEventSource(ctx, es, logger)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func getAndRollbackEventTriggers(ctx context.Context, folder, passedEventTrigger string, logger logr.Logger) error {
+	snapshotClient := collector.GetClient()
+	eventTriggers, err := snapshotClient.GetClusterResources(folder, eventv1beta1.EventTriggerKind, logger)
+	if err != nil {
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("failed to collect EventTriggers from folder %s", folder))
+		return err
+	}
+
+	for i := range eventTriggers {
+		et := eventTriggers[i]
+		if passedEventTrigger == "" || et.GetName() == passedEventTrigger {
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("rollback EventTrigger %s", et.GetName()))
+			err = rollbackEventTrigger(ctx, et, logger)
 			if err != nil {
 				return err
 			}
@@ -593,11 +650,107 @@ func rollbackClassifier(ctx context.Context, resource *unstructured.Unstructured
 	return instance.UpdateResource(ctx, currentClassifier)
 }
 
+// rollbackRoleRequest does following:
+// - if RoleRequest currently does not exist, recreates it
+// - if RoleRequest does exist, updates it Spec section
+func rollbackRoleRequest(ctx context.Context, resource *unstructured.Unstructured, logger logr.Logger) error {
+	instance := utils.GetAccessInstance()
+
+	currentRoleRequest := &libsveltosv1beta1.RoleRequest{}
+	err := instance.GetResource(ctx,
+		types.NamespacedName{Name: resource.GetName()}, currentRoleRequest)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("Creating RoleRequest %s",
+				resource.GetName()))
+			return instance.CreateResource(ctx, resource)
+		}
+		return err
+	}
+
+	passedRoleRequest := &libsveltosv1beta1.RoleRequest{}
+	err = runtime.DefaultUnstructuredConverter.
+		FromUnstructured(resource.UnstructuredContent(), passedRoleRequest)
+	if err != nil {
+		return err
+	}
+
+	currentRoleRequest.Spec = passedRoleRequest.Spec
+
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("Updating RoleRequest %s",
+		resource.GetName()))
+	return instance.UpdateResource(ctx, currentRoleRequest)
+}
+
+// rollbackEventSource does following:
+// - if EventSource currently does not exist, recreates it
+// - if EventSource does exist, updates it Spec section
+func rollbackEventSource(ctx context.Context, resource *unstructured.Unstructured, logger logr.Logger) error {
+	instance := utils.GetAccessInstance()
+
+	currentEventSource := &libsveltosv1beta1.EventSource{}
+	err := instance.GetResource(ctx,
+		types.NamespacedName{Name: resource.GetName()}, currentEventSource)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("Creating EventSource %s",
+				resource.GetName()))
+			return instance.CreateResource(ctx, resource)
+		}
+		return err
+	}
+
+	passedEventSource := &libsveltosv1beta1.EventSource{}
+	err = runtime.DefaultUnstructuredConverter.
+		FromUnstructured(resource.UnstructuredContent(), passedEventSource)
+	if err != nil {
+		return err
+	}
+
+	currentEventSource.Spec = passedEventSource.Spec
+
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("Updating EventSource %s",
+		resource.GetName()))
+	return instance.UpdateResource(ctx, currentEventSource)
+}
+
+// rollbackEventTrigger does following:
+// - if EventTrigger currently does not exist, recreates it
+// - if EventTrigger does exist, updates it Spec section
+func rollbackEventTrigger(ctx context.Context, resource *unstructured.Unstructured, logger logr.Logger) error {
+	instance := utils.GetAccessInstance()
+
+	currentEventTrigger := &eventv1beta1.EventTrigger{}
+	err := instance.GetResource(ctx,
+		types.NamespacedName{Name: resource.GetName()}, currentEventTrigger)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("Creating EventTrigger %s",
+				resource.GetName()))
+			return instance.CreateResource(ctx, resource)
+		}
+		return err
+	}
+
+	passedEventTrigger := &eventv1beta1.EventTrigger{}
+	err = runtime.DefaultUnstructuredConverter.
+		FromUnstructured(resource.UnstructuredContent(), passedEventTrigger)
+	if err != nil {
+		return err
+	}
+
+	currentEventTrigger.Spec = passedEventTrigger.Spec
+
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("Updating EventTrigger %s",
+		resource.GetName()))
+	return instance.UpdateResource(ctx, currentEventTrigger)
+}
+
 // Rollback system to any previous configuration snapshot
 func Rollback(ctx context.Context, args []string, logger logr.Logger) error {
 	//nolint: lll // command syntax
 	doc := `Usage:
-	sveltosctl snapshot rollback [options] --snapshot=<name> --sample=<name> [--namespace=<name>] [--profile=<name>] [--cluster=<name>] [--classifier=<name>] [--rolerequest=<name>] [--verbose]
+	sveltosctl snapshot rollback [options] --snapshot=<name> --sample=<name> [--namespace=<name>] [--profile=<name>] [--cluster=<name>] [--classifier=<name>] [--rolerequest=<name>] [--eventsource=<name>] [--eventtrigger=<name>] [--verbose]
 
      --snapshot=<name>       Name of the Snapshot instance
      --sample=<name>         Name of the directory containing this sample.
@@ -612,10 +765,14 @@ func Rollback(ctx context.Context, args []string, logger logr.Logger) error {
                              If not specified all classifiers are updated.
      --rolerequest=<name>    Rollback only roleRequest with this name.
                              If not specified all roleRequests are updated.
+     --eventsource=<name>    Rollback only eventSource with this name.
+                             If not specified all eventSources are updated.
+     --eventtrigger=<name>   Rollback only eventTrigger with this name.
+                             If not specified all eventTriggers are updated.
 
 Options:
   -h --help                  Show this screen.
-     --verbose               Verbose mode. Print each step.  
+     --verbose               Verbose mode. Print each step.
 
 Description:
   The snapshot rollback allows to rollback system to any previous configuration snapshot.
@@ -624,6 +781,8 @@ Description:
   - RoleRequest, Spec section
   - ConfigMaps/Secrets referenced by at least one ClusterProfile/RoleRequest at the time snapshot was taken.
   - Classifiers
+  - EventSources, Spec section
+  - EventTriggers, Spec section
   If, at the time the rollback happens, such resources do not exist, those will be recreated.
   If such resources exist, Data/BinaryData for ConfigMaps and Data/StringData for Secrets will be updated.
   - Clusters, only labels will be updated.
@@ -673,11 +832,21 @@ Description:
 		roleRequest = passedRoleRequest.(string)
 	}
 
+	eventSource := ""
+	if passedEventSource := parsedArgs["--eventsource"]; passedEventSource != nil {
+		eventSource = passedEventSource.(string)
+	}
+
+	eventTrigger := ""
+	if passedEventTrigger := parsedArgs["--eventtrigger"]; passedEventTrigger != nil {
+		eventTrigger = passedEventTrigger.(string)
+	}
+
 	cluster := ""
 	if passedCluster := parsedArgs["--cluster"]; passedCluster != nil {
 		cluster = passedCluster.(string)
 	}
 
 	return rollbackConfiguration(ctx, snapshostName, sample, namespace, cluster, profile,
-		classifier, roleRequest, logger)
+		classifier, roleRequest, eventSource, eventTrigger, logger)
 }
