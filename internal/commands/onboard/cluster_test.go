@@ -92,3 +92,21 @@ var _ = Describe("OnboardCluster", func() {
 		Expect(sveltosCluster.Annotations).To(BeNil())
 	})
 })
+
+var _ = Describe("validateManagementClusterURL", func() {
+	It("rejects an empty value", func() {
+		Expect(onboard.ValidateManagementClusterURL("")).ToNot(Succeed())
+	})
+
+	It("rejects a value with no scheme", func() {
+		Expect(onboard.ValidateManagementClusterURL("192.168.1.10:6443")).ToNot(Succeed())
+	})
+
+	It("accepts an https URL", func() {
+		Expect(onboard.ValidateManagementClusterURL("https://192.168.1.10:6443")).To(Succeed())
+	})
+
+	It("accepts an http URL", func() {
+		Expect(onboard.ValidateManagementClusterURL("http://192.168.1.10:6443")).To(Succeed())
+	})
+})

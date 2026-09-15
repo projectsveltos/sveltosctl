@@ -34,11 +34,22 @@ var (
 	DeleteRoleBinding                         = deleteRoleBinding
 	DeleteClusterRole                         = deleteClusterRole
 	DeleteClusterRoleBinding                  = deleteClusterRoleBinding
+	CreateTokenRenewalRole                    = createTokenRenewalRole
+	CreateTokenRenewalRoleBinding             = createTokenRenewalRoleBinding
+	CreateSveltosCluster                      = createSveltosCluster
+	CreateManagementClusterURLConfigMap       = createManagementClusterURLConfigMap
+	DeleteConfigMap                           = deleteConfigMap
+	ValidateManagementClusterURL              = validateManagementClusterURL
 )
 
 const (
-	SveltosKubeconfigSecretNamePostfix = sveltosKubeconfigSecretNamePostfix
-	SveltosCASecretNamePostfix         = sveltosCASecretNamePostfix
-	Kubeconfig                         = kubeconfig
-	CAKey                              = caKey
+	SveltosKubeconfigSecretNamePostfix    = sveltosKubeconfigSecretNamePostfix
+	SveltosCASecretNamePostfix            = sveltosCASecretNamePostfix
+	Kubeconfig                            = kubeconfig
+	CAKey                                 = caKey
+	TokenRenewalRBACNamePostfix           = tokenRenewalRBACNamePostfix
+	SveltosClusterManagerServiceAccount   = sveltosClusterManagerServiceAccount
+	SveltosClusterManagerNamespaceDefault = sveltosClusterManagerNamespaceDefault
+	ManagementClusterURLConfigMapKey      = managementClusterURLConfigMapKey
+	ManagementClusterCAConfigMapKey       = managementClusterCAConfigMapKey
 )

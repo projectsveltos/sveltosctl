@@ -25,6 +25,7 @@ import (
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
@@ -32,9 +33,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 	"github.com/projectsveltos/sveltosctl/internal/commands/onboard"
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
+
+const testManagementClusterHost = "https://127.0.0.1:6443"
 
 var _ = Describe("Register cluster in pullmode", func() {
 	It("prepareApplierYAML returns the YAML to apply to managed cluster", func() {
@@ -91,10 +95,10 @@ var _ = Describe("Register cluster in pullmode", func() {
 		scheme, err := utils.GetScheme()
 		Expect(err).To(BeNil())
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
-		utils.InitalizeManagementClusterAcces(scheme, &rest.Config{Host: "https://127.0.0.1:6443"}, nil, c)
+		utils.InitalizeManagementClusterAcces(scheme, &rest.Config{Host: testManagementClusterHost}, nil, c)
 
-		Expect(onboard.OnboardSveltosClusterInPullMode(context.TODO(), clusterNamespace, clusterName, "",
-			nil, textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
+		Expect(onboard.OnboardSveltosClusterInPullMode(context.TODO(), clusterNamespace, clusterName, "", "", "",
+			nil, false, textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		instance := utils.GetAccessInstance()
 		currentRole := &rbacv1.Role{}
@@ -113,5 +117,157 @@ var _ = Describe("Register cluster in pullmode", func() {
 			Expect(rule.Verbs).To(ConsistOf("get", "update", "patch"))
 		}
 		Expect(found).To(BeTrue())
+	})
+
+	It("createTokenRenewalRole grants create on serviceaccounts/token scoped to this cluster's ServiceAccount", func() {
+		clusterNamespace := randomString()
+		clusterName := randomString()
+
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+		c := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+		Expect(onboard.CreateTokenRenewalRole(context.TODO(), c, clusterNamespace, clusterName)).To(Succeed())
+
+		role := &rbacv1.Role{}
+		Expect(c.Get(context.TODO(),
+			types.NamespacedName{Namespace: clusterNamespace, Name: clusterName + onboard.TokenRenewalRBACNamePostfix},
+			role)).To(Succeed())
+
+		Expect(role.Rules).To(HaveLen(1))
+		Expect(role.Rules[0].APIGroups).To(ConsistOf(""))
+		Expect(role.Rules[0].Resources).To(ConsistOf("serviceaccounts/token"))
+		Expect(role.Rules[0].ResourceNames).To(ConsistOf(clusterName))
+		Expect(role.Rules[0].Verbs).To(ConsistOf("create"))
+	})
+
+	It("createTokenRenewalRoleBinding binds sveltoscluster-manager's ServiceAccount, and updates it when sveltosNamespace changes", func() {
+		clusterNamespace := randomString()
+		clusterName := randomString()
+
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+		c := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+		firstNamespace := randomString()
+		Expect(onboard.CreateTokenRenewalRoleBinding(context.TODO(), c, clusterNamespace, clusterName, firstNamespace)).
+			To(Succeed())
+
+		roleBindingName := clusterName + onboard.TokenRenewalRBACNamePostfix
+		roleBinding := &rbacv1.RoleBinding{}
+		Expect(c.Get(context.TODO(),
+			types.NamespacedName{Namespace: clusterNamespace, Name: roleBindingName}, roleBinding)).To(Succeed())
+		Expect(roleBinding.Subjects).To(HaveLen(1))
+		Expect(roleBinding.Subjects[0].Name).To(Equal(onboard.SveltosClusterManagerServiceAccount))
+		Expect(roleBinding.Subjects[0].Namespace).To(Equal(firstNamespace))
+
+		// Re-registering with a different --sveltos-namespace must update the binding's subject.
+		secondNamespace := randomString()
+		Expect(onboard.CreateTokenRenewalRoleBinding(context.TODO(), c, clusterNamespace, clusterName, secondNamespace)).
+			To(Succeed())
+
+		Expect(c.Get(context.TODO(),
+			types.NamespacedName{Namespace: clusterNamespace, Name: roleBindingName}, roleBinding)).To(Succeed())
+		Expect(roleBinding.Subjects[0].Namespace).To(Equal(secondNamespace))
+	})
+
+	It("createSveltosCluster sets TokenRequestRenewalOption only when tokenRenewal is requested", func() {
+		clusterNamespace := randomString()
+		clusterName := randomString()
+
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+		c := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+		Expect(onboard.CreateSveltosCluster(context.TODO(), c, clusterNamespace, clusterName, "", nil, true)).To(Succeed())
+
+		sveltosCluster := &libsveltosv1beta1.SveltosCluster{}
+		Expect(c.Get(context.TODO(),
+			types.NamespacedName{Namespace: clusterNamespace, Name: clusterName}, sveltosCluster)).To(Succeed())
+
+		Expect(sveltosCluster.Spec.PullMode).To(BeTrue())
+		Expect(sveltosCluster.Spec.TokenRequestRenewalOption).ToNot(BeNil())
+		Expect(sveltosCluster.Spec.TokenRequestRenewalOption.SAName).To(Equal(clusterName))
+		Expect(sveltosCluster.Spec.TokenRequestRenewalOption.SANamespace).To(Equal(clusterNamespace))
+
+		otherClusterName := randomString()
+		Expect(onboard.CreateSveltosCluster(context.TODO(), c, clusterNamespace, otherClusterName, "", nil, false)).To(Succeed())
+
+		withoutRenewal := &libsveltosv1beta1.SveltosCluster{}
+		Expect(c.Get(context.TODO(),
+			types.NamespacedName{Namespace: clusterNamespace, Name: otherClusterName}, withoutRenewal)).To(Succeed())
+		Expect(withoutRenewal.Spec.TokenRequestRenewalOption).To(BeNil())
+	})
+
+	It("createManagementClusterURLConfigMap creates and updates the server address and CA data", func() {
+		clusterNamespace := randomString()
+		clusterName := randomString()
+
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+		c := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+		firstURL := "https://" + randomString()
+		firstCA := []byte(randomString())
+		Expect(onboard.CreateManagementClusterURLConfigMap(context.TODO(), c, clusterNamespace, clusterName,
+			firstURL, firstCA)).To(Succeed())
+
+		configMap := &corev1.ConfigMap{}
+		Expect(c.Get(context.TODO(),
+			types.NamespacedName{Namespace: clusterNamespace, Name: clusterName}, configMap)).To(Succeed())
+		Expect(configMap.Data[onboard.ManagementClusterURLConfigMapKey]).To(Equal(firstURL))
+		Expect(configMap.Data[onboard.ManagementClusterCAConfigMapKey]).To(Equal(string(firstCA)))
+
+		// Re-registering with a different --management-cluster-url/CA must update both.
+		secondURL := "https://" + randomString()
+		secondCA := []byte(randomString())
+		Expect(onboard.CreateManagementClusterURLConfigMap(context.TODO(), c, clusterNamespace, clusterName,
+			secondURL, secondCA)).To(Succeed())
+
+		Expect(c.Get(context.TODO(),
+			types.NamespacedName{Namespace: clusterNamespace, Name: clusterName}, configMap)).To(Succeed())
+		Expect(configMap.Data[onboard.ManagementClusterURLConfigMapKey]).To(Equal(secondURL))
+		Expect(configMap.Data[onboard.ManagementClusterCAConfigMapKey]).To(Equal(string(secondCA)))
+	})
+
+	It("deregistration deletes the management-cluster-url ConfigMap", func() {
+		clusterNamespace := randomString()
+		clusterName := randomString()
+
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+		c := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+		Expect(onboard.CreateManagementClusterURLConfigMap(context.TODO(), c, clusterNamespace, clusterName,
+			"https://"+randomString(), []byte(randomString()))).To(Succeed())
+
+		Expect(onboard.DeleteConfigMap(context.TODO(), c, clusterNamespace, clusterName,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
+
+		Expect(apierrors.IsNotFound(c.Get(context.TODO(),
+			types.NamespacedName{Namespace: clusterNamespace, Name: clusterName}, &corev1.ConfigMap{}))).To(BeTrue())
+	})
+
+	It("deletePullModeResources also removes the token-renewal Role/RoleBinding", func() {
+		clusterNamespace := randomString()
+		clusterName := randomString()
+
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+		c := fake.NewClientBuilder().WithScheme(scheme).Build()
+		utils.InitalizeManagementClusterAcces(scheme, &rest.Config{Host: testManagementClusterHost}, nil, c)
+
+		Expect(onboard.CreateTokenRenewalRole(context.TODO(), c, clusterNamespace, clusterName)).To(Succeed())
+		Expect(onboard.CreateTokenRenewalRoleBinding(context.TODO(), c, clusterNamespace, clusterName,
+			onboard.SveltosClusterManagerNamespaceDefault)).To(Succeed())
+
+		onboard.DeletePullModeResources(context.TODO(), c, clusterNamespace, clusterName,
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
+
+		roleBindingName := clusterName + onboard.TokenRenewalRBACNamePostfix
+		Expect(apierrors.IsNotFound(c.Get(context.TODO(),
+			types.NamespacedName{Namespace: clusterNamespace, Name: roleBindingName}, &rbacv1.RoleBinding{}))).To(BeTrue())
+		Expect(apierrors.IsNotFound(c.Get(context.TODO(),
+			types.NamespacedName{Namespace: clusterNamespace, Name: roleBindingName}, &rbacv1.Role{}))).To(BeTrue())
 	})
 })
