@@ -50,7 +50,25 @@ const (
 	shardingAnnotationKey      = "sharding.projectsveltos.io/key"
 	rbacAPIGroup               = "rbac.authorization.k8s.io"
 	serviceAccountKind         = "ServiceAccount"
+	roleKind                   = "Role"
+
+	// sveltosClusterManagerNamespaceDefault is the namespace Sveltos is installed in by default.
+	// Sveltos can be installed in any namespace though, so --sveltos-namespace lets callers override it.
+	sveltosClusterManagerNamespaceDefault = "projectsveltos"
 )
+
+// validateManagementClusterURL checks that --management-cluster-url looks like a kubeconfig
+// "server:" value (a full URL with scheme), since it is substituted directly into one. A bare
+// host:port would silently produce a broken kubeconfig instead of failing here.
+func validateManagementClusterURL(url string) error {
+	if url == "" {
+		return fmt.Errorf("--management-cluster-url is required when --token is used")
+	}
+	if !strings.HasPrefix(url, "https://") && !strings.HasPrefix(url, "http://") {
+		return fmt.Errorf("--management-cluster-url must include a scheme, e.g. https://<host>:<port>")
+	}
+	return nil
+}
 
 func onboardSveltosCluster(ctx context.Context, clusterNamespace, clusterName, shard string, kubeconfigData []byte,
 	labels map[string]string, renew bool, logger logr.Logger) error {
@@ -153,7 +171,8 @@ func patchSecret(ctx context.Context, clusterNamespace, secretName string, kubec
 func RegisterCluster(ctx context.Context, args []string, logger logr.Logger) error { //nolint: funlen // command description
 	doc := `Usage:
   sveltosctl register cluster [options] --namespace=<name> --cluster=<name> [--kubeconfig=<file>] [--fleet-cluster-context=<value>] [--pullmode]
-                                [--labels=<value>] [--shard=<key>] [--service-account-token] [--verbose]
+                                [--labels=<value>] [--shard=<key>] [--service-account-token] [--token] [--sveltos-namespace=<name>]
+                                [--management-cluster-url=<url>] [--verbose]
 
      --namespace=<name>                  Specifies the namespace where Sveltos will create a resource (SveltosCluster) to represent
                                          the registered cluster.
@@ -189,6 +208,22 @@ func RegisterCluster(ctx context.Context, args []string, logger logr.Logger) err
                                          When enabled, Sveltos will automatically create the necessary ServiceAccount infrastructure
                                          (ServiceAccount, ClusterRole, and ClusterRoleBinding) in the managed cluster and
                                          generate a long-lived token by also creating a Secret of type kubernetes.io/service-account-token.
+     --token                              (Optional) Only valid together with --pullmode. Instead of a long-lived Secret of type
+                                         kubernetes.io/service-account-token, requests a short-lived token via TokenRequest and
+                                         configures the SveltosCluster so sveltoscluster-manager automatically renews it going forward.
+                                         This also grants sveltoscluster-manager's own ServiceAccount permission to renew this
+                                         cluster's token, scoped to this cluster's ServiceAccount only.
+     --sveltos-namespace=<name>           (Optional) Only used together with --token. The namespace where Sveltos is installed in
+                                         the management cluster. Defaults to "projectsveltos".
+     --management-cluster-url=<url>       (Required with --token) The management cluster's API server address, reachable from the
+                                         managed cluster, including scheme (e.g. https://203.0.113.10:6443). This is the same
+                                         kind of value found in the "server:" field of any kubeconfig. sveltoscluster-manager
+                                         runs in-cluster, so its own view of the management cluster's address is typically an
+                                         internal one (e.g. the kubernetes.default.svc ClusterIP) that the managed cluster
+                                         cannot reach; this value is used instead every time the token is renewed. This is
+                                         often, but not necessarily, the same address as the current kubeconfig's server (for
+                                         example, if this command is being run through a port-forward, proxy, or VPN tunnel
+                                         not reachable from the managed cluster).
 
 Options:
   -h --help                  Show this screen.
@@ -242,9 +277,14 @@ Description:
 		shard = passedShard.(string)
 	}
 
-	pullMode := parsedArgs["--pullmode"].(bool)
+	pullMode, tokenRenewal, sveltosNamespace, managementClusterURL, err := parsePullModeArgs(parsedArgs)
+	if err != nil {
+		return err
+	}
+
 	if pullMode {
-		return onboardSveltosClusterInPullMode(ctx, namespace, cluster, shard, labels, logger)
+		return onboardSveltosClusterInPullMode(ctx, namespace, cluster, shard, sveltosNamespace,
+			managementClusterURL, labels, tokenRenewal, logger)
 	}
 
 	renew := true
@@ -275,6 +315,34 @@ Description:
 	}
 
 	return onboardSveltosCluster(ctx, namespace, cluster, shard, data, labels, renew, logger)
+}
+
+// parsePullModeArgs parses and validates the --pullmode/--token/--sveltos-namespace/
+// --management-cluster-url flags together, since they're only meaningful in combination with
+// each other (--token requires --pullmode, --management-cluster-url requires --token, and
+// --sveltos-namespace only applies with --token).
+func parsePullModeArgs(parsedArgs docopt.Opts) (pullMode, tokenRenewal bool, sveltosNamespace, managementClusterURL string, err error) {
+	pullMode = parsedArgs["--pullmode"].(bool)
+	tokenRenewal = parsedArgs["--token"].(bool)
+	if !pullMode && tokenRenewal {
+		return false, false, "", "", fmt.Errorf("--token can only be used together with --pullmode")
+	}
+
+	if passedManagementClusterURL := parsedArgs["--management-cluster-url"]; passedManagementClusterURL != nil {
+		managementClusterURL = passedManagementClusterURL.(string)
+	}
+	if tokenRenewal {
+		if err := validateManagementClusterURL(managementClusterURL); err != nil {
+			return false, false, "", "", err
+		}
+	}
+
+	sveltosNamespace = sveltosClusterManagerNamespaceDefault
+	if passedSveltosNamespace := parsedArgs["--sveltos-namespace"]; passedSveltosNamespace != nil {
+		sveltosNamespace = passedSveltosNamespace.(string)
+	}
+
+	return pullMode, tokenRenewal, sveltosNamespace, managementClusterURL, nil
 }
 
 func onboardSveltosClusterWithWorkloadIdentity(

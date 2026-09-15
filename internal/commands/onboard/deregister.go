@@ -226,12 +226,37 @@ func deletePullModeResources(ctx context.Context, c client.Client, clusterNamesp
 			fmt.Sprintf("Role/%s/%s", clusterNamespace, clusterName))
 	}
 
-	// Delete ServiceAccount Secret
+	// Delete the token-renewal RoleBinding/Role (only present if the cluster was registered
+	// with --token; deleteRoleBinding/deleteRole are no-ops if not found).
+	tokenRenewalName := clusterName + tokenRenewalRBACNamePostfix
+	if err := deleteRoleBinding(ctx, c, clusterNamespace, tokenRenewalName, logger); err != nil {
+		logger.V(logs.LogInfo).Info(fmt.Sprintf("Warning: failed to delete token-renewal RoleBinding: %v", err))
+	} else {
+		deletedResources = append(deletedResources,
+			fmt.Sprintf("RoleBinding/%s/%s", clusterNamespace, tokenRenewalName))
+	}
+
+	if err := deleteRole(ctx, c, clusterNamespace, tokenRenewalName, logger); err != nil {
+		logger.V(logs.LogInfo).Info(fmt.Sprintf("Warning: failed to delete token-renewal Role: %v", err))
+	} else {
+		deletedResources = append(deletedResources,
+			fmt.Sprintf("Role/%s/%s", clusterNamespace, tokenRenewalName))
+	}
+
+	// Delete ServiceAccount Secret (non-token registration) or the management-cluster-URL
+	// ConfigMap (--token registration) that occupies the same name/namespace instead.
 	if err := deleteSecret(ctx, c, clusterNamespace, clusterName, logger); err != nil {
 		logger.V(logs.LogInfo).Info(fmt.Sprintf("Warning: failed to delete ServiceAccount Secret: %v", err))
 	} else {
 		deletedResources = append(deletedResources,
 			fmt.Sprintf("Secret/%s/%s", clusterNamespace, clusterName))
+	}
+
+	if err := deleteConfigMap(ctx, c, clusterNamespace, clusterName, logger); err != nil {
+		logger.V(logs.LogInfo).Info(fmt.Sprintf("Warning: failed to delete management-cluster-url ConfigMap: %v", err))
+	} else {
+		deletedResources = append(deletedResources,
+			fmt.Sprintf("ConfigMap/%s/%s", clusterNamespace, clusterName))
 	}
 
 	// Delete ServiceAccount
@@ -319,6 +344,24 @@ func deleteSecret(ctx context.Context, c client.Client, namespace, name string,
 
 	logger.V(logs.LogDebug).Info(fmt.Sprintf("Deleting Secret %s/%s", namespace, name))
 	return c.Delete(ctx, secret)
+}
+
+func deleteConfigMap(ctx context.Context, c client.Client, namespace, name string,
+	logger logr.Logger,
+) error {
+
+	configMap := &corev1.ConfigMap{}
+	err := c.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, configMap)
+	if err != nil {
+		if apierrors.IsNotFound(err) {
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("ConfigMap %s/%s not found", namespace, name))
+			return nil
+		}
+		return err
+	}
+
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("Deleting ConfigMap %s/%s", namespace, name))
+	return c.Delete(ctx, configMap)
 }
 
 func deleteRole(ctx context.Context, c client.Client, namespace, name string,

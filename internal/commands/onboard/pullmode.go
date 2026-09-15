@@ -24,9 +24,11 @@ import (
 	"fmt"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
+	authenticationv1 "k8s.io/api/authentication/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -34,6 +36,8 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -45,11 +49,37 @@ import (
 	"github.com/projectsveltos/sveltosctl/internal/utils"
 )
 
-func onboardSveltosClusterInPullMode(ctx context.Context, clusterNamespace, clusterName, shard string,
-	labels map[string]string, logger logr.Logger) error {
+const (
+	// sveltosClusterManagerServiceAccount is the identity sveltoscluster-manager runs as in the
+	// management cluster (fixed by the Helm chart). When --token is used, the per-cluster
+	// Role/RoleBinding created below grants this identity permission to renew the pull-mode
+	// cluster's token. The namespace it lives in is not fixed (Sveltos can be installed in any
+	// namespace), so callers pass it in as sveltosNamespace, defaulting to "projectsveltos".
+	sveltosClusterManagerServiceAccount = "sc-manager"
+
+	tokenRenewalRBACNamePostfix = "-token-renewal"
+
+	pullModeTokenDuration        = 24 * time.Hour
+	pullModeTokenRenewalInterval = time.Hour
+
+	// managementClusterURLConfigMapKey is the key, in the ConfigMap created by
+	// createManagementClusterURLConfigMap, holding the management cluster's externally
+	// reachable API server address.
+	managementClusterURLConfigMapKey = "server"
+
+	// managementClusterCAConfigMapKey is the key, in the same ConfigMap, holding the CA data
+	// (PEM) that validates that address. Not necessarily the same CA as sveltoscluster-manager's
+	// own in-cluster one: on some providers (observed on Civo) the externally reachable endpoint
+	// is fronted by a load balancer presenting a certificate from a different CA.
+	managementClusterCAConfigMapKey = "ca.crt"
+)
+
+func onboardSveltosClusterInPullMode(ctx context.Context, clusterNamespace, clusterName, shard, sveltosNamespace,
+	managementClusterURL string, labels map[string]string, tokenRenewal bool, logger logr.Logger) error {
 
 	instance := utils.GetAccessInstance()
 	c := instance.GetClient()
+	config := instance.GetConfig()
 
 	err := createNamespace(ctx, c, clusterNamespace)
 	if err != nil {
@@ -63,45 +93,29 @@ func onboardSveltosClusterInPullMode(ctx context.Context, clusterNamespace, clus
 		return err
 	}
 
-	err = createSecret(ctx, c, clusterNamespace, clusterName)
-	if err != nil {
-		logger.V(logs.LogDebug).Info(fmt.Sprintf("createSecret failed: %s", err))
+	if err := setupPullModeCredentials(ctx, c, clusterNamespace, clusterName, sveltosNamespace, managementClusterURL,
+		tokenRenewal, config.CAData, logger); err != nil {
 		return err
 	}
 
-	err = createRole(ctx, c, clusterNamespace, clusterName)
-	if err != nil {
-		logger.V(logs.LogDebug).Info(fmt.Sprintf("createRole failed: %s", err))
+	if err := createApplierRBAC(ctx, c, clusterNamespace, clusterName, logger); err != nil {
 		return err
 	}
 
-	err = createClusterRole(ctx, c, clusterNamespace, clusterName)
-	if err != nil {
-		logger.V(logs.LogDebug).Info(fmt.Sprintf("createRole failed: %s", err))
-		return err
-	}
-
-	err = createRoleBinding(ctx, c, clusterNamespace, clusterName)
-	if err != nil {
-		logger.V(logs.LogDebug).Info(fmt.Sprintf("createRoleBinding failed: %s", err))
-		return err
-	}
-
-	err = createClusterRoleBinding(ctx, c, clusterNamespace, clusterName)
-	if err != nil {
-		logger.V(logs.LogDebug).Info(fmt.Sprintf("createClusterRoleBinding failed: %s", err))
-		return err
-	}
-
-	err = createSveltosCluster(ctx, c, clusterNamespace, clusterName, shard, labels)
+	err = createSveltosCluster(ctx, c, clusterNamespace, clusterName, shard, labels, tokenRenewal)
 	if err != nil {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("createSveltosCluster failed: %s", err))
 		return err
 	}
 
-	config := instance.GetConfig()
-
-	kubeconfig, err := getKubeconfig(ctx, c, clusterNamespace, clusterName, config.Host)
+	var kubeconfig string
+	if tokenRenewal {
+		// Use the caller-provided externally reachable URL here too, not config.Host, so the
+		// very first kubeconfig and every renewed one after it point at the same address.
+		kubeconfig, err = getKubeconfigFromTokenRequest(ctx, config, managementClusterURL, clusterNamespace, clusterName, logger)
+	} else {
+		kubeconfig, err = getKubeconfig(ctx, c, clusterNamespace, clusterName, config.Host)
+	}
 	if err != nil {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("getKubeconfig failed: %s", err))
 		return err
@@ -114,6 +128,76 @@ func onboardSveltosClusterInPullMode(ctx context.Context, clusterNamespace, clus
 
 	//nolint: forbidigo // this is printing the YAML to apply to managed cluster
 	fmt.Printf("%s", toApplyYAML)
+
+	return nil
+}
+
+// setupPullModeCredentials creates whichever credential the managed cluster's kubeconfig is
+// built from: the long-lived SA-token Secret (default), or, with --token, the per-cluster
+// token-renewal RBAC plus the ConfigMap sveltoscluster-manager reads back on every renewal.
+func setupPullModeCredentials(ctx context.Context, c client.Client, clusterNamespace, clusterName, sveltosNamespace,
+	managementClusterURL string, tokenRenewal bool, caData []byte, logger logr.Logger) error {
+
+	if !tokenRenewal {
+		if err := createSecret(ctx, c, clusterNamespace, clusterName); err != nil {
+			logger.V(logs.LogDebug).Info(fmt.Sprintf("createSecret failed: %s", err))
+			return err
+		}
+		return nil
+	}
+
+	if err := createTokenRenewalRole(ctx, c, clusterNamespace, clusterName); err != nil {
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("createTokenRenewalRole failed: %s", err))
+		return err
+	}
+
+	if err := createTokenRenewalRoleBinding(ctx, c, clusterNamespace, clusterName, sveltosNamespace); err != nil {
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("createTokenRenewalRoleBinding failed: %s", err))
+		return err
+	}
+
+	// sveltoscluster-manager runs in-cluster: its own rest.Config resolves to a cluster-internal
+	// address (e.g. the kubernetes.default.svc ClusterIP), which is not reachable from the
+	// managed cluster, and its in-cluster CA does not necessarily validate the externally
+	// reachable endpoint either (observed on Civo: the external load balancer presents a
+	// certificate from a different CA than the in-cluster one). Persist both the externally
+	// reachable address and the CA that already correctly validates it (this command's own
+	// ambient config.CAData, proven to work since it is what the initial kubeconfig is also
+	// built from) so every future renewal embeds the right server and CA in the kubeconfig it
+	// delivers to sveltos-applier.
+	if err := createManagementClusterURLConfigMap(ctx, c, clusterNamespace, clusterName, managementClusterURL,
+		caData); err != nil {
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("createManagementClusterURLConfigMap failed: %s", err))
+		return err
+	}
+
+	return nil
+}
+
+// createApplierRBAC creates the Role/ClusterRole/RoleBinding/ClusterRoleBinding sveltos-applier's
+// own ServiceAccount needs, common to both --token and the default (non-renewing) registration.
+func createApplierRBAC(ctx context.Context, c client.Client, clusterNamespace, clusterName string,
+	logger logr.Logger) error {
+
+	if err := createRole(ctx, c, clusterNamespace, clusterName); err != nil {
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("createRole failed: %s", err))
+		return err
+	}
+
+	if err := createClusterRole(ctx, c, clusterNamespace, clusterName); err != nil {
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("createRole failed: %s", err))
+		return err
+	}
+
+	if err := createRoleBinding(ctx, c, clusterNamespace, clusterName); err != nil {
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("createRoleBinding failed: %s", err))
+		return err
+	}
+
+	if err := createClusterRoleBinding(ctx, c, clusterNamespace, clusterName); err != nil {
+		logger.V(logs.LogDebug).Info(fmt.Sprintf("createClusterRoleBinding failed: %s", err))
+		return err
+	}
 
 	return nil
 }
@@ -213,6 +297,38 @@ func createSecret(ctx context.Context, c client.Client, namespace, name string) 
 	return err
 }
 
+// createManagementClusterURLConfigMap persists the management cluster's externally reachable
+// API server address (as provided via --management-cluster-url) at the same name/namespace a
+// non-token pull-mode registration would otherwise use for the SA-token Secret, which --token
+// mode skips creating. Not a Secret: this value isn't sensitive, and keeping it a ConfigMap
+// means it can be read without Secret-read RBAC.
+func createManagementClusterURLConfigMap(ctx context.Context, c client.Client, namespace, name, server string,
+	caData []byte) error {
+
+	configMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Data: map[string]string{
+			managementClusterURLConfigMapKey: server,
+			managementClusterCAConfigMapKey:  string(caData),
+		},
+	}
+
+	currentConfigMap := &corev1.ConfigMap{}
+	err := c.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, currentConfigMap)
+	if err == nil {
+		currentConfigMap.Data = configMap.Data
+		return c.Update(ctx, currentConfigMap)
+	}
+	if !apierrors.IsNotFound(err) {
+		return err
+	}
+
+	return c.Create(ctx, configMap)
+}
+
 func createRole(ctx context.Context, c client.Client, namespace, name string) error {
 	tmpl, err := template.New(name).Option("missingkey=error").Parse(role)
 	if err != nil {
@@ -297,6 +413,89 @@ func createClusterRole(ctx context.Context, c client.Client, namespace, name str
 	return err
 }
 
+// createTokenRenewalRole grants sveltoscluster-manager's ServiceAccount permission to renew
+// the token for this cluster's ServiceAccount, and only this one: resourceNames restricts the
+// grant to the ServiceAccount named after the cluster, in this cluster's namespace.
+func createTokenRenewalRole(ctx context.Context, c client.Client, namespace, name string) error {
+	role := &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      name + tokenRenewalRBACNamePostfix,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups:     []string{""},
+				Resources:     []string{"serviceaccounts/token"},
+				ResourceNames: []string{name},
+				Verbs:         []string{"create"},
+			},
+		},
+	}
+
+	// Permissions might change with new releases
+	currentRole := &rbacv1.Role{}
+	err := c.Get(ctx, types.NamespacedName{Namespace: role.Namespace, Name: role.Name}, currentRole)
+	if err == nil {
+		role.SetResourceVersion(currentRole.ResourceVersion)
+		return c.Update(ctx, role)
+	}
+
+	err = c.Create(ctx, role)
+	if err != nil {
+		if apierrors.IsAlreadyExists(err) {
+			return nil
+		}
+	}
+
+	return err
+}
+
+// createTokenRenewalRoleBinding binds the Role created by createTokenRenewalRole to
+// sveltoscluster-manager's ServiceAccount. sveltosNamespace is where Sveltos is installed
+// in the management cluster (sc-manager's own namespace), which is not fixed.
+func createTokenRenewalRoleBinding(ctx context.Context, c client.Client, namespace, name, sveltosNamespace string) error {
+	roleBindingName := name + tokenRenewalRBACNamePostfix
+	roleBinding := &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: namespace,
+			Name:      roleBindingName,
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacAPIGroup,
+			Kind:     roleKind,
+			Name:     roleBindingName,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind:      serviceAccountKind,
+				Namespace: sveltosNamespace,
+				Name:      sveltosClusterManagerServiceAccount,
+			},
+		},
+	}
+
+	currentRoleBinding := &rbacv1.RoleBinding{}
+	err := c.Get(ctx, types.NamespacedName{Namespace: roleBinding.Namespace, Name: roleBinding.Name}, currentRoleBinding)
+	if err == nil {
+		// Subjects is immutable on update for RoleBindings; delete and recreate if it changed.
+		if currentRoleBinding.Subjects[0].Namespace == sveltosNamespace {
+			return nil
+		}
+		if err := c.Delete(ctx, currentRoleBinding); err != nil {
+			return err
+		}
+	}
+
+	err = c.Create(ctx, roleBinding)
+	if err != nil {
+		if apierrors.IsAlreadyExists(err) {
+			return nil
+		}
+	}
+
+	return err
+}
+
 func createRoleBinding(ctx context.Context, c client.Client, namespace, name string) error {
 	roleBinding := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
@@ -305,7 +504,7 @@ func createRoleBinding(ctx context.Context, c client.Client, namespace, name str
 		},
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: rbacAPIGroup,
-			Kind:     "Role",
+			Kind:     roleKind,
 			Name:     name,
 		},
 		Subjects: []rbacv1.Subject{
@@ -385,7 +584,7 @@ func updateSveltosClusterLabelsAndAnnotations(ctx context.Context, c client.Clie
 }
 
 func createSveltosCluster(ctx context.Context, c client.Client, namespace, name, shard string,
-	labels map[string]string) error {
+	labels map[string]string, tokenRenewal bool) error {
 
 	currentSveltosCluster := &libsveltosv1beta1.SveltosCluster{}
 	err := c.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, currentSveltosCluster)
@@ -403,6 +602,15 @@ func createSveltosCluster(ctx context.Context, c client.Client, namespace, name,
 		Spec: libsveltosv1beta1.SveltosClusterSpec{
 			PullMode: true,
 		},
+	}
+
+	if tokenRenewal {
+		sveltosCluster.Spec.TokenRequestRenewalOption = &libsveltosv1beta1.TokenRequestRenewalOption{
+			RenewTokenRequestInterval: metav1.Duration{Duration: pullModeTokenRenewalInterval},
+			TokenDuration:             metav1.Duration{Duration: pullModeTokenDuration},
+			SANamespace:               namespace,
+			SAName:                    name,
+		}
 	}
 
 	if shard != "" {
@@ -441,6 +649,34 @@ func getKubeconfig(ctx context.Context, c client.Client,
 	}
 
 	return getKubeconfigFromToken(server, token, caCrt), nil
+}
+
+// getKubeconfigFromTokenRequest requests a token for the cluster's ServiceAccount via the
+// TokenRequest API (instead of reading a long-lived Secret), and builds a kubeconfig from it.
+// The SveltosCluster's TokenRequestRenewalOption, set by createSveltosCluster, keeps this
+// token renewed going forward.
+func getKubeconfigFromTokenRequest(ctx context.Context, config *rest.Config, server,
+	namespace, name string, logger logr.Logger) (string, error) {
+
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return "", err
+	}
+
+	expirationSeconds := int64(pullModeTokenDuration.Seconds())
+	treq := &authenticationv1.TokenRequest{
+		Spec: authenticationv1.TokenRequestSpec{
+			ExpirationSeconds: &expirationSeconds,
+		},
+	}
+
+	logger.V(logs.LogDebug).Info(fmt.Sprintf("Create Token for ServiceAccount %s/%s", namespace, name))
+	tokenRequest, err := clientset.CoreV1().ServiceAccounts(namespace).CreateToken(ctx, name, treq, metav1.CreateOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	return getKubeconfigFromToken(server, []byte(tokenRequest.Status.Token), config.CAData), nil
 }
 
 func getToken(secret *corev1.Secret) ([]byte, error) {
