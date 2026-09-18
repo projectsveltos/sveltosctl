@@ -44,13 +44,14 @@ const (
 	//nolint: gosec // Sveltos secret postfix
 	sveltosKubeconfigSecretNamePostfix = "-sveltos-kubeconfig"
 	//nolint: gosec // Sveltos secret postfix
-	sveltosCASecretNamePostfix = "-sveltos-ca"
-	kubeconfig                 = "kubeconfig"
-	caKey                      = "ca.crt"
-	shardingAnnotationKey      = "sharding.projectsveltos.io/key"
-	rbacAPIGroup               = "rbac.authorization.k8s.io"
-	serviceAccountKind         = "ServiceAccount"
-	roleKind                   = "Role"
+	sveltosCASecretNamePostfix   = "-sveltos-ca"
+	kubeconfig                   = "kubeconfig"
+	caKey                        = "ca.crt"
+	shardingAnnotationKey        = "sharding.projectsveltos.io/key"
+	watchNamespacesAnnotationKey = "agent.projectsveltos.io/watch-namespaces"
+	rbacAPIGroup                 = "rbac.authorization.k8s.io"
+	serviceAccountKind           = "ServiceAccount"
+	roleKind                     = "Role"
 
 	// sveltosClusterManagerNamespaceDefault is the namespace Sveltos is installed in by default.
 	// Sveltos can be installed in any namespace though, so --sveltos-namespace lets callers override it.
@@ -172,7 +173,7 @@ func RegisterCluster(ctx context.Context, args []string, logger logr.Logger) err
 	doc := `Usage:
   sveltosctl register cluster [options] --namespace=<name> --cluster=<name> [--kubeconfig=<file>] [--fleet-cluster-context=<value>] [--pullmode]
                                 [--labels=<value>] [--shard=<key>] [--service-account-token] [--token] [--sveltos-namespace=<name>]
-                                [--management-cluster-url=<url>] [--verbose]
+                                [--management-cluster-url=<url>] [--watch-namespaces=<value>] [--verbose]
 
      --namespace=<name>                  Specifies the namespace where Sveltos will create a resource (SveltosCluster) to represent
                                          the registered cluster.
@@ -224,6 +225,15 @@ func RegisterCluster(ctx context.Context, args []string, logger logr.Logger) err
                                          often, but not necessarily, the same address as the current kubeconfig's server (for
                                          example, if this command is being run through a port-forward, proxy, or VPN tunnel
                                          not reachable from the managed cluster).
+     --watch-namespaces=<value>           (Optional) Only valid together with --pullmode. Comma-separated list of namespaces
+                                         restricting which namespaces sveltos-applier is allowed to manage resources in.
+                                         Sets the agent.projectsveltos.io/watch-namespaces annotation on the created
+                                         SveltosCluster, and the --watch-namespaces flag on sveltos-applier in the generated
+                                         YAML, to the same value. A namespaced resource outside this list is rejected instead
+                                         of deployed, and stale-resource lookups only search these namespaces instead of
+                                         cluster-wide. Cluster-scoped resources are not affected, and the ClusterRole in the
+                                         generated YAML still grants cluster-wide access: narrowing it to just these
+                                         namespaces requires a separate override (see Sveltos Applier Overrides in the docs).
 
 Options:
   -h --help                  Show this screen.
@@ -277,14 +287,14 @@ Description:
 		shard = passedShard.(string)
 	}
 
-	pullMode, tokenRenewal, sveltosNamespace, managementClusterURL, err := parsePullModeArgs(parsedArgs)
+	pmArgs, err := parsePullModeArgs(parsedArgs)
 	if err != nil {
 		return err
 	}
 
-	if pullMode {
-		return onboardSveltosClusterInPullMode(ctx, namespace, cluster, shard, sveltosNamespace,
-			managementClusterURL, labels, tokenRenewal, logger)
+	if pmArgs.PullMode {
+		return onboardSveltosClusterInPullMode(ctx, namespace, cluster, shard, pmArgs.SveltosNamespace,
+			pmArgs.ManagementClusterURL, pmArgs.WatchNamespaces, labels, pmArgs.TokenRenewal, logger)
 	}
 
 	renew := true
@@ -317,32 +327,52 @@ Description:
 	return onboardSveltosCluster(ctx, namespace, cluster, shard, data, labels, renew, logger)
 }
 
+// pullModeArgs holds the parsed --pullmode/--token/--sveltos-namespace/--management-cluster-url/
+// --watch-namespaces flags, bundled together since parsePullModeArgs validates them jointly.
+type pullModeArgs struct {
+	PullMode             bool
+	TokenRenewal         bool
+	SveltosNamespace     string
+	ManagementClusterURL string
+	WatchNamespaces      string
+}
+
 // parsePullModeArgs parses and validates the --pullmode/--token/--sveltos-namespace/
-// --management-cluster-url flags together, since they're only meaningful in combination with
-// each other (--token requires --pullmode, --management-cluster-url requires --token, and
-// --sveltos-namespace only applies with --token).
-func parsePullModeArgs(parsedArgs docopt.Opts) (pullMode, tokenRenewal bool, sveltosNamespace, managementClusterURL string, err error) {
-	pullMode = parsedArgs["--pullmode"].(bool)
-	tokenRenewal = parsedArgs["--token"].(bool)
-	if !pullMode && tokenRenewal {
-		return false, false, "", "", fmt.Errorf("--token can only be used together with --pullmode")
+// --management-cluster-url/--watch-namespaces flags together, since they're only meaningful in
+// combination with each other (--token requires --pullmode, --management-cluster-url requires
+// --token, --sveltos-namespace only applies with --token, and --watch-namespaces only applies
+// with --pullmode).
+func parsePullModeArgs(parsedArgs docopt.Opts) (pullModeArgs, error) {
+	var result pullModeArgs
+
+	result.PullMode = parsedArgs["--pullmode"].(bool)
+	result.TokenRenewal = parsedArgs["--token"].(bool)
+	if !result.PullMode && result.TokenRenewal {
+		return pullModeArgs{}, fmt.Errorf("--token can only be used together with --pullmode")
 	}
 
 	if passedManagementClusterURL := parsedArgs["--management-cluster-url"]; passedManagementClusterURL != nil {
-		managementClusterURL = passedManagementClusterURL.(string)
+		result.ManagementClusterURL = passedManagementClusterURL.(string)
 	}
-	if tokenRenewal {
-		if err := validateManagementClusterURL(managementClusterURL); err != nil {
-			return false, false, "", "", err
+	if result.TokenRenewal {
+		if err := validateManagementClusterURL(result.ManagementClusterURL); err != nil {
+			return pullModeArgs{}, err
 		}
 	}
 
-	sveltosNamespace = sveltosClusterManagerNamespaceDefault
+	result.SveltosNamespace = sveltosClusterManagerNamespaceDefault
 	if passedSveltosNamespace := parsedArgs["--sveltos-namespace"]; passedSveltosNamespace != nil {
-		sveltosNamespace = passedSveltosNamespace.(string)
+		result.SveltosNamespace = passedSveltosNamespace.(string)
 	}
 
-	return pullMode, tokenRenewal, sveltosNamespace, managementClusterURL, nil
+	if passedWatchNamespaces := parsedArgs["--watch-namespaces"]; passedWatchNamespaces != nil {
+		result.WatchNamespaces = passedWatchNamespaces.(string)
+	}
+	if !result.PullMode && result.WatchNamespaces != "" {
+		return pullModeArgs{}, fmt.Errorf("--watch-namespaces can only be used together with --pullmode")
+	}
+
+	return result, nil
 }
 
 func onboardSveltosClusterWithWorkloadIdentity(

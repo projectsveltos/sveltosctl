@@ -100,6 +100,7 @@ spec:
         - --cluster-name=
         - --cluster-type=
         - --secret-with-kubeconfig=
+        - --watch-namespaces=
         - --v=5
         - --version=main
         command:

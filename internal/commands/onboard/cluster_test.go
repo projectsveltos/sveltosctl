@@ -20,6 +20,7 @@ import (
 	"context"
 	"reflect"
 
+	"github.com/docopt/docopt-go"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	corev1 "k8s.io/api/core/v1"
@@ -108,5 +109,49 @@ var _ = Describe("validateManagementClusterURL", func() {
 
 	It("accepts an http URL", func() {
 		Expect(onboard.ValidateManagementClusterURL("http://192.168.1.10:6443")).To(Succeed())
+	})
+})
+
+const (
+	pullModeFlag        = "--pullmode"
+	tokenFlag           = "--token"
+	watchNamespacesFlag = "--watch-namespaces"
+	testWatchNamespaces = "team-a,team-b"
+)
+
+var _ = Describe("parsePullModeArgs", func() {
+	It("rejects --watch-namespaces without --pullmode", func() {
+		args := docopt.Opts{
+			pullModeFlag:        false,
+			tokenFlag:           false,
+			watchNamespacesFlag: testWatchNamespaces,
+		}
+
+		_, err := onboard.ParsePullModeArgs(args)
+		Expect(err).To(HaveOccurred())
+	})
+
+	It("passes --watch-namespaces through when --pullmode is set", func() {
+		args := docopt.Opts{
+			pullModeFlag:        true,
+			tokenFlag:           false,
+			watchNamespacesFlag: testWatchNamespaces,
+		}
+
+		result, err := onboard.ParsePullModeArgs(args)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(result.PullMode).To(BeTrue())
+		Expect(result.WatchNamespaces).To(Equal(testWatchNamespaces))
+	})
+
+	It("defaults --watch-namespaces to empty when not passed", func() {
+		args := docopt.Opts{
+			pullModeFlag: true,
+			tokenFlag:    false,
+		}
+
+		result, err := onboard.ParsePullModeArgs(args)
+		Expect(err).ToNot(HaveOccurred())
+		Expect(result.WatchNamespaces).To(Equal(""))
 	})
 })

@@ -75,7 +75,7 @@ const (
 )
 
 func onboardSveltosClusterInPullMode(ctx context.Context, clusterNamespace, clusterName, shard, sveltosNamespace,
-	managementClusterURL string, labels map[string]string, tokenRenewal bool, logger logr.Logger) error {
+	managementClusterURL, watchNamespaces string, labels map[string]string, tokenRenewal bool, logger logr.Logger) error {
 
 	instance := utils.GetAccessInstance()
 	c := instance.GetClient()
@@ -102,7 +102,7 @@ func onboardSveltosClusterInPullMode(ctx context.Context, clusterNamespace, clus
 		return err
 	}
 
-	err = createSveltosCluster(ctx, c, clusterNamespace, clusterName, shard, labels, tokenRenewal)
+	err = createSveltosCluster(ctx, c, clusterNamespace, clusterName, shard, watchNamespaces, labels, tokenRenewal)
 	if err != nil {
 		logger.V(logs.LogDebug).Info(fmt.Sprintf("createSveltosCluster failed: %s", err))
 		return err
@@ -121,7 +121,7 @@ func onboardSveltosClusterInPullMode(ctx context.Context, clusterNamespace, clus
 		return err
 	}
 
-	toApplyYAML, err := prepareApplierYAML(kubeconfig, clusterNamespace, clusterName, logger)
+	toApplyYAML, err := prepareApplierYAML(kubeconfig, clusterNamespace, clusterName, watchNamespaces, logger)
 	if err != nil {
 		return err
 	}
@@ -202,7 +202,7 @@ func createApplierRBAC(ctx context.Context, c client.Client, clusterNamespace, c
 	return nil
 }
 
-func modifyDeployment(depl *appsv1.Deployment, clusterNamespace, clusterName string,
+func modifyDeployment(depl *appsv1.Deployment, clusterNamespace, clusterName, watchNamespaces string,
 	logger logr.Logger) (*appsv1.Deployment, error) {
 
 	clusterType := "sveltos"
@@ -222,6 +222,8 @@ func modifyDeployment(depl *appsv1.Deployment, clusterNamespace, clusterName str
 				newArgs = append(newArgs, fmt.Sprintf("--cluster-type=%s", clusterType))
 			} else if strings.HasPrefix(arg, "--secret-with-kubeconfig=") {
 				newArgs = append(newArgs, fmt.Sprintf("--secret-with-kubeconfig=%s", getSecretName(clusterName)))
+			} else if strings.HasPrefix(arg, "--watch-namespaces=") {
+				newArgs = append(newArgs, fmt.Sprintf("--watch-namespaces=%s", watchNamespaces))
 			} else {
 				newArgs = append(newArgs, arg) // Keep other arguments as they are
 			}
@@ -559,7 +561,7 @@ func createClusterRoleBinding(ctx context.Context, c client.Client, namespace, n
 
 func updateSveltosClusterLabelsAndAnnotations(ctx context.Context, c client.Client,
 	sveltosCluster *libsveltosv1beta1.SveltosCluster, labels map[string]string,
-	shard string) error {
+	shard, watchNamespaces string) error {
 
 	lbls := sveltosCluster.Labels
 	if lbls == nil {
@@ -573,24 +575,34 @@ func updateSveltosClusterLabelsAndAnnotations(ctx context.Context, c client.Clie
 	sveltosCluster.Labels = lbls
 
 	if shard != "" {
-		sveltosCluster.Annotations = map[string]string{
-			shardingAnnotationKey: shard,
+		if sveltosCluster.Annotations == nil {
+			sveltosCluster.Annotations = map[string]string{}
 		}
+		sveltosCluster.Annotations[shardingAnnotationKey] = shard
 	} else if sveltosCluster.Annotations != nil {
 		delete(sveltosCluster.Annotations, shardingAnnotationKey)
+	}
+
+	if watchNamespaces != "" {
+		if sveltosCluster.Annotations == nil {
+			sveltosCluster.Annotations = map[string]string{}
+		}
+		sveltosCluster.Annotations[watchNamespacesAnnotationKey] = watchNamespaces
+	} else if sveltosCluster.Annotations != nil {
+		delete(sveltosCluster.Annotations, watchNamespacesAnnotationKey)
 	}
 
 	return c.Update(ctx, sveltosCluster)
 }
 
-func createSveltosCluster(ctx context.Context, c client.Client, namespace, name, shard string,
+func createSveltosCluster(ctx context.Context, c client.Client, namespace, name, shard, watchNamespaces string,
 	labels map[string]string, tokenRenewal bool) error {
 
 	currentSveltosCluster := &libsveltosv1beta1.SveltosCluster{}
 	err := c.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, currentSveltosCluster)
 	if err == nil {
 		// Update labels
-		return updateSveltosClusterLabelsAndAnnotations(ctx, c, currentSveltosCluster, labels, shard)
+		return updateSveltosClusterLabelsAndAnnotations(ctx, c, currentSveltosCluster, labels, shard, watchNamespaces)
 	}
 
 	sveltosCluster := &libsveltosv1beta1.SveltosCluster{
@@ -617,6 +629,13 @@ func createSveltosCluster(ctx context.Context, c client.Client, namespace, name,
 		sveltosCluster.Annotations = map[string]string{
 			shardingAnnotationKey: shard,
 		}
+	}
+
+	if watchNamespaces != "" {
+		if sveltosCluster.Annotations == nil {
+			sveltosCluster.Annotations = map[string]string{}
+		}
+		sveltosCluster.Annotations[watchNamespacesAnnotationKey] = watchNamespaces
 	}
 
 	err = c.Create(ctx, sveltosCluster)
@@ -871,7 +890,7 @@ rules:
 `
 )
 
-func prepareApplierYAML(kubeconfig, clusterNamespace, clusterName string,
+func prepareApplierYAML(kubeconfig, clusterNamespace, clusterName, watchNamespaces string,
 	logger logr.Logger) (string, error) {
 
 	applierYAML := agent.GetSveltosAgentYAML()
@@ -897,7 +916,7 @@ func prepareApplierYAML(kubeconfig, clusterNamespace, clusterName string,
 				return "", err
 			}
 
-			depl, err = modifyDeployment(depl, clusterNamespace, clusterName, logger)
+			depl, err = modifyDeployment(depl, clusterNamespace, clusterName, watchNamespaces, logger)
 			if err != nil {
 				return "", err
 			}
