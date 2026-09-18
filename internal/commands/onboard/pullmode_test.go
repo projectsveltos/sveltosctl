@@ -46,13 +46,35 @@ var _ = Describe("Register cluster in pullmode", func() {
 		clusterName := randomString()
 		kubeconfig := randomString()
 
-		toApply, err := onboard.PrepareApplierYAML(clusterNamespace, clusterName, kubeconfig,
+		toApply, err := onboard.PrepareApplierYAML(kubeconfig, clusterNamespace, clusterName, "",
 			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
 		Expect(err).To(BeNil())
 		Expect(strings.Contains(toApply, fmt.Sprintf("--cluster-namespace=%s", clusterNamespace)))
 		Expect(strings.Contains(toApply, fmt.Sprintf("--cluster-name=%s", clusterName)))
 		Expect(strings.Contains(toApply, "--cluster-namespace=sveltos"))
 		Expect(strings.Contains(toApply, fmt.Sprintf("--secret-with-kubeconfig=%s-sveltos-kubeconfig", clusterName)))
+	})
+
+	It("prepareApplierYAML sets --watch-namespaces on the sveltos-applier Deployment when requested", func() {
+		clusterNamespace := randomString()
+		clusterName := randomString()
+		kubeconfig := randomString()
+
+		toApply, err := onboard.PrepareApplierYAML(kubeconfig, clusterNamespace, clusterName, "team-a,team-b",
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
+		Expect(err).To(BeNil())
+		Expect(toApply).To(ContainSubstring("--watch-namespaces=team-a,team-b"))
+	})
+
+	It("prepareApplierYAML leaves --watch-namespaces empty when not requested", func() {
+		clusterNamespace := randomString()
+		clusterName := randomString()
+		kubeconfig := randomString()
+
+		toApply, err := onboard.PrepareApplierYAML(kubeconfig, clusterNamespace, clusterName, "",
+			textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))
+		Expect(err).To(BeNil())
+		Expect(toApply).To(ContainSubstring("--watch-namespaces=\n"))
 	})
 
 	It("onboardSveltosClusterInPullMode updates an existing Role to grant */status permissions", func() {
@@ -97,7 +119,7 @@ var _ = Describe("Register cluster in pullmode", func() {
 		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(initObjects...).Build()
 		utils.InitalizeManagementClusterAcces(scheme, &rest.Config{Host: testManagementClusterHost}, nil, c)
 
-		Expect(onboard.OnboardSveltosClusterInPullMode(context.TODO(), clusterNamespace, clusterName, "", "", "",
+		Expect(onboard.OnboardSveltosClusterInPullMode(context.TODO(), clusterNamespace, clusterName, "", "", "", "",
 			nil, false, textlogger.NewLogger(textlogger.NewConfig(textlogger.Verbosity(1))))).To(Succeed())
 
 		instance := utils.GetAccessInstance()
@@ -179,7 +201,7 @@ var _ = Describe("Register cluster in pullmode", func() {
 		Expect(err).To(BeNil())
 		c := fake.NewClientBuilder().WithScheme(scheme).Build()
 
-		Expect(onboard.CreateSveltosCluster(context.TODO(), c, clusterNamespace, clusterName, "", nil, true)).To(Succeed())
+		Expect(onboard.CreateSveltosCluster(context.TODO(), c, clusterNamespace, clusterName, "", "", nil, true)).To(Succeed())
 
 		sveltosCluster := &libsveltosv1beta1.SveltosCluster{}
 		Expect(c.Get(context.TODO(),
@@ -191,12 +213,53 @@ var _ = Describe("Register cluster in pullmode", func() {
 		Expect(sveltosCluster.Spec.TokenRequestRenewalOption.SANamespace).To(Equal(clusterNamespace))
 
 		otherClusterName := randomString()
-		Expect(onboard.CreateSveltosCluster(context.TODO(), c, clusterNamespace, otherClusterName, "", nil, false)).To(Succeed())
+		Expect(onboard.CreateSveltosCluster(context.TODO(), c, clusterNamespace, otherClusterName, "", "", nil, false)).To(Succeed())
 
 		withoutRenewal := &libsveltosv1beta1.SveltosCluster{}
 		Expect(c.Get(context.TODO(),
 			types.NamespacedName{Namespace: clusterNamespace, Name: otherClusterName}, withoutRenewal)).To(Succeed())
 		Expect(withoutRenewal.Spec.TokenRequestRenewalOption).To(BeNil())
+	})
+
+	It("createSveltosCluster sets the watch-namespaces annotation when requested", func() {
+		clusterNamespace := randomString()
+		clusterName := randomString()
+
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+		c := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+		Expect(onboard.CreateSveltosCluster(context.TODO(), c, clusterNamespace, clusterName, "", "team-a,team-b",
+			nil, false)).To(Succeed())
+
+		sveltosCluster := &libsveltosv1beta1.SveltosCluster{}
+		Expect(c.Get(context.TODO(),
+			types.NamespacedName{Namespace: clusterNamespace, Name: clusterName}, sveltosCluster)).To(Succeed())
+		Expect(sveltosCluster.Annotations[onboard.WatchNamespacesAnnotationKey]).To(Equal("team-a,team-b"))
+	})
+
+	It("updateSveltosClusterLabelsAndAnnotations sets/clears the watch-namespaces annotation alongside shard", func() {
+		sveltosCluster := &libsveltosv1beta1.SveltosCluster{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      randomString(),
+				Namespace: randomString(),
+			},
+		}
+
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(sveltosCluster).Build()
+
+		Expect(onboard.UpdateSveltosClusterLabelsAndAnnotations(context.TODO(), c, sveltosCluster, nil,
+			"shard1", "team-a,team-b")).To(Succeed())
+		Expect(sveltosCluster.Annotations[onboard.ShardingAnnotationKey]).To(Equal("shard1"))
+		Expect(sveltosCluster.Annotations[onboard.WatchNamespacesAnnotationKey]).To(Equal("team-a,team-b"))
+
+		// Clearing watch-namespaces (empty value) must not drop the shard annotation, and vice versa.
+		Expect(onboard.UpdateSveltosClusterLabelsAndAnnotations(context.TODO(), c, sveltosCluster, nil,
+			"shard1", "")).To(Succeed())
+		Expect(sveltosCluster.Annotations[onboard.ShardingAnnotationKey]).To(Equal("shard1"))
+		Expect(sveltosCluster.Annotations).ToNot(HaveKey(onboard.WatchNamespacesAnnotationKey))
 	})
 
 	It("createManagementClusterURLConfigMap creates and updates the server address and CA data", func() {

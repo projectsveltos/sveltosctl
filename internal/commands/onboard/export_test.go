@@ -37,9 +37,11 @@ var (
 	CreateTokenRenewalRole                    = createTokenRenewalRole
 	CreateTokenRenewalRoleBinding             = createTokenRenewalRoleBinding
 	CreateSveltosCluster                      = createSveltosCluster
+	UpdateSveltosClusterLabelsAndAnnotations  = updateSveltosClusterLabelsAndAnnotations
 	CreateManagementClusterURLConfigMap       = createManagementClusterURLConfigMap
 	DeleteConfigMap                           = deleteConfigMap
 	ValidateManagementClusterURL              = validateManagementClusterURL
+	ParsePullModeArgs                         = parsePullModeArgs
 )
 
 const (
@@ -52,4 +54,6 @@ const (
 	SveltosClusterManagerNamespaceDefault = sveltosClusterManagerNamespaceDefault
 	ManagementClusterURLConfigMapKey      = managementClusterURLConfigMapKey
 	ManagementClusterCAConfigMapKey       = managementClusterCAConfigMapKey
+	ShardingAnnotationKey                 = shardingAnnotationKey
+	WatchNamespacesAnnotationKey          = watchNamespacesAnnotationKey
 )
