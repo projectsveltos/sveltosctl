@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	docopt "github.com/docopt/docopt-go"
+	"github.com/docopt/docopt-go"
 
 	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
 )
@@ -34,9 +34,35 @@ func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1b
 		return nil
 	}
 
-	found := false
-	spec := make([]libsveltosv1beta1.ComponentConfiguration, len(cc))
+	spec := buildUpdatedSpec(cc, component, logSeverity)
+	return updateLogLevelConfiguration(ctx, spec)
+}
 
+func updateDebuggingConfigurationInManaged(ctx context.Context, logSeverity libsveltosv1beta1.LogLevel,
+	component, namespace, clusterName string, clusterType libsveltosv1beta1.ClusterType) error {
+
+	managedClient, err := getManagedClusterClient(ctx, namespace, clusterName, clusterType)
+	if err != nil {
+		return err
+	}
+
+	cc, err := collectLogLevelConfigurationFromClient(ctx, managedClient)
+	if err != nil {
+		return err
+	}
+
+	spec := buildUpdatedSpec(cc, component, logSeverity)
+	return updateLogLevelConfigurationWithClient(ctx, managedClient, spec)
+}
+
+// buildUpdatedSpec returns the ComponentConfiguration slice that would result
+// from setting component to logSeverity, preserving existing entries for other
+// components.
+func buildUpdatedSpec(cc []*componentConfiguration, component string,
+	logSeverity libsveltosv1beta1.LogLevel) []libsveltosv1beta1.ComponentConfiguration {
+
+	spec := make([]libsveltosv1beta1.ComponentConfiguration, len(cc))
+	found := false
 	for i, c := range cc {
 		if string(c.component) == component {
 			spec[i] = libsveltosv1beta1.ComponentConfiguration{
@@ -44,7 +70,6 @@ func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1b
 				LogLevel:  logSeverity,
 			}
 			found = true
-			break
 		} else {
 			spec[i] = libsveltosv1beta1.ComponentConfiguration{
 				Component: c.component,
@@ -62,22 +87,31 @@ func updateDebuggingConfiguration(ctx context.Context, logSeverity libsveltosv1b
 		)
 	}
 
-	return updateLogLevelConfiguration(ctx, spec)
+	return spec
 }
 
-// Set displays/changes log verbosity for a given component
+// Set displays/changes log verbosity for a given component.
+//
+// When --namespace and --clusterName are provided, the DebuggingConfiguration
+// is updated in the specified managed cluster. Otherwise, it is updated in the
+// management cluster.
 func Set(ctx context.Context, args []string) error {
 	doc := `Usage:
-  sveltosctl log-level set --component=<name> (--info|--debug|--verbose)
+  sveltosctl log-level set --component=<name> (--info|--debug|--verbose) [--namespace=<namespace>] [--clusterName=<cluster-name>] [--clusterType=<cluster-type>]
 Options:
-  -h --help             Show this screen.
-     --component=<name> Name of the component for which log severity is being set.
-     --info             Set log severity to info.
-     --debug            Set log severity to debug.
-     --verbose          Set log severity to verbose.
-	 
+  -h --help                        Show this screen.
+     --component=<name>            Name of the component for which log severity is being set.
+     --info                        Set log severity to info.
+     --debug                       Set log severity to debug.
+     --verbose                     Set log severity to verbose.
+     --namespace=<namespace>       (Optional) Namespace of the managed cluster.
+     --clusterName=<cluster-name>  (Optional) Name of the managed cluster.
+     --clusterType=<cluster-type>  (Optional) Type of managed cluster: Capi or Sveltos. Defaults to Capi.
+
 Description:
   The log-level set command set log severity for the specified component.
+  If --namespace and --clusterName are provided, log severity is set in the
+  specified managed cluster. Otherwise it is set in the management cluster.
 `
 	parsedArgs, err := docopt.ParseArgs(doc, nil, "1.0")
 	if err != nil {
@@ -95,18 +129,27 @@ Description:
 		component = passedComponent.(string)
 	}
 
+	namespace, clusterName, clusterType, err := parseManagedClusterArgs(parsedArgs)
+	if err != nil {
+		return err
+	}
+
 	info := parsedArgs["--info"].(bool)
 	debug := parsedArgs["--debug"].(bool)
 	verbose := parsedArgs["--verbose"].(bool)
 
 	var logSeverity libsveltosv1beta1.LogLevel
-	if info {
+	switch {
+	case info:
 		logSeverity = libsveltosv1beta1.LogLevelInfo
-	} else if debug {
+	case debug:
 		logSeverity = libsveltosv1beta1.LogLevelDebug
-	} else if verbose {
+	case verbose:
 		logSeverity = libsveltosv1beta1.LogLevelVerbose
 	}
 
+	if namespace != "" && clusterName != "" {
+		return updateDebuggingConfigurationInManaged(ctx, logSeverity, component, namespace, clusterName, clusterType)
+	}
 	return updateDebuggingConfiguration(ctx, logSeverity, component)
 }

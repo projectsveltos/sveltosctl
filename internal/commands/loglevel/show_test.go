@@ -25,6 +25,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -81,5 +82,33 @@ var _ = Describe("Show", func() {
 
 		Expect(found).To(BeTrue())
 		os.Stdout = old
+	})
+
+	It("showLogSettingsInManaged displays log level settings from managed cluster", func() {
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+
+		// Create a DebuggingConfiguration for the managed cluster
+		dc := &libsveltosv1beta1.DebuggingConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "default",
+			},
+			Spec: libsveltosv1beta1.DebuggingConfigurationSpec{
+				Configuration: []libsveltosv1beta1.ComponentConfiguration{
+					{
+						Component: libsveltosv1beta1.ComponentClassifier,
+						LogLevel:  libsveltosv1beta1.LogLevelInfo,
+					},
+				},
+			},
+		}
+
+		managedClient := fake.NewClientBuilder().WithScheme(scheme).WithObjects(dc).Build()
+
+		// Test the helper function directly with the managed client
+		componentConfiguration, err := loglevel.CollectLogLevelConfigurationFromClient(context.TODO(), managedClient)
+		Expect(err).To(BeNil())
+		Expect(componentConfiguration).ToNot(BeNil())
+		Expect(len(componentConfiguration)).To(Equal(1))
 	})
 })
