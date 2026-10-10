@@ -10,17 +10,17 @@ require (
 	github.com/onsi/ginkgo/v2 v2.33.0
 	github.com/onsi/gomega v1.44.0
 	github.com/pkg/errors v0.9.1
-	github.com/projectsveltos/addon-controller v1.16.0
+	github.com/projectsveltos/addon-controller v1.16.1-0.20261010095048-309e2f7326c1
 	github.com/projectsveltos/event-manager v1.16.0
-	github.com/projectsveltos/libsveltos v1.16.0
+	github.com/projectsveltos/libsveltos v1.16.1-0.20261007133830-d623a1556939
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.37.1
 	k8s.io/apiextensions-apiserver v0.37.1
 	k8s.io/apimachinery v0.37.1
 	k8s.io/client-go v0.37.1
 	k8s.io/klog/v2 v2.140.0
-	sigs.k8s.io/cluster-api v1.14.2
-	sigs.k8s.io/cluster-api/api v1.14.2
+	sigs.k8s.io/cluster-api v1.14.3
+	sigs.k8s.io/cluster-api/api v1.14.3
 	sigs.k8s.io/controller-runtime v0.25.2
 	sigs.k8s.io/yaml v1.6.0
 )
@@ -107,10 +107,10 @@ require (
 	github.com/projectsveltos/lua-utils/glua-runes v0.0.0-20251212200258-2b3cdcb7c0f5 // indirect
 	github.com/projectsveltos/lua-utils/glua-sprig v0.0.0-20251212200258-2b3cdcb7c0f5 // indirect
 	github.com/projectsveltos/lua-utils/glua-strings v0.0.0-20251212200258-2b3cdcb7c0f5 // indirect
-	github.com/prometheus/client_golang v1.24.1 // indirect
-	github.com/prometheus/client_model v0.6.2 // indirect
-	github.com/prometheus/common v0.70.1 // indirect
-	github.com/prometheus/procfs v0.21.1 // indirect
+	github.com/prometheus/client_golang v1.25.0 // indirect
+	github.com/prometheus/client_model v0.6.3 // indirect
+	github.com/prometheus/common v0.72.0 // indirect
+	github.com/prometheus/procfs v0.22.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
@@ -119,17 +119,17 @@ require (
 	github.com/yuin/gopher-lua v1.1.2 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/crypto v0.56.0 // indirect
+	golang.org/x/crypto v0.57.0 // indirect
 	golang.org/x/exp v0.0.0-20260718201538-764159d718ef // indirect
 	golang.org/x/mod v0.41.0 // indirect
-	golang.org/x/net v0.58.0 // indirect
+	golang.org/x/net v0.59.0 // indirect
 	golang.org/x/oauth2 v0.37.0 // indirect
 	golang.org/x/sync v0.23.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
-	golang.org/x/term v0.45.0 // indirect
+	golang.org/x/term v0.46.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
-	golang.org/x/tools v0.49.0 // indirect
+	golang.org/x/tools v0.51.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.5.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260819154853-08b0e4226688 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260819154853-08b0e4226688 // indirect

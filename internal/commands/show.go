@@ -43,6 +43,7 @@ func Show(ctx context.Context, args []string, logger logr.Logger) error {
     admin-rbac           Displays information about RBACs assigned to admins in each managed cluster.
     classifier-labels    Displays labels managed by Classifier and ManagementClusterClassifier instances on each cluster.
     helm-updates         Displays information on Helm charts deployed in clusters for which a newer version or patch is available.
+    drift-history        Displays the resources that drifted from the configuration Sveltos deployed, and when the drift was detected.
 
 Options:
   -h --help       Show this screen.
@@ -88,6 +89,8 @@ See 'sveltosctl show <subcommand> --help' to read about a specific subcommand.
 			err = show.ClassifierLabels(ctx, arguments, logger)
 		case "helm-updates":
 			err = show.HelmUpdates(ctx, arguments, logger)
+		case "drift-history":
+			err = show.DriftHistory(ctx, arguments, logger)
 		default:
 			//nolint: forbidigo // print doc
 			fmt.Println(doc)
