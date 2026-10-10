@@ -83,6 +83,32 @@ func (a *k8sAccess) GetOutdatedHelmChartInfo(ctx context.Context, namespace, clu
 	return result, nil
 }
 
+// ListClusterSummaries returns the ClusterSummaries in a namespace (all namespaces when namespace is empty).
+// When clusterName and/or clusterType are not empty, only the ClusterSummaries created for
+// that cluster are returned.
+func (a *k8sAccess) ListClusterSummaries(ctx context.Context, namespace, clusterName, clusterType string,
+	logger logr.Logger) (*configv1beta1.ClusterSummaryList, error) {
+
+	logger.V(logs.LogDebug).Info("Get ClusterSummaries")
+
+	matchingLabels := client.MatchingLabels{}
+	if clusterName != "" {
+		matchingLabels[configv1beta1.ClusterNameLabel] = clusterName
+	}
+	if clusterType != "" {
+		matchingLabels[configv1beta1.ClusterTypeLabel] = clusterType
+	}
+
+	listOptions := []client.ListOption{
+		client.InNamespace(namespace),
+		matchingLabels,
+	}
+
+	clusterSummaries := &configv1beta1.ClusterSummaryList{}
+	err := a.client.List(ctx, clusterSummaries, listOptions...)
+	return clusterSummaries, err
+}
+
 // HelmReleaseKey returns the join key used to match a deployed Chart (from ClusterConfiguration)
 // to its OutdatedHelmChartInfo (from ClusterSummary).
 func HelmReleaseKey(releaseNamespace, releaseName string) string {

@@ -113,6 +113,48 @@ Usage:
                              (Capi or Sveltos). If not specified all cluster types are considered.
 ```
 
+## Display drifted resources
+
+**show drift-history** displays the resources that drifted from the configuration Sveltos deployed, and when
+each drift was detected. Drift is only detected for profiles with syncMode ContinuousWithDriftDetection.
+For each feature (Helm, Resources, Kustomize) the most recently drifted resources are displayed first. A resource
+that drifts again is displayed once, with the time of its latest drift. Times are RFC3339, in UTC.
+
+```
+./bin/sveltosctl show drift-history --namespace=civo --cluster=civo-cluster1
+┌────────────────────┬───────────────────────────────────┬───────────┬─────────────────┬───────────────┬──────────────────────────────────┬──────────────────────┬───────────────────────┐
+│      CLUSTER       │              PROFILE              │  FEATURE  │      KIND       │   NAMESPACE   │               NAME               │       DETECTED       │     HELM RELEASE      │
+├────────────────────┼───────────────────────────────────┼───────────┼─────────────────┼───────────────┼──────────────────────────────────┼──────────────────────┼───────────────────────┤
+│ civo/civo-cluster1 │ ClusterProfile/civo-baseline-app  │ Resources │ ConfigMap       │ demo-app      │ app-config                       │ 2026-10-10T10:58:56Z │ -                     │
+│ civo/civo-cluster1 │ ClusterProfile/civo-nginx-ingress │ Helm      │ ServiceAccount  │ ingress-nginx │ ingress-nginx-ingress            │ 2026-10-10T10:58:56Z │ ingress-nginx/ingress │
+│ civo/civo-cluster1 │ ClusterProfile/civo-nginx-ingress │ Helm      │ Deployment.apps │ ingress-nginx │ ingress-nginx-ingress-controller │ 2026-10-10T10:28:36Z │ ingress-nginx/ingress │
+└────────────────────┴───────────────────────────────────┴───────────┴─────────────────┴───────────────┴──────────────────────────────────┴──────────────────────┴───────────────────────┘
+```
+
+**show drift-history** command has some arguments which allow filtering by:
+1. clusters' namespace
+2. clusters' name
+3. cluster type
+4. profile name
+5. feature
+
+```
+./bin/sveltosctl show drift-history --help
+Usage:
+  sveltosctl show drift-history [options] [--namespace=<name>] [--cluster=<name>] [--cluster-type=<type>] [--profile=<name>] [--feature=<name>] [--verbose]
+
+     --namespace=<name>      Show drift history of clusters in this namespace.
+                             If not specified all namespaces are considered.
+     --cluster=<name>        Show drift history of cluster with name.
+                             If not specified all cluster names are considered.
+     --cluster-type=<type>   Show drift history of clusters with this type
+                             (Capi or Sveltos). If not specified all cluster types are considered.
+     --profile=<name>        Show drift history of resources deployed by the (Cluster)Profile with this name.
+                             If not specified all profiles are considered.
+     --feature=<name>        Show drift history of resources deployed by this feature
+                             (Helm, Resources or Kustomize). If not specified all features are considered.
+```
+
 ## Register a cluster
 
 If there is kubeconfig with multiple contexts, the option __fleet-cluster-context__
