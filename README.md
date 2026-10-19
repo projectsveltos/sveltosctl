@@ -155,6 +155,48 @@ Usage:
                              (Helm, Resources or Kustomize). If not specified all features are considered.
 ```
 
+## Display unhealthy resources
+
+**show unhealthy-resources** displays the resources found not Healthy by health monitoring: the resources
+deployed by profiles with `healthMonitoring` enabled, and any other resource a HealthCheck reports.
+For each resource the profile owning the HealthCheck that reported it is displayed. When no profile owns the
+HealthCheck, the HealthCheck is displayed instead. The worst status is displayed first.
+
+```
+./bin/sveltosctl show unhealthy-resources --namespace=civo
+┌────────────────────┬───────────────────────────────────┬─────────────────┬───────────────┬──────────────────────────────────┬─────────────┬────────────────────────────────┐
+│      CLUSTER       │              PROFILE              │      KIND       │   NAMESPACE   │               NAME               │   STATUS    │            MESSAGE             │
+├────────────────────┼───────────────────────────────────┼─────────────────┼───────────────┼──────────────────────────────────┼─────────────┼────────────────────────────────┤
+│ civo/civo-cluster1 │ ClusterProfile/civo-nginx-ingress │ Deployment.apps │ ingress-nginx │ ingress-nginx-ingress-controller │ Degraded    │ Deployment has 0/1 replicas    │
+│ civo/civo-cluster1 │ ClusterProfile/civo-baseline-app  │ Service         │ demo-app      │ app-lb                           │ Progressing │ LoadBalancer has no ingress IP │
+└────────────────────┴───────────────────────────────────┴─────────────────┴───────────────┴──────────────────────────────────┴─────────────┴────────────────────────────────┘
+Note: civo/civo-cluster2: no unhealthy resources.
+```
+
+When nothing is displayed for a cluster, a note under the table explains why: health monitoring is not enabled,
+no health report has been received yet, or no resource is unhealthy.
+
+**show unhealthy-resources** command has some arguments which allow filtering by:
+1. clusters' namespace
+2. clusters' name
+3. cluster type
+4. profile name. Only the resources reported through that profile are displayed. Resources no profile owns are not.
+
+```
+./bin/sveltosctl show unhealthy-resources --help
+Usage:
+  sveltosctl show unhealthy-resources [options] [--namespace=<name>] [--cluster=<name>] [--cluster-type=<type>] [--profile=<name>] [--verbose]
+
+     --namespace=<name>      Show unhealthy resources of clusters in this namespace.
+                             If not specified all namespaces are considered.
+     --cluster=<name>        Show unhealthy resources of cluster with name.
+                             If not specified all cluster names are considered.
+     --cluster-type=<type>   Show unhealthy resources of clusters with this type
+                             (Capi or Sveltos). If not specified all cluster types are considered.
+     --profile=<name>        Show only the unhealthy resources reported through the (Cluster)Profile with this name.
+                             Resources no profile owns are not displayed. If not specified all profiles are considered.
+```
+
 ## Register a cluster
 
 If there is kubeconfig with multiple contexts, the option __fleet-cluster-context__
