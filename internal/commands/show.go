@@ -44,6 +44,7 @@ func Show(ctx context.Context, args []string, logger logr.Logger) error {
     classifier-labels    Displays labels managed by Classifier and ManagementClusterClassifier instances on each cluster.
     helm-updates         Displays information on Helm charts deployed in clusters for which a newer version or patch is available.
     drift-history        Displays the resources that drifted from the configuration Sveltos deployed, and when the drift was detected.
+    unhealthy-resources  Displays the resources that health monitoring found not Healthy, with the profile owning the HealthCheck that reported them.
 
 Options:
   -h --help       Show this screen.
@@ -91,6 +92,8 @@ See 'sveltosctl show <subcommand> --help' to read about a specific subcommand.
 			err = show.HelmUpdates(ctx, arguments, logger)
 		case "drift-history":
 			err = show.DriftHistory(ctx, arguments, logger)
+		case "unhealthy-resources":
+			err = show.UnhealthyResources(ctx, arguments, logger)
 		default:
 			//nolint: forbidigo // print doc
 			fmt.Println(doc)
