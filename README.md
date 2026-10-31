@@ -17,6 +17,11 @@
 
 </div>
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/projectsveltos/sveltos/main/docs/assets/logo.png" width="200">
+  <img src="https://raw.githubusercontent.com/projectsveltos/sveltos/main/docs/assets/mascott/admiral-sveltopus-fleet-whitebg.png" width="220" alt="Admiral Sveltopus, the Sveltos mascot">
+</p>
+
 ## What this repository is
 **sveltosctl** is the command line client for Sveltos. **sveltosctl** nicely displays resources and helm charts info in custer deployed using [ClusterProfile/Profile](https://github.com/projectsveltos/addon-controller).
 
