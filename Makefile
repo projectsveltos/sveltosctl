@@ -13,7 +13,9 @@ REGISTRY ?= projectsveltos
 IMAGE_NAME ?= sveltosctl
 K8S_LATEST_VER ?= $(shell curl -s https://dl.k8s.io/release/stable.txt)
 export SVELTOSCTL_IMG ?= $(REGISTRY)/$(IMAGE_NAME)
-TAG ?= v1.17.0
+TAG ?= v1.18.0
+# Commit the image is built from, stored in the revision label of the image
+GIT_COMMIT ?= $(shell git rev-parse HEAD)
 ARCH ?= $(shell go env GOARCH)
 
 # Directories.
@@ -146,11 +148,20 @@ PKEY ?= id_rsa
 
 .PHONY: docker-build
 docker-build: ## Build the docker image for sveltosctl
-	docker build --build-arg BUILDOS=linux --build-arg TARGETARCH=amd64 --build-arg LDFLAGS="$(LDFLAGS)" --build-arg ARCH=$(ARCH) --build-arg GIT_VERSION=$(TAG) -t $(REGISTRY)/$(IMAGE_NAME)-$(ARCH):$(TAG) -f Dockerfile .
+	docker build --build-arg BUILDOS=linux --build-arg TARGETARCH=amd64 --build-arg LDFLAGS="$(LDFLAGS)" --build-arg ARCH=$(ARCH) --build-arg GIT_VERSION=$(TAG) --build-arg GIT_COMMIT=$(GIT_COMMIT) -t $(REGISTRY)/$(IMAGE_NAME)-$(ARCH):$(TAG) -f Dockerfile .
+
+.PHONY: check-clean-tree
+check-clean-tree: ## Fail if the working tree is not clean: the Go build info of the image would say +dirty
+	@# CLAUDE.md is untracked on purpose and is excluded from the image by .dockerignore
+	@if [ -n "$$(git status --porcelain -- . ':(exclude)CLAUDE.md')" ]; then \
+		echo "The working tree is not clean, the image would be stamped +dirty. Commit, stash or remove:"; \
+		git status --porcelain -- . ':(exclude)CLAUDE.md'; \
+		exit 1; \
+	fi
 
 .PHONY: docker-buildx
-docker-buildx: ## docker build for multiple arch and push to docker hub
-	docker buildx build --push --platform linux/amd64,linux/arm64 --build-arg GIT_VERSION=$(TAG) -t $(SVELTOSCTL_IMG):$(TAG) .
+docker-buildx: check-clean-tree ## docker build for multiple arch and push to docker hub (fails if the working tree is not clean)
+	docker buildx build --push --platform linux/amd64,linux/arm64 --build-arg GIT_VERSION=$(TAG) --build-arg GIT_COMMIT=$(GIT_COMMIT) -t $(SVELTOSCTL_IMG):$(TAG) .
 
 ##@ Build
 
