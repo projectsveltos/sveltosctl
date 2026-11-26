@@ -21,6 +21,7 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	libsveltosv1beta1 "github.com/projectsveltos/libsveltos/api/v1beta1"
@@ -58,5 +59,112 @@ var _ = Describe("Set", func() {
 		Expect(len(currentDC.Spec.Configuration)).To(Equal(1))
 		Expect(currentDC.Spec.Configuration[0].Component).To(Equal(libsveltosv1beta1.ComponentAddonManager))
 		Expect(currentDC.Spec.Configuration[0].LogLevel).To(Equal(libsveltosv1beta1.LogLevelInfo))
+	})
+
+	It("collectLogLevelConfigurationFromClient returns empty configuration when DebuggingConfiguration does not exist", func() {
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+		c := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+		configs, err := loglevel.CollectLogLevelConfigurationFromClient(context.TODO(), c)
+		Expect(err).To(BeNil())
+		Expect(configs).ToNot(BeNil())
+		Expect(len(configs)).To(Equal(0))
+	})
+
+	It("collectLogLevelConfigurationFromClient returns existing configuration", func() {
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+
+		// Create a DebuggingConfiguration with some initial settings
+		dc := &libsveltosv1beta1.DebuggingConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "default",
+			},
+			Spec: libsveltosv1beta1.DebuggingConfigurationSpec{
+				Configuration: []libsveltosv1beta1.ComponentConfiguration{
+					{
+						Component: libsveltosv1beta1.ComponentClassifier,
+						LogLevel:  libsveltosv1beta1.LogLevelDebug,
+					},
+					{
+						Component: libsveltosv1beta1.ComponentAddonManager,
+						LogLevel:  libsveltosv1beta1.LogLevelInfo,
+					},
+				},
+			},
+		}
+
+		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(dc).Build()
+
+		configs, err := loglevel.CollectLogLevelConfigurationFromClient(context.TODO(), c)
+		Expect(err).To(BeNil())
+		Expect(configs).ToNot(BeNil())
+		Expect(len(configs)).To(Equal(2))
+	})
+
+	It("updateLogLevelConfigurationWithClient creates new DebuggingConfiguration when it does not exist", func() {
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+		c := fake.NewClientBuilder().WithScheme(scheme).Build()
+
+		spec := []libsveltosv1beta1.ComponentConfiguration{
+			{
+				Component: libsveltosv1beta1.ComponentClassifier,
+				LogLevel:  libsveltosv1beta1.LogLevelDebug,
+			},
+		}
+
+		err = loglevel.UpdateLogLevelConfigurationWithClient(context.TODO(), c, spec)
+		Expect(err).To(BeNil())
+
+		// Verify the configuration was created
+		configs, err := loglevel.CollectLogLevelConfigurationFromClient(context.TODO(), c)
+		Expect(err).To(BeNil())
+		Expect(configs).ToNot(BeNil())
+		Expect(len(configs)).To(Equal(1))
+	})
+
+	It("updateLogLevelConfigurationWithClient updates existing DebuggingConfiguration", func() {
+		scheme, err := utils.GetScheme()
+		Expect(err).To(BeNil())
+
+		// Create a DebuggingConfiguration with initial settings
+		dc := &libsveltosv1beta1.DebuggingConfiguration{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "default",
+			},
+			Spec: libsveltosv1beta1.DebuggingConfigurationSpec{
+				Configuration: []libsveltosv1beta1.ComponentConfiguration{
+					{
+						Component: libsveltosv1beta1.ComponentClassifier,
+						LogLevel:  libsveltosv1beta1.LogLevelInfo,
+					},
+				},
+			},
+		}
+
+		c := fake.NewClientBuilder().WithScheme(scheme).WithObjects(dc).Build()
+
+		// Update the configuration
+		spec := []libsveltosv1beta1.ComponentConfiguration{
+			{
+				Component: libsveltosv1beta1.ComponentClassifier,
+				LogLevel:  libsveltosv1beta1.LogLevelDebug,
+			},
+			{
+				Component: libsveltosv1beta1.ComponentAddonManager,
+				LogLevel:  libsveltosv1beta1.LogLevelVerbose,
+			},
+		}
+
+		err = loglevel.UpdateLogLevelConfigurationWithClient(context.TODO(), c, spec)
+		Expect(err).To(BeNil())
+
+		// Verify the configuration was updated
+		configs, err := loglevel.CollectLogLevelConfigurationFromClient(context.TODO(), c)
+		Expect(err).To(BeNil())
+		Expect(configs).ToNot(BeNil())
+		Expect(len(configs)).To(Equal(2))
 	})
 })
